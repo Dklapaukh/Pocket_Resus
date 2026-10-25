@@ -1,0 +1,65 @@
+RESUS POCKET — GITHUB SETUP
+
+This package contains the latest published Resus Pocket design.
+No coding or paid account is required for the following setup.
+
+1. EXTRACT THIS ZIP
+Windows: right-click resus-pocket-github.zip and choose Extract All.
+Open the extracted folder. You should see index.html, other files,
+and a folder named cpg-drugs.
+
+2. CREATE A NEW GITHUB REPOSITORY
+Sign in at https://github.com
+Click the + at the top right, then New repository.
+Name it resus-pocket.
+Choose Public. GitHub Pages on a free account requires a public repository.
+Tick Add a README file, then click Create repository.
+
+3. UPLOAD THE APP
+In the new repository, select Add file, then Upload files.
+Drag ALL the files and the cpg-drugs folder from the extracted package
+into the upload area. Drag the CONTENTS of the extracted folder,
+not its enclosing folder and not the ZIP file.
+Scroll down and click Commit changes. Keep the default options.
+
+IMPORTANT: index.html must appear directly in the repository's main
+file list, alongside app.js and the other files. It must not be inside
+an extra resus-pocket-github or dist folder. Keep the cpg-drugs folder.
+The empty .nojekyll file is intentional; include it if visible.
+
+4. TURN ON THE WEBSITE
+Open the repository's Settings tab.
+Select Pages in the left sidebar.
+Under Build and deployment, set Source to Deploy from a branch.
+Select main and / (root), then click Save.
+Allow a few minutes, then refresh that Pages settings screen.
+GitHub will show the website address and a Visit site button.
+Use that website address, not the github.com repository address.
+
+5. ADD TO A PHONE
+On iPhone: open the website in Safari. Tap Share, then Add to Home Screen.
+Turn on Open as Web App if shown, then tap Add.
+On Android: open the website in Chrome. Tap the three-dot menu, then
+Install and create shortcut > Install. Some versions call this
+Add to Home screen or Install app.
+Share the website address with colleagues; they can follow these same steps.
+They do not need GitHub accounts to use the published app.
+
+6. FUTURE UPDATES
+Upload the contents of a new package to the SAME repository, then
+Commit changes. GitHub Pages republishes the website automatically.
+Existing home-screen icons keep using the same website address.
+Do not upload event exports or patient information into the repository.
+
+APP STORAGE
+Events remain in the browser on the device where they were recorded;
+they do not synchronise between phones. Use Export in the event log to
+copy the record before clearing browser data or starting a new patient.
+The initial load needs internet access so offline files can be cached.
+
+OFFICIAL HELP
+https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
+https://support.apple.com/en-nz/guide/iphone/iphea86e5236/ios
+https://support.google.com/chrome/answer/9658361?hl=en&co=GENIE.Platform%3DAndroid
+
+Package source: 01f930383b08b081aff165c328f06e93852a45fc
