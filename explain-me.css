@@ -1,0 +1,24 @@
+/* A separate tutorial overlay: live clinical controls and timers stay intact. */
+#sheet.explain-me{height:100dvh;max-height:100dvh;inset:0;margin:auto;transform:none;border-radius:0;display:flex;flex-direction:column;overflow:hidden;max-width:600px}
+#sheet.explain-me:not([open]){display:none}
+#sheet.explain-me .sheet-heading{flex:none;background:#174f3d;color:#fff;border:0;padding-top:max(12px,env(safe-area-inset-top))}
+#sheet.explain-me .sheet-heading button{color:#fff;background:transparent;box-shadow:none}
+#sheet.explain-me .sheet-content{padding:0;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.explain-progress{height:5px;background:#d4e0d6;flex:none}
+.explain-progress span{display:block;height:100%;background:#286c4f;transition:width .25s}
+.explain-pages{flex:1;min-height:0;overflow-y:auto;scroll-snap-type:y proximity;scroll-behavior:smooth;overscroll-behavior:contain;scrollbar-width:thin}
+.explain-slide{min-height:100%;padding:22px 20px;display:flex;flex-direction:column;gap:18px;scroll-snap-align:start}
+.explain-slide h3{font-size:26px;line-height:1.2;letter-spacing:-.025em;margin:0;color:#173b2d}
+.explain-shot{border-radius:12px;overflow:hidden;background:#e4ece3;border:1px solid #c8d7ca;flex:none;display:flex;justify-content:center}
+.explain-shot img{display:block;width:100%;height:auto;max-height:none}
+#sheet.explain-me .explain-action{font-size:18px;line-height:1.5;margin:0;color:#19392d}
+#sheet.explain-me .explain-note{font-size:16px;line-height:1.5;margin:0;padding-top:15px;border-top:1px solid #d3dfd5;color:#475e50}
+.explain-slide small{font-size:12px;color:#57705e;margin-top:auto}
+.explain-controls{display:flex;justify-content:space-between;gap:12px;padding:10px 16px max(10px,env(safe-area-inset-bottom));background:#e4ece3;flex:none}
+.explain-controls button{min-height:44px;padding:10px 15px;font-size:15px}
+.explain-controls [data-explain-next]{background:#174f3d;color:white;border-color:#174f3d}
+.explain-controls button:disabled{opacity:.35}
+@media(max-width:360px){.explain-slide{padding:20px 16px;gap:14px}.explain-slide h3{font-size:24px}#sheet.explain-me .explain-action{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.explain-pages{scroll-behavior:auto}.explain-progress span{transition:none}}
+
+.explain-slide:nth-child(4) .explain-shot img{max-height:none}

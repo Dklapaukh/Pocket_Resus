@@ -1,0 +1,17 @@
+RESUS POCKET - GITHUB UPDATE
+
+This package includes the complete latest app, including Tutorial, sharp screenshots and tube sizes starting at 3 mm.
+
+1. Extract this ZIP (Windows: right-click > Extract All).
+2. Open your existing resus-pocket repository in GitHub.
+3. Go to the main Code page, where your current index.html is located.
+4. Choose Add file > Upload files.
+5. Drag in ALL the extracted website files AND folders together. Keep the tutorial and cpg-drugs folders intact.
+   Upload the CONTENTS of the extracted folder, not the ZIP or its outer folder.
+   GITHUB-UPDATE.txt is instructions only; you can leave it out.
+6. Scroll down and click Commit changes. Use the same branch your GitHub Pages site uses (usually main).
+7. Wait for GitHub Pages to finish publishing, then reload your app. If an older version remains visible, close and reopen it and reload while online.
+
+Existing files with matching paths will be replaced. Other existing files can remain. There is no need to delete the repository or change its Pages settings.
+
+The upload contains fewer than 100 files. No build step is needed.
