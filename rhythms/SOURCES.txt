@@ -1,0 +1,42 @@
+Rhythm reference examples - retrieved and source labels checked 28 October 2026.
+Images are reference examples, not diagnostic suggestions inferred from a patient's monitor.
+
+vf.png
+Source: https://commons.wikimedia.org/wiki/File:De-Rhythm_ventricular_fibrillation_(CardioNetworks_ECGpedia).png
+Creator: CardioNetworks ECGpedia (uploader Googletrans).
+Licence: Creative Commons Attribution-ShareAlike 3.0 Unported
+https://creativecommons.org/licenses/by-sa/3.0/
+Unmodified original, displayed proportionally. This licence applies to this image.
+
+vt.svg
+Source: https://commons.wikimedia.org/wiki/File:Ventricular_Tachycardia.svg
+Creator: Rocuronium Bromide, 16 May 2024; revision 7 January 2025.
+Licence: CC0 1.0 Universal https://creativecommons.org/publicdomain/zero/1.0/
+Unmodified original educational three-second ECG strip.
+
+ torsades.svg
+Source: https://commons.wikimedia.org/wiki/File:Torsades_de_Pointes_(polymorphic_VT).svg
+Creator: Rocuronium Bromide, 16 May 2024; revision 7 January 2025.
+Licence: CC0 1.0 Universal https://creativecommons.org/publicdomain/zero/1.0/
+Unmodified original educational three-second ECG strip.
+
+Morphology review: VF is irregular without organised QRS complexes; VT is regular with broad complexes;
+torsades demonstrates changing polarity and waxing/waning amplitude. The supplied labels and these
+features were checked during implementation; this is not independent clinical certification.
+
+Clinical references
+https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas
+EAS 3.14, version 1.1.0.1 dated 16 June 2026, checked live 28 October 2026.
+Torsades history requires withholding amiodarone even after a later rhythm change.
+Magnesium: adults 10 mmol IV over 1-2 minutes; repeat once if torsades persists/recurs.
+PEA: address reversible causes; 0.9% NaCl IV 1-2 L adults, 20-40 mL/kg children.
+
+https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas
+EAS 14.27, version 1.0.5.3 dated 9 June 2025, checked live 28 October 2026.
+Adult cardiac-arrest magnesium is diluted to 10 mL for 1-2 minute administration.
+Avoid co-administration in an IV line with an adrenaline infusion; document in mmol.
+
+Packaged cpg-paediatric-equipment.pdf, EAS 7.2, exported 24 September 2026:
+Magnesium doses for bands 20 / 30 / 40 kg: 4 / 6 / 8 mmol.
+5 / 10 kg tables contain no magnesium dose, so the app gives no numeric reference for these bands.
+Paediatric preparation #13: dilute 5 mL from 10 mmol/5 mL ampoule to 10 mL (1 mmol/mL).

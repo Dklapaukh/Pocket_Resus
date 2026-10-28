@@ -1,0 +1,22 @@
+.rhythm-image-choices{display:grid;grid-template-columns:1fr;gap:10px}
+.rhythm-image-choices button{display:flex;flex-direction:column;gap:8px;align-items:stretch;padding:10px 12px;text-align:left;min-height:90px}
+.rhythm-image-choices button>span{font-weight:700;font-size:19px}
+.rhythm-image-choices small{display:block;font-size:13px;font-weight:400;color:#52675d;margin-top:2px}
+.rhythm-image-choices img{width:100%;height:66px;object-fit:contain;background:#fff;border-radius:4px}
+.rhythm-credits{font-size:13px;margin-top:12px}
+.rhythm-credits p{font-size:13px;line-height:1.5}
+.rhythm-snippet{background:#f0f5ed;border:1px solid #9cb79f;border-radius:10px;padding:12px 14px}
+.rhythm-snippet h3{font-size:18px;margin:0 0 10px}
+.rhythm-snippet blockquote{margin:0;padding-left:12px;border-left:3px solid #174f3d;font-size:20px;font-weight:700}
+.rhythm-snippet p{margin:12px 0 0;font-size:17px}
+.live-mode .drug-grid .drug.magnesium{background:#fff6ec;border:1px solid #c17c27}
+.live-mode .drug-grid .drug.magnesium .record{background:#f1dfc5;color:#694314;border-color:#bb843f}
+.live-mode .drug-grid .drug.magnesium .drug-clock{color:#694314}
+.live-mode .drug-grid .drug.fluids{background:#eff8fc;border:1px solid #397f9e}
+.live-mode .drug-grid .drug.fluids .record{background:#d4e8f1;color:#214e62;border-color:#5f92a8}
+.live-mode .drug-grid .drug.fluids .drug-clock{color:#214e62}
+.log-entry[data-event-type=magnesium]{color:#84541a}
+.log-entry[data-event-type=fluids]{color:#23617b}
+.equipment-record-actions{display:flex;gap:8px;align-items:stretch}
+.equipment-record-actions>.primary{flex:1;min-width:0;width:auto;padding:12px 8px;line-height:1.35;font-size:16px}
+@media(max-width:350px){.equipment-record-actions>.primary{font-size:15px}.rhythm-image-choices img{height:58px}}
