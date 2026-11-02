@@ -18,7 +18,8 @@ Rebuild Pocket Resus (https://github.com/Dklapaukh/Pocket_Resus, branch `main`, 
 - **Stage 2c done** (3 Nov 2026, needs upload + phone check): dormant code removed from `src/app/` (pause handler, record-rhythm-only sheet, causes screen, single-item live checklist, "record action" note path, `liveCheckIndex`); listed in `docs/removed-or-dormant.md`. Saved/imported logs containing old pause/resume/rhythm/cause events still display. 4Hs/4Ts guidance prompts kept. Files changed: `events.js`, `sheets.js`, `state.js`, `views.js`. `npm test` = 51 passing; all 88 screen steps still match the original hashes. Unused CSS for the removed screens left for the CSS stage.
 - **Stage 2c confirmed:** owner uploaded it and all phone checks passed (3 Nov 2026).
 - **Stage 2d done** (3 Nov 2026, needs upload + phone check): all 9 modules in `src/app/` reformatted with Prettier (single quotes, width 100; run through `npx prettier@3`, **not** added to the repo) and given plain-English comments (file headers plus one above each function / listener). No logic changed: every module was tested after formatting, 51 passing, all 88 screen steps match the original hashes. Comments were written from the code, not just function names; if you find one that is wrong, fix the comment. `sw.js` not changed (network-first, so no cache bump needed).
-- Next: **Stage 3**: check clinical flags C3–C6 against the online EAS guidelines (`docs/06-DECISIONS-LOG.md`, `docs/05-ARCHITECTURE-RISKS-PLAN.md` D2). **The owner is the clinical reviewer (D2 answered, 3 Nov 2026).** Claude prepares a comparison (app value vs current guideline text, with links) and the owner replies Keep / Change per item; until then behaviour is preserved. No clinical value is changed without the owner's explicit reply. Also still open: unused CSS/images cleanup (see `docs/removed-or-dormant.md`).
+- **Stage 3 done** (3 Nov 2026, docs only, no app files changed, `npm test` = 51 passing before and after): owner ruled **C3 Keep, C4 Keep, C5 Keep, C6a Keep, C6b seek clinical advice** (details in `docs/06-DECISIONS-LOG.md`, decisions 4-7 and C6b). C6b stays open (child second amiodarone dose has no EAS source). Values were checked against the bundled EAS PDF export dated 24.09.2026; the live 7.2 page could not be opened by the tool.
+- Next: **A1** (shock energy to CPG bands). Two rulings needed first: (a) C4 kept exact weight × 4 for weights under 5 kg, A1 would use the 5 kg band; (b) C3 pads prompt (≤100 J) depends on energy, which A1 changes (25 kg: 100 J now, 30 kg band 120 J after).
 - Stage 2 not covered by the fake browser: real layout/pixels, wake lock, install prompt, service worker, clipboard (these stay for the Playwright/phone checks).
 
 ## Decisions made by owner
@@ -39,7 +40,7 @@ Rebuild Pocket Resus (https://github.com/Dklapaukh/Pocket_Resus, branch `main`, 
 | A6 | Keep a backup of an unreadable saved session instead of silently discarding it | Awaiting owner yes/no |
 
 ## Open clinical flags (preserve current behaviour until ruled)
-C3 paediatric pads prompt at ≤100 J (source?); C4 weights under 5 kg accepted; C5 amiodarone prompt requires current rhythm VF/VT; C6 check magnesium 20/30/40 kg bands and amiodarone second-dose values against EAS 7.2/14.4. After A1, the pads prompt threshold (energy ≤100 J) must be re-checked because it is tied to energy.
+C3, C4, C5, C6a ruled **Keep** (3 Nov 2026). **C6b open:** child second amiodarone dose (half of first) has no EAS source; owner seeking clinical advice; behaviour preserved. After A1, the pads prompt threshold (energy ≤100 J) must be re-checked because it is tied to energy.
 
 ## Observations to preserve or fix later
 - Post-ROSC live screen scrolls slightly (Post ROSC checklist button partly below the fold).
