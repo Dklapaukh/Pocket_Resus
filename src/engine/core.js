@@ -1,6 +1,7 @@
-/* PORTED UNCHANGED from the original core.js (Stage 1). Only the wrapper differs:
-   the old global-script wrapper became an ES module. Logic lines are identical;
-   tests/engine-fidelity.test.mjs proves it. Do not edit clinical logic here. */
+/* PORTED from the original core.js (Stage 1). The wrapper differs (ES module) and logic lines are
+   identical EXCEPT joules() (change A1, owner-approved 3 Nov 2026: shock energy = 4 J/kg of the
+   CPG weight band, rounded up, capped at 200 J). tests/engine-fidelity.test.mjs pins that one
+   difference. Do not edit clinical logic here without owner approval. */
 /* Standalone arrest engine. Epoch timestamps; no inferred clinical events.
    NZCPG EAS 3.14 and 7.2, packaged exports 24 September 2026. */
 const CYCLE=120000, ADR=240000;
@@ -8,7 +9,7 @@ function fresh(now=Date.now()){return {version:1,id:'resus-'+now,appStart:now,re
 function validWeight(w){return /^\d+(\.\d)?$/.test(String(w).trim().replace(',','.'))&&+String(w).replace(',','.')>0&&+String(w).replace(',','.')<=500;}
 function estimate(age){const a=Number(age);if(String(age).trim()===''||!Number.isFinite(a)||a<=0||a>14)return null;return a<1?5:Number.isInteger(a)?a<=10?(a+4)*2:a*3:null;}
 function isPaediatric(s){return validWeight(s.weight)&&Number(String(s.weight).replace(',','.'))<=40;}
-function joules(weight){return validWeight(weight)?Math.min(Math.round(Number(String(weight).replace(',','.'))*40)/10,200):null;}
+function joules(weight){if(!validWeight(weight))return null;const w=Number(String(weight).replace(',','.')),b=[5,10,20,30,40].find(n=>w<=n);return b?b*4:200;}
 function needsPaediatricPads(weight){const j=joules(weight);return j!==null&&j<=100;}
 function canRhythmCheck(s,now=Date.now()){return s.phase==='Active'&&timing(s,now).left===0;}
 function dose(s){
