@@ -35,7 +35,7 @@ export function drugCard(type) {
 export function weightHeader() {
   const w = st.s.weight,
     j = R.joules(w);
-  return `<div class="weight-row"><button data-action="weight" class="weight-button" aria-label="Patient weight${w ? ' ' + esc(w) + ' kg' : ''}"><span>Pt weight (kg)</span><strong>${w ? esc(w) + ' kg' : 'Enter kg'}</strong>${w ? `<small class="header-energy" title="4 J/kg · maximum 200 J">${j} J${st.s.weightSource.startsWith('Estimated') ? ' · est.' : ''}</small>` : ''}</button>${R.needsPaediatricPads(w) ? '<div class="pads-prompt"><span aria-hidden="true">▰ ▰</span> Use paediatric pads</div>' : ''}${st.s.special ? '<span class="special-flag">Special situation · manual review</span>' : ''}</div>`;
+  return `<div class="weight-row"><button data-action="weight" class="weight-button" aria-label="Patient weight${w ? ' ' + esc(w) + ' kg' : ''}"><span>Pt weight (kg)</span><strong>${w ? esc(w) + ' kg' : 'Enter kg'}</strong>${w ? `<small class="header-energy" title="4 J/kg of CPG weight band · maximum 200 J">${j} J${st.s.weightSource.startsWith('Estimated') ? ' · est.' : ''}</small>` : ''}</button>${R.needsPaediatricPads(w) ? '<div class="pads-prompt"><span aria-hidden="true">▰ ▰</span> Use paediatric pads</div>' : ''}${st.s.special ? '<span class="special-flag">Special situation · manual review</span>' : ''}</div>`;
 }
 
 /* Start, shock, no-shock and re-arrest events (voided ones left out), oldest first. */
@@ -233,7 +233,7 @@ export function tick() {
 export function guidance() {
   sheet(
     'Guidance & sources',
-    `<p><b>Standard non-traumatic cardiac arrest.</b> Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.</p><p>NZCPG <em>EAS guideline 3.14</em>: two minute CPR cycles; adrenaline review every 4 minutes; amiodarone reviews at 3 and 6 VF / pulseless VT shocks. Weight references retain the source app’s 5 / 10 / 20 / 30 / 40 kg paediatric bands.</p><p>The 4 J/kg calculation is capped at 200 J. The adult CPG specifies maximum defibrillator setting. A no-shock cycle is counted only when recorded.</p><div class="stack">${[
+    `<p><b>Standard non-traumatic cardiac arrest.</b> Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.</p><p>NZCPG <em>EAS guideline 3.14</em>: two minute CPR cycles; adrenaline review every 4 minutes; amiodarone reviews at 3 and 6 VF / pulseless VT shocks. Weight references retain the source app’s 5 / 10 / 20 / 30 / 40 kg paediatric bands.</p><p>Shock energy is 4 J/kg of the CPG weight band (rounded up), capped at 200 J. The adult CPG specifies maximum defibrillator setting. A no-shock cycle is counted only when recorded.</p><div class="stack">${[
       ['Cardiac arrest · <em>EAS guideline 3.14</em>', 'cpg-cardiac-arrest.pdf'],
       ['Post ROSC · <em>EAS guideline 3.15</em>', 'cpg-post-rosc.pdf'],
       ['Paediatric equipment & doses · <em>EAS guideline 7.2</em>', 'cpg-paediatric-equipment.pdf'],
