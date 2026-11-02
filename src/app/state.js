@@ -4,7 +4,7 @@
 import {R, KEY} from './base.js';
 
 /* Everything the app remembers while it runs, in one object (was loose variables). */
-export const st={logScope:'all',checklistDisplay:'items',s:undefined,tab:'live',checklist:'arrest',checkReturn:'live',sheetContext:null,toastTimeout:undefined,installPrompt:null,storageOK:true,wakeLock:null,liveCheckIndex:0};
+export const st={logScope:'all',checklistDisplay:'items',s:undefined,tab:'live',checklist:'arrest',checkReturn:'live',sheetContext:null,toastTimeout:undefined,installPrompt:null,storageOK:true,wakeLock:null};
 
 try{const saved=JSON.parse(localStorage.getItem(KEY));st.s=saved?.version===1&&Array.isArray(saved.events)&&Number.isFinite(saved.appStart)?saved:R.fresh();}catch{st.s=R.fresh();}
 
