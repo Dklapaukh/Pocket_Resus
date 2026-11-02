@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 import path from 'node:path';
+import { buildSync } from 'esbuild';
 
 process.env.TZ = 'UTC';                   // clock text must not depend on the computer's time zone
 export const T0 = 1700000000000;           // fixed start time used by every scenario
@@ -84,5 +85,13 @@ export function openApp({ appDir, savedState = null, scriptLoader = defaultLoade
 // (vm.Script in the page's context gives scripts the same shared top-level scope a browser does.)
 function defaultLoader(w, dir, srcs, dom) {
   const ctx = dom.getInternalVMContext();
+  // Rebuilt app (Stage 2b): one <script type=module>. jsdom cannot run modules, so bundle it into one
+  // strict-mode script first (browsers run modules in strict mode, so the test does too).
+  const mod = srcs.find(x => x.startsWith('src/'));
+  if (mod) {
+    const code = buildSync({ entryPoints: [path.join(dir, mod)], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' } }).outputFiles[0].text;
+    new vm.Script(code, { filename: mod }).runInContext(ctx);
+    return;
+  }
   for (const src of srcs) new vm.Script(readFileSync(path.join(dir, src), 'utf8'), { filename: src }).runInContext(ctx);
 }
