@@ -1,0 +1,12 @@
+canRhythmCheck@2:00 true  @1:59 false
+[["",false,null,false,1,300,10,null,null,200],["0",false,null,false,null,null,null,null,null,null],["0.1",true,0.4,true,0.05,25,null,2,4,0.4],["5",true,20,true,0.05,25,null,100,200,20],["5.1",true,20.4,true,0.1,50,null,102,204,20.4],["10",true,40,true,0.1,50,null,200,400,40],["10.1",true,40.4,true,0.2,100,4,202,404,40.4],["20",true,80,true,0.2,100,4,400,800,80],["30",true,120,false,0.3,150,6,600,1200,120],["40",true,160,false,0.4,200,8,800,1600,160],["40.1",true,160.4,false,1,300,10,1000,2000,160.4],["50",true,200,false,1,300,10,1000,2000,200],["100",true,200,false,1,300,10,1000,2000,200],["500",true,200,false,1,300,10,1000,2000,200],["500.1",false,null,false,null,null,null,null,null,null],["abc",false,null,false,null,null,null,null,null,null],["4,5",true,18,true,0.05,25,null,null,null,18],["12.34",false,null,false,null,null,null,null,null,null]]
+[{"a":0,"est":null},{"a":0.5,"est":5},{"a":1,"est":10},{"a":2,"est":12},{"a":10,"est":28},{"a":11,"est":33},{"a":12,"est":36},{"a":14,"est":42},{"a":15,"est":null},{"a":"","est":null},{"a":null,"est":null}]
+{"counts":{"shocks":4,"noShock":0,"streak":0,"amio":0},"care":"amiodarone","tdp":"magnesium","pea":"fluids","undo":12,"phase":"ROSC","timing":{"left":115000,"app":725000,"resus":725000,"adr":null,"amio":null,"late":0}}
+CPR cycle started — Cycle 1
+Shock delivered — VF · 200 J
+Shock delivered — VF · 200 J
+Shock delivered — VF · 200 J
+Shock delivered — VF · 200 J
+Shock delivered — Torsades · 200 J
+No shock · rhythm check — PEA
+ROSC — Sinus rhythm
