@@ -5,9 +5,11 @@ Rebuild Pocket Resus (https://github.com/Dklapaukh/Pocket_Resus, branch `main`, 
 
 ## State
 - Phase 1 (read-only audit) done. Documents: `01-REPOSITORY-AUDIT-COMPLETED.md`, `02-FEATURE-CONTRACT-COMPLETED.md`, `05-ARCHITECTURE-RISKS-PLAN.md`, `06-DECISIONS-LOG.md`, `baseline/` (engine script, output, file hashes).
-- Owner has uploaded the latest local files (v16, cache `v16-timer-spacing`) to `main`. Get the new commit SHA with `git ls-remote` and record it. Before Stage 0, confirm `sw.js` on `main` contains `v16-timer-spacing`.
-- Two screenshot sets taken from the live phone UI (Chrome, portrait, 1080×2340). Set 2 shows the v16 layout (countdown smaller, "+ Previous shock" no longer overlapping). Still wanted from owner: Log tab (all), Log tab (interventions only), the "…" settings menu.
-- Next: Stage 0 (baseline scripts + golden tests) → Stage 1 (port and pin the engine files). See plan in `05`.
+- `main` = v16. **Baseline SHA `1dde71144e319868bc09df3f2bb2312724ae8eb6`**; `sw.js` cache `resus-pocket-v16-timer-spacing` confirmed; all 16 app files match `baseline/file-hashes.sha256`.
+- Two screenshot sets taken from the live phone UI (Chrome, portrait, 1080×2340). Set 2 shows the v16 layout (countdown smaller, "+ Previous shock" no longer overlapping). Log tab (all), Log tab (interventions only) and the "…" menu are now filed in `baseline/screenshots/` with `baseline/BASELINE-NOTES.md`. The menu list scrolls and only the top part was captured.
+- **Stage 0 done (engine level) and Stage 1 done** (2 Nov 2026): golden file made from the original engine; engine ported unchanged to `src/engine/`; `npm test` = 39 passing (golden, 300 random side-by-side runs, baseline script output, line-for-line fidelity, app-files-unchanged guard, plain-English characterisation). Tests were also shown to fail when a dose or energy number is altered. App, clinical logic and UI untouched.
+- Not done in Stage 0: browser (Playwright) scenarios and multi-size screenshots (no browser here); real exported logs/JSON.
+- Next: Stage 2 (module skeleton: move `app.js` into modules, compare screen HTML for each scenario). Needs the Stage 0/1 files uploaded to `main` first.
 
 ## Decisions made by owner
 1. Not rebuilt (historical): pause/resume, Reviewed/Suspected causes screen, "record rhythm only", VF/VT/torsades images, single-item live checklist. 4Hs/4Ts **guidance prompts** are kept.
@@ -19,8 +21,8 @@ Rebuild Pocket Resus (https://github.com/Dklapaukh/Pocket_Resus, branch `main`, 
 ## Approved changes: apply only AFTER parity is proven
 | ID | Change | Status |
 |---|---|---|
-| A1 | **Shock energy:** round weight up to the CPG weight band, multiply by 4 J/kg (bottom of the EAS 7.2 range), cap 200 J. Current app uses exact weight × 4 (42 kg shows 168 J; would become 50 kg → 200 J; 25 kg shows 100 J; would become 30 kg → 120 J). Owner said "round up to nearest 5 kg". The guideline bands are 5/10/20/30/40, which differ at 15 kg (5 kg steps: 60 J; bands: 20 kg band → 80 J) | **One question open:** confirm bands (recommended) vs every-5-kg |
-| A2 | **Amiodarone card must not show from the start.** Proposed rule: appears when due (3 shocks in VF/VT including previous shocks; second dose at 6), stays once shown. Uses existing `amioDue` logic. Needs a decision on what fills the space before then | Owner agrees card should not show from the start; **confirm proposed rule** |
+| A1 | **Shock energy:** round weight up to the CPG weight band, multiply by 4 J/kg (bottom of the EAS 7.2 range), cap 200 J. Current app uses exact weight × 4 (42 kg shows 168 J; would become 50 kg → 200 J; 25 kg shows 100 J; would become 30 kg → 120 J). Owner said "round up to nearest 5 kg". The guideline bands are 5/10/20/30/40, which differ at 15 kg (5 kg steps: 60 J; bands: 20 kg band → 80 J) | **Owner confirmed: bands** (2 Nov 2026). Not yet applied |
+| A2 | **Amiodarone card must not show from the start.** Proposed rule: appears when due (3 shocks in VF/VT including previous shocks; second dose at 6), stays once shown. Uses existing `amioDue` logic. Needs a decision on what fills the space before then | Owner confirmed proposed rule (**yes**, 2 Nov 2026). Still to decide: what fills the space before the card appears. Not yet applied |
 | A3 | Portrait lock: add `"orientation":"portrait"` to `manifest.webmanifest` (works for the installed app, not for a normal browser tab) | Approved in principle |
 | A4 | Countdown digits look too small in v16; enlarge without re-creating the "+ Previous shock" overlap | Approved in principle; size to be tuned with owner |
 | A5 | Possible guard against double-tap recording a drug twice | Propose after testing; needs approval |
