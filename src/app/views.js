@@ -1,84 +1,356 @@
 /* Builds the screens (live, causes, checklists, log, guidance) and the 250 ms tick.
-   Converted mechanically from the original app files in Stage 2b: logic unchanged;
-   shared variables are now st.<name>. */
-import {$, R} from './base.js';
-import {drugDose, finished, torsades} from './session.js';
-import {clock, countdown, esc, formatGuidelineReference, normalizeGuidelineReferences, time} from './format.js';
-import {ARREST_CHECKLISTS, CARDIAC_CPG, CAUSES, MAGNESIUM_CPG} from './data.js';
-import {sheet} from './sheets.js';
-import {st} from './state.js';
+   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+import { $, R } from './base.js';
+import { drugDose, finished, torsades } from './session.js';
+import {
+  clock,
+  countdown,
+  esc,
+  formatGuidelineReference,
+  normalizeGuidelineReferences,
+  time,
+} from './format.js';
+import { ARREST_CHECKLISTS, CARDIAC_CPG, CAUSES, MAGNESIUM_CPG } from './data.js';
+import { sheet } from './sheets.js';
+import { st } from './state.js';
 
-export function drugCard(type){const adr=type==='adrenaline',name=adr?'Adrenaline':'Amiodarone',d=R.dose(st.s),c=R.counts(st.s),value=drugDose(type),blocked=!adr&&torsades(),canRef=d&&!st.s.special&&!blocked&&(adr||c.amio<2)&&!['ROSC','Ended'].includes(st.s.phase);
-return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s)&&d?'child':''}">${d?esc(value+' mg IV'):'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p><button class="record" data-drug="${type}" ${canRef?'':'disabled'}>${canRef?'Record '+value+' mg IV':blocked?'Withhold · torsades':st.s.special?'Manual review':!adr&&c.amio>=2?'2 doses recorded':st.s.phase==='ROSC'?'ROSC recorded':st.s.phase==='Ended'?'Session ended':'Weight needed'}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;}
-
-export function weightHeader(){const w=st.s.weight,j=R.joules(w);return `<div class="weight-row"><button data-action="weight" class="weight-button" aria-label="Patient weight${w?' '+esc(w)+' kg':''}"><span>Pt weight (kg)</span><strong>${w?esc(w)+' kg':'Enter kg'}</strong>${w?`<small class="header-energy" title="4 J/kg · maximum 200 J">${j} J${st.s.weightSource.startsWith('Estimated')?' · est.':''}</small>`:''}</button>${R.needsPaediatricPads(w)?'<div class="pads-prompt"><span aria-hidden="true">▰ ▰</span> Use paediatric pads</div>':''}${st.s.special?'<span class="special-flag">Special situation · manual review</span>':''}</div>`;}
-
-export function cycleRecords(){return R.active(st.s).filter(e=>['start','shock','noshock','rearrest'].includes(e.type)).sort((a,b)=>a.at-b.at);}
-
-export function openCycleLog(){const rows=cycleRecords(),prior=st.s.priorShocks+st.s.priorNoShock;sheet('Cycle log',`${prior?`<p class="caption">${prior} earlier cycles recorded as counts only; individual timestamps unavailable.</p>`:''}${rows.length?rows.map((e,i)=>`<article class="cycle-log-row"><b>${e.preApp?'Before app':'Cycle '+(prior+rows.slice(0,i+1).filter(x=>!x.preApp).length)}</b><time>${e.timeUnknown?'Time not set':time(e.at)}</time><p>${e.type==='shock'?'<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg> Shock delivered':e.type==='noshock'?'No shock · next cycle started':e.type==='rearrest'?'Re-arrest · CPR restarted':'CPR cycle started'}${e.details?' · '+esc(e.details):''}</p></article>`).join(''):'<p>No cycles recorded yet.</p>'}`);}
-
-export function liveView(){const c=R.counts(st.s),w=st.s.weight,stopped=['ROSC','Ended'].includes(st.s.phase),j=R.joules(w);return `<div class="live-dashboard">
-
-<section class="timer-panel" id="timerPanel"><div class="cycle-dial" id="cycleTrack"><svg class="cycle-ring" width="100%" height="100%" aria-hidden="true"><rect class="ring-track"/><rect class="ring-fill" id="progress" pathLength="120"/></svg><div class="dial-face"><div class="dial-history"><button class="cycle-heading" data-action="cycle-log" aria-label="Open timestamped cycle log"><span id="cycleTitle">${st.s.cycle?'CPR cycle '+st.s.cycle:'Ready for CPR'}</span><span class="dial-shocks"><svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg><strong>${c.shocks}</strong><span>${c.shocks===1?'shock':'shocks'}</span></span></button><button class="previous-shock" data-action="previous-shock" aria-label="Add a shock before app start">+ Previous shock</button></div><div class="dial-timing"><div class="countdown" id="cycleClock" role="timer" aria-label="Time remaining in CPR cycle">02:00</div><div class="cycle-caption" id="cycleCaption">Ready to start</div></div><div class="dial-actions"><button class="unexpected-rosc" data-outcome="rosc" id="unexpectedRosc" aria-label="Record unexpected ROSC" ${!['Ready','Active'].includes(st.s.phase)?'hidden':''}>♡ ROSC</button><button class="start-button" data-action="${stopped?(st.s.phase==='ROSC'?'rearrest':'export'):'start'}" id="startCycle" ${st.s.phase==='Active'?'hidden':''}>${stopped?(st.s.phase==='ROSC'?'Re-arrest · restart CPR':'Export record'):'▶ Start CPR'}</button><button class="rhythm-check-button" data-action="rhythm-check" id="rhythmCheck" hidden>⌁ Rhythm check</button></div></div></div><span class="sr-only" id="cycleAlert" role="status" aria-live="polite"></span></section>
-<div class="access-cards"><button data-action="airway"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v12m0-5-4 4m4-4 4 4M12 9C7 9 3 17 3 24c0 4 3 4 6 2l4-3V11M20 9c5 0 9 8 9 15 0 4-3 4-6 2l-4-3V11"/></svg><span>Airway</span><span class="card-chevron" aria-hidden="true">›</span></button><button data-action="access"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M10 3h12v17a6 6 0 0 1-12 0V3ZM8 7h16M10 13h12M13 1v4m6-4v4m-3 21v5"/><path d="M16 17v4"/></svg><span>Access</span><span class="card-chevron" aria-hidden="true">›</span></button></div><div class="drug-grid">${drugCard('adrenaline')}${R.careMode(st.s)==='amiodarone'?drugCard('amiodarone'):supportCard(R.careMode(st.s))}</div>
-${st.s.phase==='ROSC'?'<button class="postrosc-main" data-action="postrosc">☑ Post ROSC checklist</button>':''}
-<div class="tools-row"><button data-action="interventions" ${finished()?'disabled':''}><span aria-hidden="true">＋</span> Airway / access</button><button data-action="note" ${finished()?'disabled':''}>+ Event</button></div></div>`;}
-
-
-
-export function checkStatus(key){return R.active(st.s).filter(e=>e.type==='checklist'&&e.key===key).at(-1);}
-
-export function checksView(){const list=ARREST_CHECKLISTS.find(c=>c.id===st.checklist),done=list.items.filter((_,i)=>checkStatus(st.checklist+':'+i)?.checked).length;return `<button class="check-back" data-tab="${st.checkReturn}">← Back</button><div class="row"><h2>${list.label}</h2><span class="muted">${done}/${list.items.length}</span></div><p class="caption">${list.code} · Each tick is timestamped.${list.intro?' '+list.intro:''}</p><div class="panel" style="padding:0">${list.items.map((t,i)=>{const key=list.id+':'+i,e=checkStatus(key);return `<label class="check-item"><input type="checkbox" aria-label="${esc(t)}" data-check="${key}" ${e?.checked?'checked':''} ${finished()?'disabled':''}><span>${esc(t)}${e?.checked?`<time>${time(e.at)}</time>`:''}</span></label>`;}).join('')}</div><a href="${list.pdf}" target="_blank" rel="noopener">Original ${formatGuidelineReference(list.code.split(' · ')[0])} ↗</a><p class="caption">A tick records checklist review, not administration or an intervention.</p>`;}
-
-export function logRows(includeVoided=true){return R.logEntries(st.s,ARREST_CHECKLISTS,{scope:st.logScope,checklists:st.checklistDisplay,includeVoided});}
-
-export function logView(){const rows=logRows();return `<div class="row"><h2>Event log</h2><button data-action="copy" aria-label="Export event log to clipboard">Export</button></div><div class="log-filters"><label>Show<select id="logScope"><option value="all" ${st.logScope==='all'?'selected':''}>All events</option><option value="interventions" ${st.logScope==='interventions'?'selected':''}>Interventions only</option></select></label><label>Checklists<select id="checklistDisplay" ${st.logScope==='interventions'?'disabled':''}><option value="items" ${st.checklistDisplay==='items'?'selected':''}>Each item</option><option value="times" ${st.checklistDisplay==='times'?'selected':''}>Start & finish only</option></select></label></div><p class="caption log-filter-help">${st.logScope==='interventions'?'CPR, shocks, rhythm checks, medicines, airway/access and recorded actions. Checklist items excluded.':st.checklistDisplay==='times'?'Checklist start: first item checked. Finish: all items checked. Other events remain visible.':'All recorded events, including individual checklist items.'} Export copies this view; voided entries are excluded.</p><p class="caption">${new Date(st.s.appStart).toLocaleDateString('en-NZ')} · ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)}<br>Resus start ${time(st.s.resusStart)}${st.s.resusStart<st.s.appStart?' · before app opened':''} · ${st.s.phase}</p><button class="primary" data-action="note" ${finished()?'disabled':''}>+ Add event / earlier event</button>${rows.length?rows.slice().reverse().map(e=>`<article data-event-type="${e.type==='equipment'&&['iv','io'].includes(e.procedure)?'access':e.type}" class="log-entry ${e.voided?'void':''}"><time>${e.timeUnknown?'Before app':time(e.at)}${e.timeUnknown?'<small>Time not set</small>':`<small>${e.at<st.s.resusStart?'−':'+'}${clock(Math.abs(e.at-st.s.resusStart))} resus</small>`}</time><div>${e.type==='shock'?'<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg>':''}<b>${esc(e.title)}</b><p>${esc(e.details)}</p>${e.needsReview&&!e.voided?`<button class="review-shock" data-edit="${esc(e.id)}">Add time / edit details</button>`:''}${e.correctedAt?'<small class="caption">Corrected</small>':''}${e.voided?'<small class="caption">Voided · excluded from counts</small>':''}</div>${e.synthetic?`<button data-review-checklist="${esc(e.checklistId)}" aria-label="Review ${esc(e.title)}">↗</button>`:`<button data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.title)} at ${e.timeUnknown?'time not set':time(e.at)}">✎</button>`}</article>`).join(''):'<p class="empty">No events in this view yet.</p>'}`;}
-
-export function render(){document.body.classList.toggle('large',st.s.largeText);document.body.classList.toggle('live-mode',st.tab==='live');document.body.classList.toggle('guidance-mode',st.tab==='guidance');document.body.classList.toggle('checklist-mode',st.tab==='checks');$('headerWeight').innerHTML=weightHeader();$('main').innerHTML=st.tab==='live'?liveView():st.tab==='guidance'?guidanceGrid():st.tab==='checks'?checksView():logView();document.querySelectorAll('[data-tab]').forEach(b=>{if(b.dataset.tab===st.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if($('undo'))$('undo').disabled=!st.s.undo.length;normalizeGuidelineReferences($('main'));normalizeGuidelineReferences($('headerWeight'));tick();}
-
-export function tick(){const t=R.timing(st.s),c=R.counts(st.s);$('appClock').textContent=clock(t.app);$('resusClock').textContent=clock(t.resus);document.querySelector('.bottom-nav [data-checklist=arrest]').classList.toggle('checklist-attention',R.checklistPrompt(st.s));$('appClock').classList.toggle('long-clock',t.app>=3600000);$('resusClock').classList.toggle('long-clock',t.resus>=3600000);if(st.tab!=='live')return;
- const on=st.s.phase==='Active',running=on&&st.s.deadline!==null,due=on&&t.left===0,stopped=['ROSC','Ended'].includes(st.s.phase);
- $('cycleClock').textContent=stopped?(st.s.phase==='ROSC'?'ROSC':'Ended'):countdown(t.left);$('cycleTitle').textContent=stopped?(st.s.phase==='ROSC'?'ROSC recorded':'Session ended'):st.s.cycle?'CPR cycle '+st.s.cycle:'Ready for CPR';$('cycleCaption').textContent=stopped?'Recorded at '+time(st.s.end):due?'Rhythm check due'+(t.late>1000?' · +'+clock(t.late):''):on&&!running?'Paused · resus clock continues':running&&t.left<=15000?'Prepare for rhythm check':running&&t.left<=30000?'30 seconds remaining':running?'CPR in progress':'Ready to start';
- if($('cycleAlert').textContent!==(due?'Cycle complete. Rhythm check.':''))$('cycleAlert').textContent=due?'Cycle complete. Rhythm check.':'';$('timerPanel').classList.toggle('due',due);$('timerPanel').classList.toggle('prepare',running&&t.left>0&&t.left<=15000);$('timerPanel').classList.toggle('stopped',stopped);$('timerPanel').classList.toggle('ready',st.s.phase==='Ready');$('progress').style.strokeDashoffset=String(120*(1-Math.max(0,Math.min(1,t.left/R.CYCLE))));$('unexpectedRosc').hidden=!['Ready','Active'].includes(st.s.phase);$('rhythmCheck').hidden=!due;$('cycleTrack').hidden=false;$('startCycle').hidden=on;
- const enabled=on&&!st.s.special;
- $('adrenalineClock').textContent=t.adr===null?'—':t.adr<0?'+'+clock(-t.adr):countdown(t.adr);
- $('adrenalineStatus').textContent=!enabled?'Review inactive':t.adr===null?'No dose recorded':t.adr<0?'4 min elapsed · review':'Until 4 min review';
- $('adrenalineCard').classList.toggle('attention',enabled&&t.adr!==null&&t.adr<=30000);
- if(R.careMode(st.s)==='amiodarone'){
- $('amiodaroneClock').textContent=t.amio===null?'—':clock(t.amio);
- const amioDue=enabled&&!torsades()&&['VF','VT'].includes(st.s.rhythm)&&((c.shocks>=3&&c.amio===0)||(c.shocks>=6&&c.amio===1));
- $('amiodaroneStatus').textContent=torsades()?'Withhold · torsades':!enabled?'Review inactive':amioDue?'Review '+(c.amio?'second':'first')+' dose':c.amio>=2?'Since last dose':(t.amio===null?'Review at '+(c.amio?'6':'3')+' shocks':'Since last dose');
- $('amiodaroneCard').classList.toggle('attention',amioDue);
- }else tickSupport(R.careMode(st.s),enabled);
+/* One drug card (adrenaline or amiodarone) on the Live screen. */
+export function drugCard(type) {
+  const adr = type === 'adrenaline',
+    name = adr ? 'Adrenaline' : 'Amiodarone',
+    d = R.dose(st.s),
+    c = R.counts(st.s),
+    value = drugDose(type),
+    blocked = !adr && torsades(),
+    canRef =
+      d &&
+      !st.s.special &&
+      !blocked &&
+      (adr || c.amio < 2) &&
+      !['ROSC', 'Ended'].includes(st.s.phase);
+  return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s) && d ? 'child' : ''}">${d ? esc(value + ' mg IV') : 'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p><button class="record" data-drug="${type}" ${canRef ? '' : 'disabled'}>${canRef ? 'Record ' + value + ' mg IV' : blocked ? 'Withhold · torsades' : st.s.special ? 'Manual review' : !adr && c.amio >= 2 ? '2 doses recorded' : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Weight needed'}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;
 }
 
-export function guidance(){sheet('Guidance & sources',`<p><b>Standard non-traumatic cardiac arrest.</b> Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.</p><p>NZCPG <em>EAS guideline 3.14</em>: two minute CPR cycles; adrenaline review every 4 minutes; amiodarone reviews at 3 and 6 VF / pulseless VT shocks. Weight references retain the source app’s 5 / 10 / 20 / 30 / 40 kg paediatric bands.</p><p>The 4 J/kg calculation is capped at 200 J. The adult CPG specifies maximum defibrillator setting. A no-shock cycle is counted only when recorded.</p><div class="stack">${[['Cardiac arrest · <em>EAS guideline 3.14</em>','cpg-cardiac-arrest.pdf'],['Post ROSC · <em>EAS guideline 3.15</em>','cpg-post-rosc.pdf'],['Paediatric equipment & doses · <em>EAS guideline 7.2</em>','cpg-paediatric-equipment.pdf'],['RSI · <em>EAS guideline 9.3</em>','cpg-rsi.pdf']].map(([l,p])=>`<a href="${p}" target="_blank" rel="noopener">${l} ↗</a>`).join('')}</div><details class="panel"><summary>RSI medicine references</summary><p>Fentanyl: 2 mcg/kg IV, maximum 200 mcg. Only when indicated for TBI, suspected intracranial pathology or hypertension; withhold with shock.</p><p>Ketamine: 2 mg/kg IV, maximum 200 mg. Consider 1 mg/kg with shock / prior sedation; do not reduce for prolonged seizures.</p><p>Rocuronium <b>or</b> suxamethonium: 2 mg/kg IV, maximum 200 mg. Adult dose usually rounded to nearest 50 mg. Alternatives, not both.</p><p>Use the full RSI CPG for patient context and administration.</p></details><p class="caption">Packaged NZCPG exports: 24 September 2026. Reversible causes: ANZCOR 11.2. Local protocol takes precedence. This extracted app requires clinical validation before patient-care use.</p>`);}
-
-export function supportCard(type){
- const mag=type==='magnesium',ref=mag?R.magnesiumReference(st.s):R.fluidReference(st.s),stats=R.supportStats(st.s,type),value=mag?(ref.dose===null?'Dose: clinical review':ref.dose+' mmol IV'):(ref.min===null?'Enter weight':ref.min+'–'+ref.max+' mL IV');
- const enabled=!st.s.special&&!['ROSC','Ended'].includes(st.s.phase),canRef=enabled&&(!mag||(ref.dose!==null&&stats.count<2));
- const label=mag?(stats.count>=2?'2 doses recorded':ref.dose===null?'Review dose':stats.count?'Record repeat…':'Record '+ref.dose+' mmol IV'):'Record fluid…';
- return `<section class="drug ${type}" id="${type}Card"><h3>${mag?'Magnesium':'Fluids · NaCl 0.9%'}</h3><div class="drug-dose">${esc(value)}</div><strong class="drug-clock" id="supportClock">—</strong><p class="caption" id="supportStatus"></p><button class="record" data-support="${type}" ${canRef?'':'disabled'}>${enabled?label:st.s.phase==='ROSC'?'ROSC recorded':st.s.phase==='Ended'?'Session ended':'Manual review'}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}">Other…</button></div></section>`;
+/* Header "Pt weight (kg)" button, with the shock energy calculated from the weight. */
+export function weightHeader() {
+  const w = st.s.weight,
+    j = R.joules(w);
+  return `<div class="weight-row"><button data-action="weight" class="weight-button" aria-label="Patient weight${w ? ' ' + esc(w) + ' kg' : ''}"><span>Pt weight (kg)</span><strong>${w ? esc(w) + ' kg' : 'Enter kg'}</strong>${w ? `<small class="header-energy" title="4 J/kg · maximum 200 J">${j} J${st.s.weightSource.startsWith('Estimated') ? ' · est.' : ''}</small>` : ''}</button>${R.needsPaediatricPads(w) ? '<div class="pads-prompt"><span aria-hidden="true">▰ ▰</span> Use paediatric pads</div>' : ''}${st.s.special ? '<span class="special-flag">Special situation · manual review</span>' : ''}</div>`;
 }
 
-export function tickSupport(type,enabled){const stats=R.supportStats(st.s,type);$('supportClock').textContent=stats.last?clock(Date.now()-stats.last.at):'—';$('supportStatus').textContent=!enabled?'Review inactive':type==='magnesium'?(stats.count>=2?'2 doses · clinical review':stats.count?'Repeat once only if TdP persists/recurs':'Withhold amiodarone · torsades history'):(stats.total?stats.total+' mL recorded · review total':'PEA · review fluid volume');}
-
-export function cpgSource(){return `<p class="caption">NZCPG <em>EAS guideline 3.14</em><br><a href="${CARDIAC_CPG}" target="_blank" rel="noopener">Current <em>EAS guideline 3.14</em> ↗</a> · <a href="cpg-cardiac-arrest.pdf#page=2" target="_blank">Offline <em>EAS guideline 3.14</em> ↗</a></p>`;}
-
-export function torsadesSnippet(){return `<div class="rhythm-snippet"><h3>Torsades de pointes · guideline extract</h3><blockquote>Withhold amiodarone.<br>Administer magnesium IV:</blockquote><p>Adult reference: 10 mmol (2.5 g), given IV over 1–2 minutes. A single repeat is permitted when torsades continues or returns. Use the paediatric dose tables for children.</p></div>${cpgSource()}`;}
-
-export function peaSnippet(){return `<div class="rhythm-snippet"><h3>PEA · guideline extract</h3><blockquote>Correct immediately reversible causes.<br>Administer 0.9% sodium chloride IV:</blockquote><p>The IV volume reference is 1–2 L in adults, or 20–40 mL/kg in children. Assess and treat the reversible cause.</p></div>${cpgSource()}`;}
-
-export function supportAdministration(type){
- if(type==='fluids'){const ref=R.fluidReference(st.s);sheet('Fluids · administration',`${peaSnippet()}<p><b>${ref.min===null?'Enter weight':ref.min+'–'+ref.max+' mL IV'}</b> · ${formatGuidelineReference(ref.basis)}</p><p>Record the actual volume given in mL. The card shows the recorded total; a rhythm change does not record fluid administration.</p>`);return;}
- const ref=R.magnesiumReference(st.s);
- sheet('Magnesium · administration',`${torsadesSnippet()}<p><b>${ref.dose===null?'Dose requires clinical review':ref.dose+' mmol IV'}</b> · ${formatGuidelineReference(ref.basis)}</p><p>For adult cardiac-arrest administration, dilute the 10 mmol dose with 0.9% sodium chloride to 10 mL and give over 1–2 minutes. The paediatric preparation in <em>EAS guideline 7.2</em> is 1 mmol/mL: dilute 5 mL from a 10 mmol/5 mL ampoule to 10 mL, then draw up the table dose.</p><p>Avoid the IV line carrying a concurrent adrenaline infusion because precipitation can occur. Record magnesium in mmol.</p><a href="${MAGNESIUM_CPG}" target="_blank" rel="noopener"><em>EAS guideline 14.27</em> ↗</a><p><a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a></p>`);
+/* Start, shock, no-shock and re-arrest events (voided ones left out), oldest first. */
+export function cycleRecords() {
+  return R.active(st.s)
+    .filter((e) => ['start', 'shock', 'noshock', 'rearrest'].includes(e.type))
+    .sort((a, b) => a.at - b.at);
 }
 
-export function rhythmImages(){return `<div class="rhythm-image-choices">${[['VF','Ventricular fibrillation'],['VT','Pulseless VT'],['Torsades','Torsades de pointes']].map(([id,title])=>`<button data-record-rhythm="${id}">${title}</button>`).join('')}</div>`;}
+/* "Cycle log" pop-up: each recorded cycle with its time, plus a note about earlier cycles entered as counts only. */
+export function openCycleLog() {
+  const rows = cycleRecords(),
+    prior = st.s.priorShocks + st.s.priorNoShock;
+  sheet(
+    'Cycle log',
+    `${prior ? `<p class="caption">${prior} earlier cycles recorded as counts only; individual timestamps unavailable.</p>` : ''}${rows.length ? rows.map((e, i) => `<article class="cycle-log-row"><b>${e.preApp ? 'Before app' : 'Cycle ' + (prior + rows.slice(0, i + 1).filter((x) => !x.preApp).length)}</b><time>${e.timeUnknown ? 'Time not set' : time(e.at)}</time><p>${e.type === 'shock' ? '<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg> Shock delivered' : e.type === 'noshock' ? 'No shock · next cycle started' : e.type === 'rearrest' ? 'Re-arrest · CPR restarted' : 'CPR cycle started'}${e.details ? ' · ' + esc(e.details) : ''}</p></article>`).join('') : '<p>No cycles recorded yet.</p>'}`,
+  );
+}
 
-export function guidanceGrid(){return `<h2>Guidance</h2><div class="guidance-grid">${ARREST_CHECKLISTS.map(c=>`<button data-open-check="${c.id}">☑ ${c.label}</button>`).join('')}<button data-reference="rsi">RSI doses<br><small>${st.s.weight?esc(st.s.weight)+' kg':'Enter weight'}</small></button><button data-reference="tubes">Tube sizes & age<br><small>${st.s.age?esc(st.s.age)+' years':'Age criteria'}</small></button></div><section class="causes-board"><h3>Reversible causes · 4 Hs & 4 Ts</h3><div>${CAUSES.map(c=>`<button data-cause-guide="${c.id}">${c.name}</button>`).join('')}</div></section>`;}
+/* The Live tab screen. */
+export function liveView() {
+  const c = R.counts(st.s),
+    w = st.s.weight,
+    stopped = ['ROSC', 'Ended'].includes(st.s.phase),
+    j = R.joules(w);
+  return `<div class="live-dashboard">
 
-export function referenceSheet(type){const w=Number(st.s.weight),age=st.s.age===''?null:Number(st.s.age),fmt=n=>Math.round(n*10)/10;if(type==='rsi'){sheet('RSI dose references',`${w?`<p><b>${w} kg</b> · calculated references, not recorded administrations</p><dl><dt>Fentanyl · conditional</dt><dd>${fmt(Math.min(w*2,200))} mcg IV</dd><dt>Ketamine · usual</dt><dd>${fmt(Math.min(w*2,200))} mg IV</dd><dt>Ketamine · reduced</dt><dd>${fmt(Math.min(w,200))} mg IV</dd><dt>Rocuronium OR suxamethonium</dt><dd>${fmt(w>40?Math.min(Math.round(w*2/50)*50,200):Math.min(w*2,200))} mg IV</dd></dl>`:'<button class="primary" data-action="weight">Enter patient weight</button>'}<p>Fentanyl only for TBI, suspected intracranial pathology or hypertension; withhold with shock. Consider reduced ketamine with shock / prior sedation; do not reduce for prolonged seizures. Neuromuscular blockers are alternatives, not both.</p><a href="cpg-rsi.pdf" target="_blank"><em>EAS guideline 9.3</em> ↗</a>`);return;}
- sheet('Tube sizes & age criteria',`<label>Patient age (years)<input id="referenceAge" type="number" min="0" max="120" step="any" value="${esc(st.s.age)}"></label><button data-save-age>Use age</button>${age!==null&&age<=14?`<p><b>Cuffed ETT:</b> ${age<1?'3–4 mm':fmt(age/4+3.5)+' mm (formula)'}</p><p><b>Length at lips:</b> ${age<1?'ETT size × 3 cm':fmt(age/2+12)+' cm (formula)'}</p>`:'<p>Enter age to show the paediatric ETT and length-at-lips formula results.</p>'}<p class="caption">Paediatric formulae are guides; confirm actual fit. Not a weight-only adult tube-size recommendation.</p><h3>Age-based weight estimate</h3><p>Under 1 year: 5 kg. Ages 1–10: (age + 4) × 2 kg. Ages 11–14: age × 3 kg. Estimates may underestimate actual weight.</p><h3>iGel weight ranges</h3><p>1: 2–5 kg · 1.5: 5–12 kg · 2: 10–25 kg · 2.5: 25–35 kg · 3: 30–60 kg · 4: 50–90 kg · 5: 90+ kg.</p><a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a><p class="caption">iGel colours/ranges: Intersurgical product information.</p>`);
+<section class="timer-panel" id="timerPanel"><div class="cycle-dial" id="cycleTrack"><svg class="cycle-ring" width="100%" height="100%" aria-hidden="true"><rect class="ring-track"/><rect class="ring-fill" id="progress" pathLength="120"/></svg><div class="dial-face"><div class="dial-history"><button class="cycle-heading" data-action="cycle-log" aria-label="Open timestamped cycle log"><span id="cycleTitle">${st.s.cycle ? 'CPR cycle ' + st.s.cycle : 'Ready for CPR'}</span><span class="dial-shocks"><svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg><strong>${c.shocks}</strong><span>${c.shocks === 1 ? 'shock' : 'shocks'}</span></span></button><button class="previous-shock" data-action="previous-shock" aria-label="Add a shock before app start">+ Previous shock</button></div><div class="dial-timing"><div class="countdown" id="cycleClock" role="timer" aria-label="Time remaining in CPR cycle">02:00</div><div class="cycle-caption" id="cycleCaption">Ready to start</div></div><div class="dial-actions"><button class="unexpected-rosc" data-outcome="rosc" id="unexpectedRosc" aria-label="Record unexpected ROSC" ${!['Ready', 'Active'].includes(st.s.phase) ? 'hidden' : ''}>♡ ROSC</button><button class="start-button" data-action="${stopped ? (st.s.phase === 'ROSC' ? 'rearrest' : 'export') : 'start'}" id="startCycle" ${st.s.phase === 'Active' ? 'hidden' : ''}>${stopped ? (st.s.phase === 'ROSC' ? 'Re-arrest · restart CPR' : 'Export record') : '▶ Start CPR'}</button><button class="rhythm-check-button" data-action="rhythm-check" id="rhythmCheck" hidden>⌁ Rhythm check</button></div></div></div><span class="sr-only" id="cycleAlert" role="status" aria-live="polite"></span></section>
+<div class="access-cards"><button data-action="airway"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v12m0-5-4 4m4-4 4 4M12 9C7 9 3 17 3 24c0 4 3 4 6 2l4-3V11M20 9c5 0 9 8 9 15 0 4-3 4-6 2l-4-3V11"/></svg><span>Airway</span><span class="card-chevron" aria-hidden="true">›</span></button><button data-action="access"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M10 3h12v17a6 6 0 0 1-12 0V3ZM8 7h16M10 13h12M13 1v4m6-4v4m-3 21v5"/><path d="M16 17v4"/></svg><span>Access</span><span class="card-chevron" aria-hidden="true">›</span></button></div><div class="drug-grid">${drugCard('adrenaline')}${R.careMode(st.s) === 'amiodarone' ? drugCard('amiodarone') : supportCard(R.careMode(st.s))}</div>
+${st.s.phase === 'ROSC' ? '<button class="postrosc-main" data-action="postrosc">☑ Post ROSC checklist</button>' : ''}
+<div class="tools-row"><button data-action="interventions" ${finished() ? 'disabled' : ''}><span aria-hidden="true">＋</span> Airway / access</button><button data-action="note" ${finished() ? 'disabled' : ''}>+ Event</button></div></div>`;
+}
+
+/* The latest checklist event (ticked or unticked) for one checklist item. */
+export function checkStatus(key) {
+  return R.active(st.s)
+    .filter((e) => e.type === 'checklist' && e.key === key)
+    .at(-1);
+}
+
+/* The checklist screen. */
+export function checksView() {
+  const list = ARREST_CHECKLISTS.find((c) => c.id === st.checklist),
+    done = list.items.filter((_, i) => checkStatus(st.checklist + ':' + i)?.checked).length;
+  return `<button class="check-back" data-tab="${st.checkReturn}">← Back</button><div class="row"><h2>${list.label}</h2><span class="muted">${done}/${list.items.length}</span></div><p class="caption">${list.code} · Each tick is timestamped.${list.intro ? ' ' + list.intro : ''}</p><div class="panel" style="padding:0">${list.items
+    .map((t, i) => {
+      const key = list.id + ':' + i,
+        e = checkStatus(key);
+      return `<label class="check-item"><input type="checkbox" aria-label="${esc(t)}" data-check="${key}" ${e?.checked ? 'checked' : ''} ${finished() ? 'disabled' : ''}><span>${esc(t)}${e?.checked ? `<time>${time(e.at)}</time>` : ''}</span></label>`;
+    })
+    .join(
+      '',
+    )}</div><a href="${list.pdf}" target="_blank" rel="noopener">Original ${formatGuidelineReference(list.code.split(' · ')[0])} ↗</a><p class="caption">A tick records checklist review, not administration or an intervention.</p>`;
+}
+
+/* Log entries for the chosen scope and checklist display; voided ones optional. */
+export function logRows(includeVoided = true) {
+  return R.logEntries(st.s, ARREST_CHECKLISTS, {
+    scope: st.logScope,
+    checklists: st.checklistDisplay,
+    includeVoided,
+  });
+}
+
+/* The Log tab. */
+export function logView() {
+  const rows = logRows();
+  return `<div class="row"><h2>Event log</h2><button data-action="copy" aria-label="Export event log to clipboard">Export</button></div><div class="log-filters"><label>Show<select id="logScope"><option value="all" ${st.logScope === 'all' ? 'selected' : ''}>All events</option><option value="interventions" ${st.logScope === 'interventions' ? 'selected' : ''}>Interventions only</option></select></label><label>Checklists<select id="checklistDisplay" ${st.logScope === 'interventions' ? 'disabled' : ''}><option value="items" ${st.checklistDisplay === 'items' ? 'selected' : ''}>Each item</option><option value="times" ${st.checklistDisplay === 'times' ? 'selected' : ''}>Start & finish only</option></select></label></div><p class="caption log-filter-help">${st.logScope === 'interventions' ? 'CPR, shocks, rhythm checks, medicines, airway/access and recorded actions. Checklist items excluded.' : st.checklistDisplay === 'times' ? 'Checklist start: first item checked. Finish: all items checked. Other events remain visible.' : 'All recorded events, including individual checklist items.'} Export copies this view; voided entries are excluded.</p><p class="caption">${new Date(st.s.appStart).toLocaleDateString('en-NZ')} · ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)}<br>Resus start ${time(st.s.resusStart)}${st.s.resusStart < st.s.appStart ? ' · before app opened' : ''} · ${st.s.phase}</p><button class="primary" data-action="note" ${finished() ? 'disabled' : ''}>+ Add event / earlier event</button>${
+    rows.length
+      ? rows
+          .slice()
+          .reverse()
+          .map(
+            (e) =>
+              `<article data-event-type="${e.type === 'equipment' && ['iv', 'io'].includes(e.procedure) ? 'access' : e.type}" class="log-entry ${e.voided ? 'void' : ''}"><time>${e.timeUnknown ? 'Before app' : time(e.at)}${e.timeUnknown ? '<small>Time not set</small>' : `<small>${e.at < st.s.resusStart ? '−' : '+'}${clock(Math.abs(e.at - st.s.resusStart))} resus</small>`}</time><div>${e.type === 'shock' ? '<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg>' : ''}<b>${esc(e.title)}</b><p>${esc(e.details)}</p>${e.needsReview && !e.voided ? `<button class="review-shock" data-edit="${esc(e.id)}">Add time / edit details</button>` : ''}${e.correctedAt ? '<small class="caption">Corrected</small>' : ''}${e.voided ? '<small class="caption">Voided · excluded from counts</small>' : ''}</div>${e.synthetic ? `<button data-review-checklist="${esc(e.checklistId)}" aria-label="Review ${esc(e.title)}">↗</button>` : `<button data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.title)} at ${e.timeUnknown ? 'time not set' : time(e.at)}">✎</button>`}</article>`,
+          )
+          .join('')
+      : '<p class="empty">No events in this view yet.</p>'
+  }`;
+}
+
+/* Redraw the whole screen for the current tab, then update clocks. Called after every change. */
+export function render() {
+  document.body.classList.toggle('large', st.s.largeText);
+  document.body.classList.toggle('live-mode', st.tab === 'live');
+  document.body.classList.toggle('guidance-mode', st.tab === 'guidance');
+  document.body.classList.toggle('checklist-mode', st.tab === 'checks');
+  $('headerWeight').innerHTML = weightHeader();
+  $('main').innerHTML =
+    st.tab === 'live'
+      ? liveView()
+      : st.tab === 'guidance'
+        ? guidanceGrid()
+        : st.tab === 'checks'
+          ? checksView()
+          : logView();
+  document.querySelectorAll('[data-tab]').forEach((b) => {
+    if (b.dataset.tab === st.tab) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
+  if ($('undo')) $('undo').disabled = !st.s.undo.length;
+  normalizeGuidelineReferences($('main'));
+  normalizeGuidelineReferences($('headerWeight'));
+  tick();
+}
+
+/* Runs four times a second: updates clocks, cycle countdown, ring, drug timers and prompts. */
+export function tick() {
+  const t = R.timing(st.s),
+    c = R.counts(st.s);
+  $('appClock').textContent = clock(t.app);
+  $('resusClock').textContent = clock(t.resus);
+  document
+    .querySelector('.bottom-nav [data-checklist=arrest]')
+    .classList.toggle('checklist-attention', R.checklistPrompt(st.s));
+  $('appClock').classList.toggle('long-clock', t.app >= 3600000);
+  $('resusClock').classList.toggle('long-clock', t.resus >= 3600000);
+  if (st.tab !== 'live') return;
+  const on = st.s.phase === 'Active',
+    running = on && st.s.deadline !== null,
+    due = on && t.left === 0,
+    stopped = ['ROSC', 'Ended'].includes(st.s.phase);
+  $('cycleClock').textContent = stopped
+    ? st.s.phase === 'ROSC'
+      ? 'ROSC'
+      : 'Ended'
+    : countdown(t.left);
+  $('cycleTitle').textContent = stopped
+    ? st.s.phase === 'ROSC'
+      ? 'ROSC recorded'
+      : 'Session ended'
+    : st.s.cycle
+      ? 'CPR cycle ' + st.s.cycle
+      : 'Ready for CPR';
+  $('cycleCaption').textContent = stopped
+    ? 'Recorded at ' + time(st.s.end)
+    : due
+      ? 'Rhythm check due' + (t.late > 1000 ? ' · +' + clock(t.late) : '')
+      : on && !running
+        ? 'Paused · resus clock continues'
+        : running && t.left <= 15000
+          ? 'Prepare for rhythm check'
+          : running && t.left <= 30000
+            ? '30 seconds remaining'
+            : running
+              ? 'CPR in progress'
+              : 'Ready to start';
+  if ($('cycleAlert').textContent !== (due ? 'Cycle complete. Rhythm check.' : ''))
+    $('cycleAlert').textContent = due ? 'Cycle complete. Rhythm check.' : '';
+  $('timerPanel').classList.toggle('due', due);
+  $('timerPanel').classList.toggle('prepare', running && t.left > 0 && t.left <= 15000);
+  $('timerPanel').classList.toggle('stopped', stopped);
+  $('timerPanel').classList.toggle('ready', st.s.phase === 'Ready');
+  $('progress').style.strokeDashoffset = String(
+    120 * (1 - Math.max(0, Math.min(1, t.left / R.CYCLE))),
+  );
+  $('unexpectedRosc').hidden = !['Ready', 'Active'].includes(st.s.phase);
+  $('rhythmCheck').hidden = !due;
+  $('cycleTrack').hidden = false;
+  $('startCycle').hidden = on;
+  const enabled = on && !st.s.special;
+  $('adrenalineClock').textContent =
+    t.adr === null ? '—' : t.adr < 0 ? '+' + clock(-t.adr) : countdown(t.adr);
+  $('adrenalineStatus').textContent = !enabled
+    ? 'Review inactive'
+    : t.adr === null
+      ? 'No dose recorded'
+      : t.adr < 0
+        ? '4 min elapsed · review'
+        : 'Until 4 min review';
+  $('adrenalineCard').classList.toggle('attention', enabled && t.adr !== null && t.adr <= 30000);
+  if (R.careMode(st.s) === 'amiodarone') {
+    $('amiodaroneClock').textContent = t.amio === null ? '—' : clock(t.amio);
+    const amioDue =
+      enabled &&
+      !torsades() &&
+      ['VF', 'VT'].includes(st.s.rhythm) &&
+      ((c.shocks >= 3 && c.amio === 0) || (c.shocks >= 6 && c.amio === 1));
+    $('amiodaroneStatus').textContent = torsades()
+      ? 'Withhold · torsades'
+      : !enabled
+        ? 'Review inactive'
+        : amioDue
+          ? 'Review ' + (c.amio ? 'second' : 'first') + ' dose'
+          : c.amio >= 2
+            ? 'Since last dose'
+            : t.amio === null
+              ? 'Review at ' + (c.amio ? '6' : '3') + ' shocks'
+              : 'Since last dose';
+    $('amiodaroneCard').classList.toggle('attention', amioDue);
+  } else tickSupport(R.careMode(st.s), enabled);
+}
+
+/* "Guidance & sources" pop-up: what the app is and is not, with links to the guideline PDFs. */
+export function guidance() {
+  sheet(
+    'Guidance & sources',
+    `<p><b>Standard non-traumatic cardiac arrest.</b> Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.</p><p>NZCPG <em>EAS guideline 3.14</em>: two minute CPR cycles; adrenaline review every 4 minutes; amiodarone reviews at 3 and 6 VF / pulseless VT shocks. Weight references retain the source app’s 5 / 10 / 20 / 30 / 40 kg paediatric bands.</p><p>The 4 J/kg calculation is capped at 200 J. The adult CPG specifies maximum defibrillator setting. A no-shock cycle is counted only when recorded.</p><div class="stack">${[
+      ['Cardiac arrest · <em>EAS guideline 3.14</em>', 'cpg-cardiac-arrest.pdf'],
+      ['Post ROSC · <em>EAS guideline 3.15</em>', 'cpg-post-rosc.pdf'],
+      ['Paediatric equipment & doses · <em>EAS guideline 7.2</em>', 'cpg-paediatric-equipment.pdf'],
+      ['RSI · <em>EAS guideline 9.3</em>', 'cpg-rsi.pdf'],
+    ]
+      .map(([l, p]) => `<a href="${p}" target="_blank" rel="noopener">${l} ↗</a>`)
+      .join(
+        '',
+      )}</div><details class="panel"><summary>RSI medicine references</summary><p>Fentanyl: 2 mcg/kg IV, maximum 200 mcg. Only when indicated for TBI, suspected intracranial pathology or hypertension; withhold with shock.</p><p>Ketamine: 2 mg/kg IV, maximum 200 mg. Consider 1 mg/kg with shock / prior sedation; do not reduce for prolonged seizures.</p><p>Rocuronium <b>or</b> suxamethonium: 2 mg/kg IV, maximum 200 mg. Adult dose usually rounded to nearest 50 mg. Alternatives, not both.</p><p>Use the full RSI CPG for patient context and administration.</p></details><p class="caption">Packaged NZCPG exports: 24 September 2026. Reversible causes: ANZCOR 11.2. Local protocol takes precedence. This extracted app requires clinical validation before patient-care use.</p>`,
+  );
+}
+
+/* Live-screen card for the support item: magnesium (torsades) or fluids (PEA). */
+export function supportCard(type) {
+  const mag = type === 'magnesium',
+    ref = mag ? R.magnesiumReference(st.s) : R.fluidReference(st.s),
+    stats = R.supportStats(st.s, type),
+    value = mag
+      ? ref.dose === null
+        ? 'Dose: clinical review'
+        : ref.dose + ' mmol IV'
+      : ref.min === null
+        ? 'Enter weight'
+        : ref.min + '–' + ref.max + ' mL IV';
+  const enabled = !st.s.special && !['ROSC', 'Ended'].includes(st.s.phase),
+    canRef = enabled && (!mag || (ref.dose !== null && stats.count < 2));
+  const label = mag
+    ? stats.count >= 2
+      ? '2 doses recorded'
+      : ref.dose === null
+        ? 'Review dose'
+        : stats.count
+          ? 'Record repeat…'
+          : 'Record ' + ref.dose + ' mmol IV'
+    : 'Record fluid…';
+  return `<section class="drug ${type}" id="${type}Card"><h3>${mag ? 'Magnesium' : 'Fluids · NaCl 0.9%'}</h3><div class="drug-dose">${esc(value)}</div><strong class="drug-clock" id="supportClock">—</strong><p class="caption" id="supportStatus"></p><button class="record" data-support="${type}" ${canRef ? '' : 'disabled'}>${enabled ? label : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Manual review'}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}">Other…</button></div></section>`;
+}
+
+/* Per-tick text for that card: time since last dose and status line. */
+export function tickSupport(type, enabled) {
+  const stats = R.supportStats(st.s, type);
+  $('supportClock').textContent = stats.last ? clock(Date.now() - stats.last.at) : '—';
+  $('supportStatus').textContent = !enabled
+    ? 'Review inactive'
+    : type === 'magnesium'
+      ? stats.count >= 2
+        ? '2 doses · clinical review'
+        : stats.count
+          ? 'Repeat once only if TdP persists/recurs'
+          : 'Withhold amiodarone · torsades history'
+      : stats.total
+        ? stats.total + ' mL recorded · review total'
+        : 'PEA · review fluid volume';
+}
+
+/* Source line linking the current EAS cardiac arrest guideline. */
+export function cpgSource() {
+  return `<p class="caption">NZCPG <em>EAS guideline 3.14</em><br><a href="${CARDIAC_CPG}" target="_blank" rel="noopener">Current <em>EAS guideline 3.14</em> ↗</a> · <a href="cpg-cardiac-arrest.pdf#page=2" target="_blank">Offline <em>EAS guideline 3.14</em> ↗</a></p>`;
+}
+
+/* Torsades guideline extract (withhold amiodarone; magnesium IV), reused in several pop-ups. */
+export function torsadesSnippet() {
+  return `<div class="rhythm-snippet"><h3>Torsades de pointes · guideline extract</h3><blockquote>Withhold amiodarone.<br>Administer magnesium IV:</blockquote><p>Adult reference: 10 mmol (2.5 g), given IV over 1–2 minutes. A single repeat is permitted when torsades continues or returns. Use the paediatric dose tables for children.</p></div>${cpgSource()}`;
+}
+
+/* PEA guideline extract (correct reversible causes; 0.9% sodium chloride IV). */
+export function peaSnippet() {
+  return `<div class="rhythm-snippet"><h3>PEA · guideline extract</h3><blockquote>Correct immediately reversible causes.<br>Administer 0.9% sodium chloride IV:</blockquote><p>The IV volume reference is 1–2 L in adults, or 20–40 mL/kg in children. Assess and treat the reversible cause.</p></div>${cpgSource()}`;
+}
+
+/* Pop-up for giving magnesium or fluids: guideline extract and calculated amount, then record it. */
+export function supportAdministration(type) {
+  if (type === 'fluids') {
+    const ref = R.fluidReference(st.s);
+    sheet(
+      'Fluids · administration',
+      `${peaSnippet()}<p><b>${ref.min === null ? 'Enter weight' : ref.min + '–' + ref.max + ' mL IV'}</b> · ${formatGuidelineReference(ref.basis)}</p><p>Record the actual volume given in mL. The card shows the recorded total; a rhythm change does not record fluid administration.</p>`,
+    );
+    return;
+  }
+  const ref = R.magnesiumReference(st.s);
+  sheet(
+    'Magnesium · administration',
+    `${torsadesSnippet()}<p><b>${ref.dose === null ? 'Dose requires clinical review' : ref.dose + ' mmol IV'}</b> · ${formatGuidelineReference(ref.basis)}</p><p>For adult cardiac-arrest administration, dilute the 10 mmol dose with 0.9% sodium chloride to 10 mL and give over 1–2 minutes. The paediatric preparation in <em>EAS guideline 7.2</em> is 1 mmol/mL: dilute 5 mL from a 10 mmol/5 mL ampoule to 10 mL, then draw up the table dose.</p><p>Avoid the IV line carrying a concurrent adrenaline infusion because precipitation can occur. Record magnesium in mmol.</p><a href="${MAGNESIUM_CPG}" target="_blank" rel="noopener"><em>EAS guideline 14.27</em> ↗</a><p><a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a></p>`,
+  );
+}
+
+/* Rhythm choice buttons (VF, pulseless VT, torsades). Despite the name there are no pictures. */
+export function rhythmImages() {
+  return `<div class="rhythm-image-choices">${[
+    ['VF', 'Ventricular fibrillation'],
+    ['VT', 'Pulseless VT'],
+    ['Torsades', 'Torsades de pointes'],
+  ]
+    .map(([id, title]) => `<button data-record-rhythm="${id}">${title}</button>`)
+    .join('')}</div>`;
+}
+
+/* The Guidance tab: a button for each checklist. */
+export function guidanceGrid() {
+  return `<h2>Guidance</h2><div class="guidance-grid">${ARREST_CHECKLISTS.map((c) => `<button data-open-check="${c.id}">☑ ${c.label}</button>`).join('')}<button data-reference="rsi">RSI doses<br><small>${st.s.weight ? esc(st.s.weight) + ' kg' : 'Enter weight'}</small></button><button data-reference="tubes">Tube sizes & age<br><small>${st.s.age ? esc(st.s.age) + ' years' : 'Age criteria'}</small></button></div><section class="causes-board"><h3>Reversible causes · 4 Hs & 4 Ts</h3><div>${CAUSES.map((c) => `<button data-cause-guide="${c.id}">${c.name}</button>`).join('')}</div></section>`;
+}
+
+/* Reference pop-up opened from Guidance (RSI doses, tube sizes), calculated from weight or age. */
+export function referenceSheet(type) {
+  const w = Number(st.s.weight),
+    age = st.s.age === '' ? null : Number(st.s.age),
+    fmt = (n) => Math.round(n * 10) / 10;
+  if (type === 'rsi') {
+    sheet(
+      'RSI dose references',
+      `${w ? `<p><b>${w} kg</b> · calculated references, not recorded administrations</p><dl><dt>Fentanyl · conditional</dt><dd>${fmt(Math.min(w * 2, 200))} mcg IV</dd><dt>Ketamine · usual</dt><dd>${fmt(Math.min(w * 2, 200))} mg IV</dd><dt>Ketamine · reduced</dt><dd>${fmt(Math.min(w, 200))} mg IV</dd><dt>Rocuronium OR suxamethonium</dt><dd>${fmt(w > 40 ? Math.min(Math.round((w * 2) / 50) * 50, 200) : Math.min(w * 2, 200))} mg IV</dd></dl>` : '<button class="primary" data-action="weight">Enter patient weight</button>'}<p>Fentanyl only for TBI, suspected intracranial pathology or hypertension; withhold with shock. Consider reduced ketamine with shock / prior sedation; do not reduce for prolonged seizures. Neuromuscular blockers are alternatives, not both.</p><a href="cpg-rsi.pdf" target="_blank"><em>EAS guideline 9.3</em> ↗</a>`,
+    );
+    return;
+  }
+  sheet(
+    'Tube sizes & age criteria',
+    `<label>Patient age (years)<input id="referenceAge" type="number" min="0" max="120" step="any" value="${esc(st.s.age)}"></label><button data-save-age>Use age</button>${age !== null && age <= 14 ? `<p><b>Cuffed ETT:</b> ${age < 1 ? '3–4 mm' : fmt(age / 4 + 3.5) + ' mm (formula)'}</p><p><b>Length at lips:</b> ${age < 1 ? 'ETT size × 3 cm' : fmt(age / 2 + 12) + ' cm (formula)'}</p>` : '<p>Enter age to show the paediatric ETT and length-at-lips formula results.</p>'}<p class="caption">Paediatric formulae are guides; confirm actual fit. Not a weight-only adult tube-size recommendation.</p><h3>Age-based weight estimate</h3><p>Under 1 year: 5 kg. Ages 1–10: (age + 4) × 2 kg. Ages 11–14: age × 3 kg. Estimates may underestimate actual weight.</p><h3>iGel weight ranges</h3><p>1: 2–5 kg · 1.5: 5–12 kg · 2: 10–25 kg · 2.5: 25–35 kg · 3: 30–60 kg · 4: 50–90 kg · 5: 90+ kg.</p><a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a><p class="caption">iGel colours/ranges: Intersurgical product information.</p>`,
+  );
 }
