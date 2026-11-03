@@ -29,9 +29,10 @@ test('A2: the card appears after the 3rd VF/VT shock, not before', () => {
   shock(a, 'VF'); assert.ok(card(a)); assert.match(amioCardHtml(a), /300 mg IV/); assert.match(amioCardHtml(a), /data-drug="amiodarone"\s*>/);
 });
 
-test('A2: three shocks followed by non-shockable rhythms never show the card; PEA keeps the fluids card', () => {
+test('A2 (updated by A2c): non-shockable rhythms never show the amiodarone card; asystole and PEA both show fluids', () => {
   const a = openApp({ appDir: ROOT }); start(a, '70');
-  noShock(a, 'Asystole'); noShock(a, 'Asystole'); noShock(a, 'Asystole'); assert.ok(pending(a));
+  noShock(a, 'Asystole'); noShock(a, 'Asystole'); noShock(a, 'Asystole');
+  assert.ok(main(a).includes('id="fluidsCard"') && !pending(a) && !card(a));
   noShock(a, 'PEA'); assert.ok(main(a).includes('id="fluidsCard"') && !pending(a));
 });
 
