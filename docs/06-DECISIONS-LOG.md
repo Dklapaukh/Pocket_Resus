@@ -23,5 +23,5 @@
 | ID | Question | Status |
 |---|---|---|
 | C2 | ~~Energy from exact weight~~ | **Closed:** replaced by change A1 (band × 4 J/kg), applied 3 Nov 2026 |
-| C6b | Child **second amiodarone dose** in the app (half of the first) has no source: EAS 7.2 has one amiodarone row only; 3.14 and 14.4 say "see paediatric dose tables" | **Owner: seek clinical advice** (3 Nov 2026). **3 Nov 2026 (A2 task): owner ruled the card reads "Seek clinical advice" when a child's second dose is due; applied** (dose line + disabled button + Administration pop-up). Open: the number shown between the first dose and 6 shocks (see doc 07 › Next) |
+| C6b | Child **second amiodarone dose** in the app (half of the first) has no source: EAS 7.2 has one amiodarone row only; 3.14 and 14.4 say "see paediatric dose tables" | **Owner: seek clinical advice** (3 Nov 2026). **3 Nov 2026 (A2 task): owner ruled the card reads "Seek clinical advice" when a child's second dose is due; applied** (dose line + disabled button + Administration pop-up). **Owner ruling 3 Nov 2026 on the interim number:** show "Seek clinical advice" plus a "Select dose" button between the first dose and 6 shocks (not built yet; see doc 07 › State) |
 | Dormant | `liveChecklist()` (single-item checklist on live screen) is unused | Recommend dropping, same reason as decision 1 |
