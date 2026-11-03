@@ -14,15 +14,16 @@ import { ARREST_CHECKLISTS, CARDIAC_CPG, CAUSES, MAGNESIUM_CPG } from './data.js
 import { sheet } from './sheets.js';
 import { st } from './state.js';
 
-/* True when an amiodarone dose is due: first after 3 shocks, second after 6 (earlier shocks count), in VF/VT,
-   no torsades, session running. Same rule the card's "attention" highlight already used. */
+/* True when an amiodarone dose is due: first at 3 shocks, second at 6 (earlier shocks and "+ Previous shock"
+   count), no torsades at any point, session running. A2b (owner rule): the CURRENT rhythm does not matter here
+   (asystole or "Not recorded" still opens the card). Which card fills the lower slot (amiodarone, magnesium or
+   fluids) is decided separately by R.careMode: PEA at the latest check = fluids, torsades history = magnesium. */
 export function amioDue() {
   const c = R.counts(st.s);
   return (
     st.s.phase === 'Active' &&
     !st.s.special &&
     !torsades() &&
-    ['VF', 'VT'].includes(st.s.rhythm) &&
     ((c.shocks >= 3 && c.amio === 0) || (c.shocks >= 6 && c.amio === 1))
   );
 }

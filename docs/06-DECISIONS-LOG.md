@@ -18,6 +18,7 @@
 | 7 | **C6a Keep:** magnesium 4/6/8 mmol for 20/30/40 kg, none for 5/10 kg, matches bundled EAS 7.2 table (PDF export dated 24.09.2026; live page could not be opened by the tool) | No change (3 Nov 2026) |
 | 8 | **A1 applied to everyone, including weights under 5 kg** (3 Nov 2026): energy = 4 J/kg × CPG weight band (rounded up), 200 J above 40 kg | Code + tests changed. Examples: 3 kg 20 J; 15 kg 80 J; 25 kg 120 J; 42 kg 200 J |
 | 9 | **Pads prompt keeps the rule "energy ≤100 J"** (3 Nov 2026) | After A1 it covers weights up to 20 kg (80 J); 21 to 40 kg no longer get the prompt (25 kg did before) |
+| 10 | **A2b amiodarone gate (owner rule, 3 Nov 2026):** card opens at 3 shocks (second dose at 6), counting previous shocks, whatever the current rhythm; torsades at any point = magnesium keeps the lower slot, amiodarone never; PEA at the latest check = fluids, and a later VF/VT can bring amiodarone back if criteria are met | Built in `amioDue()` (`views.js`); engine unchanged; 10 tests |
 
 ## Still open
 | ID | Question | Status |
