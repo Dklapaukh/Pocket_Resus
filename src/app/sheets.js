@@ -145,6 +145,17 @@ export function openDrug(type) {
   );
 }
 
+/* C6b-2 (owner ruling 3 Nov 2026, option A): child second amiodarone dose before 6 shocks. No dose is suggested or
+   pre-filled; the clinician types the mg actually given. Submits through the normal drugForm handler. */
+export function openSelectDose() {
+  const now = Date.now();
+  sheet(
+    'Select amiodarone dose',
+    `<p><b>Seek clinical advice.</b> No second-dose value is suggested for a child. Enter the dose given.</p><form id="drugForm"><input type="hidden" name="name" value="Amiodarone"><input type="hidden" name="unit" value="mg"><input type="hidden" name="route" value="IV"><label>Dose given (mg IV)<input name="dose" type="number" inputmode="decimal" min="0.001" step="any" required placeholder="mg"></label><label>Given at<input name="at" type="time" step="60" value="${local(now).slice(11)}" required></label><button class="primary" type="submit">Record dose</button></form>`,
+    { kind: 'drug', type: 'amiodarone', at: now },
+  );
+}
+
 /* Pop-up listing the airway and/or access options to choose from. */
 export function openInterventions(group) {
   sheet(

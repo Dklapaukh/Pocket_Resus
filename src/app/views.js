@@ -1,7 +1,7 @@
 /* Builds the screens (live, causes, checklists, log, guidance) and the 250 ms tick.
    Logic is the same as the original app files; shared memory lives in st (see state.js). */
 import { $, R } from './base.js';
-import { careMode, latestLowerRhythm, childSecondAmio, drugDose, finished, torsades } from './session.js';
+import { childSecondAmio, drugDose, finished, secondAmioEarly, torsades } from './session.js';
 import {
   clock,
   countdown,
@@ -15,9 +15,9 @@ import { sheet } from './sheets.js';
 import { st } from './state.js';
 
 /* True when an amiodarone dose is due: first at 3 shocks, second at 6 (earlier shocks and "+ Previous shock"
-   count), no torsades at any point, session running. A2b (owner rule): the CURRENT rhythm does not matter for
-   the gate itself; A2c: a non-shockable rhythm at the latest check shows fluids in the slot instead. Which card fills the lower slot (amiodarone, magnesium or
-   fluids) is decided separately by R.careMode: any non-shockable rhythm (PEA or Asystole) at the latest check = fluids (A2c), torsades history = magnesium. */
+   count), no torsades at any point, session running. A2b (owner rule): the CURRENT rhythm does not matter here
+   (asystole or "Not recorded" still opens the card). Which card fills the lower slot (amiodarone, magnesium or
+   fluids) is decided separately by R.careMode: PEA at the latest check = fluids, torsades history = magnesium. */
 export function amioDue() {
   const c = R.counts(st.s);
   return (
@@ -48,15 +48,18 @@ export function drugCard(type) {
     c = R.counts(st.s),
     value = drugDose(type),
     blocked = !adr && torsades(),
-    advice = !adr && childSecondAmio(), // C6b: child second amiodarone dose has no source
+    early = !adr && secondAmioEarly(), // C6b-2: second dose is not an option before the 6th shock
+    advice = !adr && R.isPaediatric(st.s) && c.amio === 1, // C6b: child second amiodarone dose has no source
+    selectDose = advice && early && !blocked && !st.s.special && !['ROSC', 'Ended'].includes(st.s.phase),
     canRef =
       d &&
       !advice &&
+      !early &&
       !st.s.special &&
       !blocked &&
       (adr || c.amio < 2) &&
       !['ROSC', 'Ended'].includes(st.s.phase);
-  return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s) && d ? 'child' : ''}">${advice ? 'Seek clinical advice' : d ? esc(value + ' mg IV') : 'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p><button class="record" data-drug="${type}" ${canRef ? '' : 'disabled'}>${canRef ? 'Record ' + value + ' mg IV' : blocked ? 'Withhold · torsades' : advice ? 'Seek clinical advice' : st.s.special ? 'Manual review' : !adr && c.amio >= 2 ? '2 doses recorded' : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Weight needed'}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;
+  return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s) && d ? 'child' : ''}">${advice ? 'Seek clinical advice' : early ? 'Due after 6 shocks' : d ? esc(value + ' mg IV') : 'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p>${selectDose ? `<button class="record" data-select-dose="amiodarone">Select dose</button>` : `<button class="record" data-drug="${type}" ${canRef ? '' : 'disabled'}>`}${selectDose ? '' : canRef ? 'Record ' + value + ' mg IV' : blocked ? 'Withhold · torsades' : advice ? 'Seek clinical advice' : early ? 'Not yet due' : st.s.special ? 'Manual review' : !adr && c.amio >= 2 ? '2 doses recorded' : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Weight needed'}${selectDose ? '' : '</button>'}<div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;
 }
 
 /* Header "Pt weight (kg)" button, with the shock energy calculated from the weight. */
@@ -92,7 +95,7 @@ export function liveView() {
   return `<div class="live-dashboard">
 
 <section class="timer-panel" id="timerPanel"><div class="cycle-dial" id="cycleTrack"><svg class="cycle-ring" width="100%" height="100%" aria-hidden="true"><rect class="ring-track"/><rect class="ring-fill" id="progress" pathLength="120"/></svg><div class="dial-face"><div class="dial-history"><button class="cycle-heading" data-action="cycle-log" aria-label="Open timestamped cycle log"><span id="cycleTitle">${st.s.cycle ? 'CPR cycle ' + st.s.cycle : 'Ready for CPR'}</span><span class="dial-shocks"><svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg><strong>${c.shocks}</strong><span>${c.shocks === 1 ? 'shock' : 'shocks'}</span></span></button><button class="previous-shock" data-action="previous-shock" aria-label="Add a shock before app start">+ Previous shock</button></div><div class="dial-timing"><div class="countdown" id="cycleClock" role="timer" aria-label="Time remaining in CPR cycle">02:00</div><div class="cycle-caption" id="cycleCaption">Ready to start</div></div><div class="dial-actions"><button class="unexpected-rosc" data-outcome="rosc" id="unexpectedRosc" aria-label="Record unexpected ROSC" ${!['Ready', 'Active'].includes(st.s.phase) ? 'hidden' : ''}>♡ ROSC</button><button class="start-button" data-action="${stopped ? (st.s.phase === 'ROSC' ? 'rearrest' : 'export') : 'start'}" id="startCycle" ${st.s.phase === 'Active' ? 'hidden' : ''}>${stopped ? (st.s.phase === 'ROSC' ? 'Re-arrest · restart CPR' : 'Export record') : '▶ Start CPR'}</button><button class="rhythm-check-button" data-action="rhythm-check" id="rhythmCheck" hidden>⌁ Rhythm check</button></div></div></div><span class="sr-only" id="cycleAlert" role="status" aria-live="polite"></span></section>
-<div class="access-cards"><button data-action="airway"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v12m0-5-4 4m4-4 4 4M12 9C7 9 3 17 3 24c0 4 3 4 6 2l4-3V11M20 9c5 0 9 8 9 15 0 4-3 4-6 2l-4-3V11"/></svg><span>Airway</span><span class="card-chevron" aria-hidden="true">›</span></button><button data-action="access"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M10 3h12v17a6 6 0 0 1-12 0V3ZM8 7h16M10 13h12M13 1v4m6-4v4m-3 21v5"/><path d="M16 17v4"/></svg><span>Access</span><span class="card-chevron" aria-hidden="true">›</span></button></div><div class="drug-grid">${drugCard('adrenaline')}${careMode(st.s) === 'amiodarone' ? (amioCardVisible() ? drugCard('amiodarone') : amioPendingCard()) : supportCard(careMode(st.s))}</div>
+<div class="access-cards"><button data-action="airway"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v12m0-5-4 4m4-4 4 4M12 9C7 9 3 17 3 24c0 4 3 4 6 2l4-3V11M20 9c5 0 9 8 9 15 0 4-3 4-6 2l-4-3V11"/></svg><span>Airway</span><span class="card-chevron" aria-hidden="true">›</span></button><button data-action="access"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M10 3h12v17a6 6 0 0 1-12 0V3ZM8 7h16M10 13h12M13 1v4m6-4v4m-3 21v5"/><path d="M16 17v4"/></svg><span>Access</span><span class="card-chevron" aria-hidden="true">›</span></button></div><div class="drug-grid">${drugCard('adrenaline')}${R.careMode(st.s) === 'amiodarone' ? (amioCardVisible() ? drugCard('amiodarone') : amioPendingCard()) : supportCard(R.careMode(st.s))}</div>
 ${st.s.phase === 'ROSC' ? '<button class="postrosc-main" data-action="postrosc">☑ Post ROSC checklist</button>' : ''}
 <div class="tools-row"><button data-action="interventions" ${finished() ? 'disabled' : ''}><span aria-hidden="true">＋</span> Airway / access</button><button data-action="note" ${finished() ? 'disabled' : ''}>+ Event</button></div></div>`;
 }
@@ -235,7 +238,7 @@ export function tick() {
         ? '4 min elapsed · review'
         : 'Until 4 min review';
   $('adrenalineCard').classList.toggle('attention', enabled && t.adr !== null && t.adr <= 30000);
-  if (careMode(st.s) === 'amiodarone') {
+  if (R.careMode(st.s) === 'amiodarone') {
     if (!amioCardVisible()) return; // A2: placeholder tile has nothing to update
     const due = amioDue();
     $('amiodaroneClock').textContent = t.amio === null ? '—' : clock(t.amio);
@@ -251,7 +254,7 @@ export function tick() {
               ? 'Review at ' + (c.amio ? '6' : '3') + ' shocks'
               : 'Since last dose';
     $('amiodaroneCard').classList.toggle('attention', due);
-  } else tickSupport(careMode(st.s), enabled);
+  } else tickSupport(R.careMode(st.s), enabled);
 }
 
 /* "Guidance & sources" pop-up: what the app is and is not, with links to the guideline PDFs. */
@@ -311,7 +314,7 @@ export function tickSupport(type, enabled) {
           : 'Withhold amiodarone · torsades history'
       : stats.total
         ? stats.total + ' mL recorded · review total'
-        : (latestLowerRhythm(st.s) === 'Asystole' ? 'Asystole' : 'PEA') + ' · review fluid volume';
+        : 'PEA · review fluid volume';
 }
 
 /* Source line linking the current EAS cardiac arrest guideline. */
@@ -324,9 +327,9 @@ export function torsadesSnippet() {
   return `<div class="rhythm-snippet"><h3>Torsades de pointes · guideline extract</h3><blockquote>Withhold amiodarone.<br>Administer magnesium IV:</blockquote><p>Adult reference: 10 mmol (2.5 g), given IV over 1–2 minutes. A single repeat is permitted when torsades continues or returns. Use the paediatric dose tables for children.</p></div>${cpgSource()}`;
 }
 
-/* Fluids guideline extract for a non-shockable rhythm (PEA or asystole; A2c): correct reversible causes; 0.9% sodium chloride IV. Heading is neutral. */
+/* PEA guideline extract (correct reversible causes; 0.9% sodium chloride IV). */
 export function peaSnippet() {
-  return `<div class="rhythm-snippet"><h3>Fluids · guideline extract</h3><blockquote>Correct immediately reversible causes.<br>Administer 0.9% sodium chloride IV:</blockquote><p>The IV volume reference is 1–2 L in adults, or 20–40 mL/kg in children. Assess and treat the reversible cause.</p></div>${cpgSource()}`;
+  return `<div class="rhythm-snippet"><h3>PEA · guideline extract</h3><blockquote>Correct immediately reversible causes.<br>Administer 0.9% sodium chloride IV:</blockquote><p>The IV volume reference is 1–2 L in adults, or 20–40 mL/kg in children. Assess and treat the reversible cause.</p></div>${cpgSource()}`;
 }
 
 /* Pop-up for giving magnesium or fluids: guideline extract and calculated amount, then record it. */

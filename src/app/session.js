@@ -49,23 +49,6 @@ export function canRecord() {
 }
 
 /* True if torsades has been recorded (amiodarone is then withheld and magnesium offered). */
-/* A2c (owner ruling, 3 Nov 2026): which card fills the lower drug slot. Same as the engine's R.careMode except that
-   ANY non-shockable rhythm (PEA or Asystole) at the latest check gives fluids. "Other" and "Not recorded" are still
-   ignored. VF/VT then bring amiodarone back (or magnesium if torsades was ever recorded). The engine file is untouched. */
-export function latestLowerRhythm(s) {
-  const latest = R.active(s)
-    .filter((e) => ['shock', 'noshock', 'rhythm', 'rosc'].includes(e.type) && ['PEA', 'Asystole', 'VF', 'VT', 'Torsades'].includes(e.rhythm))
-    .sort((a, b) => a.at - b.at)
-    .at(-1);
-  return latest?.rhythm || s.rhythm;
-}
-
-export function careMode(s) {
-  const rhythm = latestLowerRhythm(s);
-  if (rhythm === 'PEA' || rhythm === 'Asystole') return 'fluids';
-  return R.hasTorsades(s) ? 'magnesium' : 'amiodarone';
-}
-
 export function torsades() {
   return R.hasTorsades(st.s);
 }
@@ -82,6 +65,13 @@ export function drugDose(type) {
 export function childSecondAmio() {
   const c = R.counts(st.s);
   return R.isPaediatric(st.s) && c.amio === 1 && c.shocks >= 6;
+}
+
+/* C6b-2 (owner ruling 3 Nov 2026): the second amiodarone dose is only an option from the 6th shock. True while one
+   dose is recorded and fewer than 6 shocks (including earlier shocks) have been counted. */
+export function secondAmioEarly() {
+  const c = R.counts(st.s);
+  return c.amio === 1 && c.shocks < 6;
 }
 
 /* Settings toggle: hold or release the screen wake lock (keeps the screen on). */
@@ -128,7 +118,7 @@ export function recordSupport(type, confirmed = false) {
     !canRecord() ||
     st.s.special ||
     ['ROSC', 'Ended'].includes(st.s.phase) ||
-    careMode(st.s) !== type
+    R.careMode(st.s) !== type
   )
     return;
   if (type === 'fluids') {
@@ -192,7 +182,7 @@ export function saveRhythm(
 }
 
 /* A rhythm button was tapped in the rhythm pop-up. Torsades after a shock asks for confirmation
-   first; PEA or asystole shows fluid guidance after saving (A2c). */
+   first; PEA shows fluid guidance after saving. */
 export function selectRhythm(rhythm) {
   const ctx = st.sheetContext;
   if (ctx?.kind !== 'rhythm') return;
@@ -217,9 +207,9 @@ export function selectRhythm(rhythm) {
     );
     return;
   }
-  if (saveRhythm(outcome, rhythm, energy) && (rhythm === 'PEA' || rhythm === 'Asystole'))
+  if (saveRhythm(outcome, rhythm, energy) && rhythm === 'PEA')
     sheet(
-      'Non-shockable rhythm · fluid guidance',
+      'PEA · fluid guidance',
       `${peaSnippet()}<button class="primary" data-close>Continue CPR</button>`,
     );
 }

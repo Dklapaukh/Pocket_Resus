@@ -12,6 +12,7 @@ import {
   exportSheet,
   exportText,
   openDrug,
+  openSelectDose,
   openEquipment,
   openExplainMe,
   openHistory,
@@ -30,6 +31,7 @@ import {
   canRecord,
   commit,
   childSecondAmio,
+  secondAmioEarly,
   drugDose,
   keepAwake,
   recordSupport,
@@ -119,7 +121,7 @@ document.addEventListener('click', async (e) => {
     if (
       value === null ||
       st.s.special ||
-      (type === 'amiodarone' && (torsades() || R.counts(st.s).amio >= 2 || childSecondAmio())) ||
+      (type === 'amiodarone' && (torsades() || R.counts(st.s).amio >= 2 || childSecondAmio() || secondAmioEarly())) ||
       st.s.phase === 'ROSC'
     )
       return;
@@ -142,6 +144,10 @@ document.addEventListener('click', async (e) => {
         ),
       'Recorded ' + value + ' mg IV · Undo available',
     );
+    return;
+  }
+  if (b.dataset.selectDose) {
+    if (canRecord()) openSelectDose();
     return;
   }
   if (b.dataset.customDrug) {
