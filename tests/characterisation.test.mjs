@@ -1,3 +1,4 @@
+// (The two [A1] checks below apply to the ORIGINAL only; the new energy rule is tested in a1-energy.test.mjs.)
 // Plain-English record of CURRENT behaviour (parity first). Items marked [A1]/[A2] are approved to change
 // LATER, one at a time, with owner sign-off; update the matching test in that same change.
 import test from 'node:test';
@@ -10,12 +11,12 @@ for (const [name, R] of [['original', original], ['ported', ported]]) {
     assert.equal(R.dose({ weight: '5.1' }).adr, 0.1);
     assert.equal(R.dose({ weight: '' }).amio1, 300);
   });
-  test(name + ': [A1] shock energy today = exact weight x 4 J/kg, capped at 200 J', () => {
+  if (name === 'original') test(name + ': [A1] shock energy today = exact weight x 4 J/kg, capped at 200 J', () => {
     assert.equal(R.joules('42'), 168); assert.equal(R.joules('25'), 100); assert.equal(R.joules('5.1'), 20.4);
     assert.equal(R.joules('41'), 164); assert.equal(R.joules('60'), 200); assert.equal(R.joules('abc'), null);
     assert.equal(R.shockEnergy({ weight: '' }), 200);
   });
-  test(name + ': [A1-linked, C3] paediatric pads prompt when energy is 100 J or less', () => {
+  if (name === 'original') test(name + ': [A1-linked, C3] paediatric pads prompt when energy is 100 J or less', () => {
     assert.equal(R.needsPaediatricPads('25'), true); assert.equal(R.needsPaediatricPads('26'), false);
   });
   test(name + ': [C4] weights under 5 kg are accepted and use the 5 kg band', () => {

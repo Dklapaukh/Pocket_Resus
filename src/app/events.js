@@ -29,6 +29,7 @@ import {
 import {
   canRecord,
   commit,
+  childSecondAmio,
   drugDose,
   keepAwake,
   recordSupport,
@@ -118,7 +119,7 @@ document.addEventListener('click', async (e) => {
     if (
       value === null ||
       st.s.special ||
-      (type === 'amiodarone' && (torsades() || R.counts(st.s).amio >= 2)) ||
+      (type === 'amiodarone' && (torsades() || R.counts(st.s).amio >= 2 || childSecondAmio())) ||
       st.s.phase === 'ROSC'
     )
       return;

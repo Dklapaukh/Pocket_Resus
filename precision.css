@@ -137,3 +137,8 @@ header:has(.pads-prompt) #headerWeight .special-flag{right:150px}
  #equipmentForm .iv-sites>.toggle:nth-of-type(n+4){grid-column:span 3}
  #equipmentForm .iv-sites .row-confirm{position:absolute}
 }
+
+/* A2: tile shown in the lower drug slot until amiodarone is due (no dose, no button) */
+.live-mode .drug-grid .drug.drug-pending{display:block;border-left-color:#c9d1cc;border-top:1px solid #e1e8e3;background:#f4f6f5;color:#5d6d64}
+.live-mode .drug-grid .drug.drug-pending h3{color:#5d6d64}
+.live-mode .drug-grid .drug.drug-pending .pending-note{margin:3px 0 0;font-size:12.5px;line-height:16px}

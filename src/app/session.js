@@ -60,6 +60,13 @@ export function drugDose(type) {
   return !d ? null : type === 'adrenaline' ? d.adr : c.amio === 0 ? d.amio1 : d.amio2;
 }
 
+/* C6b (owner ruling 3 Nov 2026): the child second amiodarone dose has no EAS source, so once a child has had
+   one dose and 6 shocks are reached the app shows "Seek clinical advice" instead of a number. */
+export function childSecondAmio() {
+  const c = R.counts(st.s);
+  return R.isPaediatric(st.s) && c.amio === 1 && c.shocks >= 6;
+}
+
 /* Settings toggle: hold or release the screen wake lock (keeps the screen on). */
 export async function keepAwake() {
   try {

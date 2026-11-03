@@ -10,6 +10,7 @@ export const st = {
   logScope: 'all',
   checklistDisplay: 'items',
   s: undefined,
+  amioShownFor: null, // id of the session whose amiodarone card has already appeared (A2: it then stays)
   tab: 'live',
   checklist: 'arrest',
   checkReturn: 'live',

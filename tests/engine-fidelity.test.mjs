@@ -12,7 +12,13 @@ for (const f of ['core.js', 'rhythm-care.js', 'log-view.js']) {
     const O = read(f), P = read('src/engine/' + f);
     const orig = O.slice(first(O, f), idx(O, l => l.startsWith('root.Resus=') || l.startsWith('const api={')));
     const port = P.slice(first(P, f), idx(P, l => l.startsWith('export {')));
-    assert.deepEqual(port, orig);
+    if (f === 'core.js') {
+      // A1 (owner-approved 3 Nov 2026): joules() is the ONE allowed difference; everything else must match.
+      const isJ = l => l.startsWith('function joules(');
+      assert.equal(port.filter(isJ).length, 1); assert.equal(orig.filter(isJ).length, 1);
+      assert.equal(port.find(isJ), "function joules(weight){if(!validWeight(weight))return null;const w=Number(String(weight).replace(',','.')),b=[5,10,20,30,40].find(n=>w<=n);return b?b*4:200;}");
+      assert.deepEqual(port.filter(l => !isJ(l)), orig.filter(l => !isJ(l)));
+    } else assert.deepEqual(port, orig);
     assert.ok(orig.length >= 8, 'sanity: compared real code');
   });
 }

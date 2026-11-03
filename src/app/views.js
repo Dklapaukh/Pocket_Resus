@@ -1,7 +1,7 @@
 /* Builds the screens (live, causes, checklists, log, guidance) and the 250 ms tick.
    Logic is the same as the original app files; shared memory lives in st (see state.js). */
 import { $, R } from './base.js';
-import { drugDose, finished, torsades } from './session.js';
+import { childSecondAmio, drugDose, finished, torsades } from './session.js';
 import {
   clock,
   countdown,
@@ -14,6 +14,31 @@ import { ARREST_CHECKLISTS, CARDIAC_CPG, CAUSES, MAGNESIUM_CPG } from './data.js
 import { sheet } from './sheets.js';
 import { st } from './state.js';
 
+/* True when an amiodarone dose is due: first after 3 shocks, second after 6 (earlier shocks count), in VF/VT,
+   no torsades, session running. Same rule the card's "attention" highlight already used. */
+export function amioDue() {
+  const c = R.counts(st.s);
+  return (
+    st.s.phase === 'Active' &&
+    !st.s.special &&
+    !torsades() &&
+    ['VF', 'VT'].includes(st.s.rhythm) &&
+    ((c.shocks >= 3 && c.amio === 0) || (c.shocks >= 6 && c.amio === 1))
+  );
+}
+
+/* A2 (owner-approved): the amiodarone card appears only when a dose is due. Once it has appeared it stays for
+   that patient, even if a shock is later voided or undone. It also shows whenever a dose is already recorded. */
+export function amioCardVisible() {
+  if (amioDue()) st.amioShownFor = st.s.id;
+  return st.amioShownFor === st.s.id || R.counts(st.s).amio >= 1;
+}
+
+/* A2: what sits in the lower drug slot before the amiodarone card is due (no dose, no button). */
+export function amioPendingCard() {
+  return `<section class="drug drug-pending" id="amiodaronePending"><h3>Amiodarone</h3><p class="pending-note">Not yet due. Review after 3 shocks in VF / pulseless VT (second dose after 6, counting earlier shocks).</p></section>`;
+}
+
 /* One drug card (adrenaline or amiodarone) on the Live screen. */
 export function drugCard(type) {
   const adr = type === 'adrenaline',
@@ -22,13 +47,15 @@ export function drugCard(type) {
     c = R.counts(st.s),
     value = drugDose(type),
     blocked = !adr && torsades(),
+    advice = !adr && childSecondAmio(), // C6b: child second amiodarone dose has no source
     canRef =
       d &&
+      !advice &&
       !st.s.special &&
       !blocked &&
       (adr || c.amio < 2) &&
       !['ROSC', 'Ended'].includes(st.s.phase);
-  return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s) && d ? 'child' : ''}">${d ? esc(value + ' mg IV') : 'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p><button class="record" data-drug="${type}" ${canRef ? '' : 'disabled'}>${canRef ? 'Record ' + value + ' mg IV' : blocked ? 'Withhold · torsades' : st.s.special ? 'Manual review' : !adr && c.amio >= 2 ? '2 doses recorded' : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Weight needed'}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;
+  return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s) && d ? 'child' : ''}">${advice ? 'Seek clinical advice' : d ? esc(value + ' mg IV') : 'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p><button class="record" data-drug="${type}" ${canRef ? '' : 'disabled'}>${canRef ? 'Record ' + value + ' mg IV' : blocked ? 'Withhold · torsades' : advice ? 'Seek clinical advice' : st.s.special ? 'Manual review' : !adr && c.amio >= 2 ? '2 doses recorded' : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Weight needed'}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;
 }
 
 /* Header "Pt weight (kg)" button, with the shock energy calculated from the weight. */
@@ -64,7 +91,7 @@ export function liveView() {
   return `<div class="live-dashboard">
 
 <section class="timer-panel" id="timerPanel"><div class="cycle-dial" id="cycleTrack"><svg class="cycle-ring" width="100%" height="100%" aria-hidden="true"><rect class="ring-track"/><rect class="ring-fill" id="progress" pathLength="120"/></svg><div class="dial-face"><div class="dial-history"><button class="cycle-heading" data-action="cycle-log" aria-label="Open timestamped cycle log"><span id="cycleTitle">${st.s.cycle ? 'CPR cycle ' + st.s.cycle : 'Ready for CPR'}</span><span class="dial-shocks"><svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg><strong>${c.shocks}</strong><span>${c.shocks === 1 ? 'shock' : 'shocks'}</span></span></button><button class="previous-shock" data-action="previous-shock" aria-label="Add a shock before app start">+ Previous shock</button></div><div class="dial-timing"><div class="countdown" id="cycleClock" role="timer" aria-label="Time remaining in CPR cycle">02:00</div><div class="cycle-caption" id="cycleCaption">Ready to start</div></div><div class="dial-actions"><button class="unexpected-rosc" data-outcome="rosc" id="unexpectedRosc" aria-label="Record unexpected ROSC" ${!['Ready', 'Active'].includes(st.s.phase) ? 'hidden' : ''}>♡ ROSC</button><button class="start-button" data-action="${stopped ? (st.s.phase === 'ROSC' ? 'rearrest' : 'export') : 'start'}" id="startCycle" ${st.s.phase === 'Active' ? 'hidden' : ''}>${stopped ? (st.s.phase === 'ROSC' ? 'Re-arrest · restart CPR' : 'Export record') : '▶ Start CPR'}</button><button class="rhythm-check-button" data-action="rhythm-check" id="rhythmCheck" hidden>⌁ Rhythm check</button></div></div></div><span class="sr-only" id="cycleAlert" role="status" aria-live="polite"></span></section>
-<div class="access-cards"><button data-action="airway"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v12m0-5-4 4m4-4 4 4M12 9C7 9 3 17 3 24c0 4 3 4 6 2l4-3V11M20 9c5 0 9 8 9 15 0 4-3 4-6 2l-4-3V11"/></svg><span>Airway</span><span class="card-chevron" aria-hidden="true">›</span></button><button data-action="access"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M10 3h12v17a6 6 0 0 1-12 0V3ZM8 7h16M10 13h12M13 1v4m6-4v4m-3 21v5"/><path d="M16 17v4"/></svg><span>Access</span><span class="card-chevron" aria-hidden="true">›</span></button></div><div class="drug-grid">${drugCard('adrenaline')}${R.careMode(st.s) === 'amiodarone' ? drugCard('amiodarone') : supportCard(R.careMode(st.s))}</div>
+<div class="access-cards"><button data-action="airway"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3v12m0-5-4 4m4-4 4 4M12 9C7 9 3 17 3 24c0 4 3 4 6 2l4-3V11M20 9c5 0 9 8 9 15 0 4-3 4-6 2l-4-3V11"/></svg><span>Airway</span><span class="card-chevron" aria-hidden="true">›</span></button><button data-action="access"><svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M10 3h12v17a6 6 0 0 1-12 0V3ZM8 7h16M10 13h12M13 1v4m6-4v4m-3 21v5"/><path d="M16 17v4"/></svg><span>Access</span><span class="card-chevron" aria-hidden="true">›</span></button></div><div class="drug-grid">${drugCard('adrenaline')}${R.careMode(st.s) === 'amiodarone' ? (amioCardVisible() ? drugCard('amiodarone') : amioPendingCard()) : supportCard(R.careMode(st.s))}</div>
 ${st.s.phase === 'ROSC' ? '<button class="postrosc-main" data-action="postrosc">☑ Post ROSC checklist</button>' : ''}
 <div class="tools-row"><button data-action="interventions" ${finished() ? 'disabled' : ''}><span aria-hidden="true">＋</span> Airway / access</button><button data-action="note" ${finished() ? 'disabled' : ''}>+ Event</button></div></div>`;
 }
@@ -208,24 +235,21 @@ export function tick() {
         : 'Until 4 min review';
   $('adrenalineCard').classList.toggle('attention', enabled && t.adr !== null && t.adr <= 30000);
   if (R.careMode(st.s) === 'amiodarone') {
+    if (!amioCardVisible()) return; // A2: placeholder tile has nothing to update
+    const due = amioDue();
     $('amiodaroneClock').textContent = t.amio === null ? '—' : clock(t.amio);
-    const amioDue =
-      enabled &&
-      !torsades() &&
-      ['VF', 'VT'].includes(st.s.rhythm) &&
-      ((c.shocks >= 3 && c.amio === 0) || (c.shocks >= 6 && c.amio === 1));
     $('amiodaroneStatus').textContent = torsades()
       ? 'Withhold · torsades'
       : !enabled
         ? 'Review inactive'
-        : amioDue
+        : due
           ? 'Review ' + (c.amio ? 'second' : 'first') + ' dose'
           : c.amio >= 2
             ? 'Since last dose'
             : t.amio === null
               ? 'Review at ' + (c.amio ? '6' : '3') + ' shocks'
               : 'Since last dose';
-    $('amiodaroneCard').classList.toggle('attention', amioDue);
+    $('amiodaroneCard').classList.toggle('attention', due);
   } else tickSupport(R.careMode(st.s), enabled);
 }
 

@@ -25,3 +25,12 @@ export { ported };
 
 // checklists.js is a plain browser script (const ARREST_CHECKLISTS=...): evaluate it to get the data.
 export const LISTS = new Function(readFileSync(path.join(ROOT, 'checklists.js'), 'utf8') + ';return ARREST_CHECKLISTS;')();
+
+// A1 (owner-approved 3 Nov 2026): shock energy = 4 J/kg of the CPG weight band. The ORIGINAL files in the
+// repo root stay untouched as evidence. Tests that compare old and new engines call this to give the
+// original object the A1 energy rule (and nothing else), so every OTHER difference is still caught.
+// Only call it in a test file that does not also need the pure original afterwards (each file runs separately).
+export function giveOriginalTheA1Energy() {
+  original.joules = ported.joules;
+  original.needsPaediatricPads = ported.needsPaediatricPads;
+}
