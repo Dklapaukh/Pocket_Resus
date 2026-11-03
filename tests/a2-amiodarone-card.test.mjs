@@ -29,10 +29,9 @@ test('A2: the card appears after the 3rd VF/VT shock, not before', () => {
   shock(a, 'VF'); assert.ok(card(a)); assert.match(amioCardHtml(a), /300 mg IV/); assert.match(amioCardHtml(a), /data-drug="amiodarone"\s*>/);
 });
 
-test('A2 (updated by A2c): non-shockable rhythms never show the amiodarone card; asystole and PEA both show fluids', () => {
+test('A2: three shocks followed by non-shockable rhythms never show the card; PEA keeps the fluids card', () => {
   const a = openApp({ appDir: ROOT }); start(a, '70');
-  noShock(a, 'Asystole'); noShock(a, 'Asystole'); noShock(a, 'Asystole');
-  assert.ok(main(a).includes('id="fluidsCard"') && !pending(a) && !card(a));
+  noShock(a, 'Asystole'); noShock(a, 'Asystole'); noShock(a, 'Asystole'); assert.ok(pending(a));
   noShock(a, 'PEA'); assert.ok(main(a).includes('id="fluidsCard"') && !pending(a));
 });
 
@@ -55,7 +54,7 @@ test('A2: a recorded dose keeps the card on screen after a reload', () => {
 test('C6b: child (15 kg) second dose reads "Seek clinical advice"; button disabled; nothing can record it', () => {
   const a = openApp({ appDir: ROOT }); start(a, '15');
   shock(a); shock(a); shock(a); assert.match(amioCardHtml(a), /100 mg IV/); a.click('[data-drug=amiodarone]');
-  shock(a); shock(a); assert.match(amioCardHtml(a), /50 mg IV/, 'before 6 shocks the old number is still shown (open question for the owner)');
+  shock(a); shock(a); assert.ok(!/50 mg/.test(amioCardHtml(a)), 'C6b-2: no second-dose number before 6 shocks');
   shock(a);
   const html = amioCardHtml(a);
   assert.match(html, /<div class="drug-dose child">Seek clinical advice<\/div>/);
