@@ -10,5 +10,6 @@ const rows = readFileSync(ROOT + '/docs/baseline/file-hashes.sha256', 'utf8').tr
 // They are covered by tests/modules.test.mjs instead. The original JS files stay in place, unused, until cleanup.
 // A2 (owner-approved): precision.css gained one appended block; tests/a2-amiodarone-card.test.mjs checks it is baseline + that block only.
 // A3 (owner-approved): manifest.webmanifest gained `"orientation": "portrait"`; tests/a3-manifest-orientation.test.mjs checks it is baseline + that one line only.
-const CHANGED_ON_PURPOSE = new Set(['index.html', 'sw.js', 'precision.css', 'manifest.webmanifest']);
+// A4 (owner-approved): rhythm-care.css gained one appended block; tests/a4-countdown-digits.test.mjs checks it is baseline + that block only.
+const CHANGED_ON_PURPOSE = new Set(['index.html', 'sw.js', 'precision.css', 'manifest.webmanifest', 'rhythm-care.css']);
 for (const [hash, file] of rows.filter(([, f]) => !CHANGED_ON_PURPOSE.has(f))) test(file + ' unchanged', () => { assert.equal(createHash('sha256').update(readFileSync(ROOT + '/' + file)).digest('hex'), hash); });
