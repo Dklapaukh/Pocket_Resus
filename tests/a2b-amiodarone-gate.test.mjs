@@ -30,16 +30,18 @@ test('A2b: a mix of recorded and previous shocks counts', () => {
   previous(a); previous(a); shock(a, 'VF'); assert.ok(amio(a));
 });
 
-test('A2b: 3 shocks then asystole recorded: the card stays open (current rhythm does not matter)', () => {
+test('A2b (updated by A2c): 3 shocks then asystole: fluids shows; the next VF/VT shock brings amiodarone back', () => {
   const a = openApp({ appDir: ROOT }); start(a);
   shock(a); shock(a); shock(a); noShock(a, 'Asystole');
-  assert.ok(amio(a) && !pending(a) && !fluids(a) && !magnesium(a));
+  assert.ok(fluids(a) && !amio(a) && !pending(a) && !magnesium(a));
+  shock(a, 'VF'); assert.ok(amio(a) && !fluids(a));
   assert.match(main(a), /data-drug="amiodarone"\s*>/);
 });
 
-test('A2b: asystole as the current rhythm with only 2 shocks keeps the grey tile', () => {
+test('A2b (updated by A2c): asystole after 1 shock shows fluids; a later VF gives the grey tile (not yet due)', () => {
   const a = openApp({ appDir: ROOT }); start(a);
-  shock(a); shock(a); noShock(a, 'Asystole'); assert.ok(pending(a) && !amio(a));
+  shock(a); noShock(a, 'Asystole'); assert.ok(fluids(a) && !amio(a) && !pending(a));
+  shock(a, 'VF'); assert.ok(pending(a) && !amio(a), '2 shocks so far: not yet due');
 });
 
 test('A2b: PEA at the latest check turns the lower card into fluids; a later VF replaces it with amiodarone', () => {
@@ -57,7 +59,8 @@ test('A2b: torsades at any point: magnesium holds the lower slot, amiodarone nev
   const a = openApp({ appDir: ROOT }); start(a);
   shock(a); shock(a); torsadesShock(a); assert.ok(magnesium(a) && !amio(a) && !pending(a));
   shock(a, 'VF'); shock(a, 'VF'); assert.ok(magnesium(a) && !amio(a), '3+ shocks must not bring amiodarone back');
-  noShock(a, 'Asystole'); assert.ok(magnesium(a) && !amio(a));
+  noShock(a, 'Asystole'); assert.ok(fluids(a) && !amio(a), 'A2c: asystole shows fluids');
+  shock(a, 'VF'); assert.ok(magnesium(a) && !amio(a), 'torsades history: back to magnesium, never amiodarone');
 });
 
 test('A2b: torsades, then PEA, then VF: fluids for PEA, then back to magnesium (never amiodarone)', () => {
@@ -71,9 +74,9 @@ test('A2b: torsades after the card was already showing: card is replaced by magn
   shock(a); shock(a); shock(a); assert.ok(amio(a)); torsadesShock(a); assert.ok(magnesium(a) && !amio(a));
 });
 
-test('A2b: second dose is due at 6 shocks whatever the current rhythm (one dose given, asystole recorded)', () => {
+test('A2b (updated by A2c): second dose due at 6 shocks (one dose given); asystole shows fluids, the next VF shows the card', () => {
   const a = openApp({ appDir: ROOT }); start(a);
   shock(a); shock(a); shock(a); a.click('[data-drug=amiodarone]');
-  shock(a); shock(a); shock(a); noShock(a, 'Asystole');
-  assert.ok(amio(a)); assert.match(main(a), /Review second dose/);
+  shock(a); shock(a); shock(a); noShock(a, 'Asystole'); assert.ok(fluids(a) && !amio(a));
+  shock(a, 'VF'); assert.ok(amio(a)); assert.match(main(a), /Review second dose/);
 });
