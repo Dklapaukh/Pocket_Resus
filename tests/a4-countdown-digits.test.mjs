@@ -22,10 +22,12 @@ test('A4: rhythm-care.css is the v16 original plus one appended A4 block', () =>
 
 const block = raw.slice(at);
 
-test('A4: shock block moves beside the digits on screens up to 700 px tall', () => {
-  assert.match(block, /@media\(max-height:700px\)\{/);
-  assert.match(block, /#timerPanel \.dial-face\{grid-template-columns:auto minmax\(0,1fr\)/);
-  assert.match(block, /#timerPanel \.dial-timing\{padding-top:38px\}/); // keeps the digits clear of the ROSC button
+test('A4 (owner tweak): "shocks" word hidden, "+ Previous shock" is a small bordered "+" beside the two rows', () => {
+  assert.match(block, /\.dial-shocks>span:last-child\{position:absolute;width:1px;height:1px/); // hidden visually, still read aloud
+  assert.match(block, /\.dial-history\{flex-direction:row;align-items:center/); // button centred between the two rows
+  assert.match(block, /\.previous-shock\{font-size:0;width:32px;height:32px;[^}]*border:1px solid/); // small, with a border
+  assert.match(block, /\.previous-shock::before\{content:"\+"/);
+  assert.doesNotMatch(block, /grid-template-columns/); // digits stay centred under the shock block, not beside it
 });
 
 test('A4: digit size is set in ONE place and is larger than the old floor on short screens', () => {

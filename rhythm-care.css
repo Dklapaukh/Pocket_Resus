@@ -66,14 +66,17 @@
 .live-mode #timerPanel .dial-timing .cycle-caption{margin:0;line-height:1.25}
 @media(max-height:620px){#timerPanel .dial-timing{gap:4px}.live-mode #timerPanel .dial-timing .cycle-caption{font-size:10px;line-height:1.2}}
 
-/* A4 (owner-approved): bigger countdown digits on shorter screens (about 700 px tall or less, which includes a phone's
-   browser tab). The shock block (cycle title, shock count, "+ Previous shock") sits LEFT of the digits instead of above them,
-   so the digits keep the card height and cannot touch "+ Previous shock". Taller screens are unchanged.
-   Also reserves enough room for the Start / Rhythm check button between 621 and 700 px so the caption is not covered. */
+/* A4 (owner-approved), tweaked after the owner phone check: bigger, CENTRED countdown digits.
+   Shock block (all screens): the word "shocks" is hidden (kept for screen readers); "+ Previous shock" is a small bordered
+   "+" button vertically centred beside the two rows (cycle title / bolt and count). Its accessible name is unchanged.
+   Because that block is now only two rows high, the digits no longer need to sit beside it: they stay centred under it.
+   Shorter screens (700 px tall or less, which includes a phone's browser tab) get one larger digit-size rule and room for
+   the Start / Rhythm check button between 621 and 700 px so the caption is not covered. */
+#timerPanel .dial-shocks>span:last-child{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#timerPanel .dial-history{flex-direction:row;align-items:center;gap:10px;max-width:none}
+#timerPanel .dial-history .previous-shock{font-size:0;width:32px;height:32px;min-height:32px;padding:0;display:grid;place-items:center;border:1px solid #8fb09b;border-radius:8px;background:#f1f7f2;color:#174f3d}
+#timerPanel .dial-history .previous-shock::before{content:"+";font-size:22px;line-height:1;font-weight:600}
 @media(max-height:700px){
-#timerPanel .dial-face{grid-template-columns:auto minmax(0,1fr);grid-template-rows:minmax(0,1fr);column-gap:4px}
-#timerPanel .dial-history{max-width:none;align-self:start}
-#timerPanel .dial-timing{padding-top:38px}
 .live-mode #timerPanel .dial-timing #cycleClock{font-size:min(36cqw,max(24px,calc(100cqh - 30px)),110px)}
 }
 @media(min-height:621px) and (max-height:700px){
