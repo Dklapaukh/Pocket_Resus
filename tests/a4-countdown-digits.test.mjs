@@ -12,9 +12,10 @@ const MARKER = '\n/* A4 (owner-approved)';
 const raw = readFileSync(`${ROOT}/rhythm-care.css`, 'utf8');
 const at = raw.indexOf(MARKER);
 
-test('A4: rhythm-care.css is the v16 original plus one appended A4 block', () => {
+test('A4: rhythm-care.css is the v16 original (minus the unused rules removed by CSS cleanup step 2) plus one appended A4 block', () => {
   assert.ok(at > 0, 'A4 block marker not found');
-  const baseline = readFileSync(`${ROOT}/docs/baseline/file-hashes.sha256`, 'utf8')
+  // fingerprint after CSS cleanup step 2: docs/baseline/css-cleanup-step2-hashes.sha256 (original v16 one stays in file-hashes.sha256)
+  const baseline = readFileSync(`${ROOT}/docs/baseline/css-cleanup-step2-hashes.sha256`, 'utf8')
     .trim().split('\n').map((l) => l.trim().split(/\s+/)).find(([, f]) => f === 'rhythm-care.css')[0];
   assert.equal(createHash('sha256').update(raw.slice(0, at)).digest('hex'), baseline);
   assert.equal(raw.indexOf(MARKER, at + 1), -1, 'only one A4 block expected');

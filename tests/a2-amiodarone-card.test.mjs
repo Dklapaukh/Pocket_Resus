@@ -78,11 +78,12 @@ test('C6b: adults are unchanged (second dose 150 mg IV, recordable at 6 shocks)'
   a.click('[data-drug-info=amiodarone]'); assert.match(a.surfaces().sheet, /300 mg IV first; 150 mg IV second/);
 });
 
-// precision.css is the baseline file plus ONE appended block (the tile styling); nothing else in it changed.
+// precision.css is the baseline file (minus the unused rules removed by CSS cleanup step 2) plus ONE appended block (the tile styling); nothing else in it changed.
+// The fingerprint comes from docs/baseline/css-cleanup-step2-hashes.sha256 (the original v16 fingerprint stays in file-hashes.sha256).
 const A2_CSS = '\n/* A2: tile shown in the lower drug slot until amiodarone is due (no dose, no button) */\n.live-mode .drug-grid .drug.drug-pending{display:block;border-left-color:#c9d1cc;border-top:1px solid #e1e8e3;background:#f4f6f5;color:#5d6d64}\n.live-mode .drug-grid .drug.drug-pending h3{color:#5d6d64}\n.live-mode .drug-grid .drug.drug-pending .pending-note{margin:3px 0 0;font-size:12.5px;line-height:16px}\n';
-test('A2: precision.css = the baseline file + the A2 tile block only', () => {
+test('A2: precision.css = the cleaned baseline file + the A2 tile block only', () => {
   const now = readFileSync(ROOT + '/precision.css', 'utf8');
   assert.ok(now.endsWith(A2_CSS), 'A2 block missing or changed');
-  const want = readFileSync(ROOT + '/docs/baseline/file-hashes.sha256', 'utf8').split('\n').map(l => l.trim().split(/\s+/)).find(r => r[1] === 'precision.css')[0];
+  const want = readFileSync(ROOT + '/docs/baseline/css-cleanup-step2-hashes.sha256', 'utf8').split('\n').map(l => l.trim().split(/\s+/)).find(r => r[1] === 'precision.css')[0];
   assert.equal(createHash('sha256').update(now.slice(0, now.length - A2_CSS.length)).digest('hex'), want);
 });

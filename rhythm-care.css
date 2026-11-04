@@ -3,8 +3,6 @@
 .rhythm-image-choices button>span{font-weight:700;font-size:19px}
 .rhythm-image-choices small{display:block;font-size:13px;font-weight:400;color:#52675d;margin-top:2px}
 .rhythm-image-choices img{width:100%;height:66px;object-fit:contain;background:#fff;border-radius:4px}
-.rhythm-credits{font-size:13px;margin-top:12px}
-.rhythm-credits p{font-size:13px;line-height:1.5}
 .rhythm-snippet{background:#f0f5ed;border:1px solid #9cb79f;border-radius:10px;padding:12px 14px}
 .rhythm-snippet h3{font-size:18px;margin:0 0 10px}
 .rhythm-snippet blockquote{margin:0;padding-left:12px;border-left:3px solid #174f3d;font-size:20px;font-weight:700}

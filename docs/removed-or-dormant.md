@@ -20,3 +20,9 @@ After removal, all 6 screen scenarios (88 steps) still match the original golden
 ## Left for later cleanup
 - Unused CSS for the removed screens (e.g. `.live-checklist`, `.cause`, `.cause-actions`) in the stylesheets: handle at the CSS stage so pixels are checked on a phone.
 - (Done 4 Nov 2026) The unused VF/VT/torsades images and the `rhythms/` folder were deleted; they remain in git history.
+
+## CSS cleanup (4 Nov 2026)
+
+- Step 1: the unused `rhythms/` folder, `GITHUB-SETUP.txt` and `GITHUB-UPDATE.txt` were deleted (phone check passed).
+- Step 2: 134 unused CSS rules and 8 dead selectors removed from `style.css`, `phone.css`, `precision.css`, `rhythm-care.css`. Full list and checks: `docs/css-cleanup-step2.md`.
+- Still kept on purpose: root `core.js`, `rhythm-care.js`, `log-view.js`, `checklists.js`, `app.js`, `equipment.js`, `guidance.js`, `explain-me.js` (the tests compare against them; old code stays in git history).
