@@ -22,18 +22,23 @@ test('A4: rhythm-care.css is the v16 original plus one appended A4 block', () =>
 
 const block = raw.slice(at);
 
-test('A4 (owner tweak): "shocks" word hidden, "+ Previous shock" is a small bordered "+" beside the two rows', () => {
+test('A4c (owner tweak): "shocks" word hidden; "+ Previous shock" is a compact bordered button BELOW the two rows', () => {
   assert.match(block, /\.dial-shocks>span:last-child\{position:absolute;width:1px;height:1px/); // hidden visually, still read aloud
-  assert.match(block, /\.dial-history\{flex-direction:row;align-items:center/); // button centred between the two rows
-  assert.match(block, /\.previous-shock\{font-size:0;width:32px;height:32px;[^}]*border:1px solid/); // small, with a border
-  assert.match(block, /\.previous-shock::before\{content:"\+"/);
+  assert.match(block, /\.dial-history\{flex-direction:column;align-items:flex-start/); // stacked: title / count / button
+  assert.match(block, /\.previous-shock\{font-size:10px;[^}]*height:19px;[^}]*border:1px solid/); // compact, with a border
+  assert.doesNotMatch(block, /previous-shock::before/); // the words "+ Previous shock" are shown, not a bare "+"
   assert.doesNotMatch(block, /grid-template-columns/); // digits stay centred under the shock block, not beside it
+});
+
+test('A4c: the button text and accessible name are unchanged in the page markup', () => {
+  const views = readFileSync(`${ROOT}/src/app/views.js`, 'utf8');
+  assert.match(views, /aria-label="Add a shock before app start">\+ Previous shock<\/button>/);
 });
 
 test('A4: digit size is set in ONE place and is larger than the old floor on short screens', () => {
   const rules = block.match(/#cycleClock\{font-size:[^}]*\}/g) || [];
   assert.equal(rules.length, 1);
-  assert.match(rules[0], /min\(36cqw,max\(24px,calc\(100cqh - 30px\)\),110px\)/);
+  assert.match(rules[0], /min\(36cqw,max\(24px,calc\(100cqh - 24px\)\),110px\)/);
 });
 
 test('A4: room for the Start / Rhythm check button between 621 and 700 px (caption no longer covered)', () => {

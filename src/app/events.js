@@ -34,6 +34,7 @@ import {
   secondAmioEarly,
   drugDose,
   keepAwake,
+  lockLeft,
   recordSupport,
   requestWakeSilently,
   save,
@@ -122,7 +123,8 @@ document.addEventListener('click', async (e) => {
       value === null ||
       st.s.special ||
       (type === 'amiodarone' && (torsades() || R.counts(st.s).amio >= 2 || childSecondAmio() || secondAmioEarly())) ||
-      st.s.phase === 'ROSC'
+      st.s.phase === 'ROSC' ||
+      lockLeft(type) > 0 // A5: adrenaline is locked for 3 min 30 s after a dose
     )
       return;
     commit(

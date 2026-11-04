@@ -128,6 +128,18 @@ export async function requestWakeSilently() {
   } catch {}
 }
 
+/* A5 (owner ruling, 4 Nov 2026): protection against accidental double-taps on the Live drug cards.
+   Adrenaline: after a dose is recorded the card is greyed out and cannot be used for 3 min 30 s.
+   Magnesium and fluids: the card cannot record a repeat for 5 s (not greyed out). Amiodarone is already
+   protected by its dose-count rules. Returns the milliseconds left (0 = free). An undone dose frees the card. */
+export const A5_LOCK_MS = { adrenaline: 210000, magnesium: 5000, fluids: 5000 };
+export function lockLeft(type) {
+  const last = R.supportStats(st.s, type).last;
+  if (!last || !A5_LOCK_MS[type]) return 0;
+  const gone = Date.now() - last.at;
+  return gone >= 0 && gone < A5_LOCK_MS[type] ? A5_LOCK_MS[type] - gone : 0;
+}
+
 /* Record the second-line support item for the current rhythm: magnesium (torsades; a repeat
    needs confirming; maximum 2) or open the fluids sheet (PEA). */
 export function recordSupport(type, confirmed = false) {
@@ -135,7 +147,8 @@ export function recordSupport(type, confirmed = false) {
     !canRecord() ||
     st.s.special ||
     ['ROSC', 'Ended'].includes(st.s.phase) ||
-    careMode(st.s) !== type
+    careMode(st.s) !== type ||
+    lockLeft(type) > 0 // A5: no repeat within 5 s
   )
     return;
   if (type === 'fluids') {

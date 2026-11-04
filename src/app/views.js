@@ -4,6 +4,7 @@ import { $, R } from './base.js';
 import {
   careMode,
   latestLowerRhythm,
+  lockLeft,
   childSecondAmio,
   drugDose,
   finished,
@@ -66,8 +67,10 @@ export function drugCard(type) {
       !st.s.special &&
       !blocked &&
       (adr || c.amio < 2) &&
-      !['ROSC', 'Ended'].includes(st.s.phase);
-  return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s) && d ? 'child' : ''}">${advice ? 'Seek clinical advice' : early ? 'Due after 6 shocks' : d ? esc(value + ' mg IV') : 'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p>${selectDose ? `<button class="record" data-select-dose="amiodarone">Select dose</button>` : `<button class="record" data-drug="${type}" ${canRef ? '' : 'disabled'}>`}${selectDose ? '' : canRef ? 'Record ' + value + ' mg IV' : blocked ? 'Withhold · torsades' : advice ? 'Seek clinical advice' : early ? 'Not yet due' : st.s.special ? 'Manual review' : !adr && c.amio >= 2 ? '2 doses recorded' : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Weight needed'}${selectDose ? '' : '</button>'}<div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;
+      !['ROSC', 'Ended'].includes(st.s.phase),
+    a5 = adr && lockLeft('adrenaline') > 0, // A5: greyed out for 3 min 30 s after a dose
+    a5Attr = a5 ? ` data-a5-free="${canRef ? 1 : 0}"` : ''; // remembers whether it is otherwise usable, to free it later
+  return `<section class="drug" id="${type}Card"><h3>${name}</h3><div class="drug-dose ${R.isPaediatric(st.s) && d ? 'child' : ''}">${advice ? 'Seek clinical advice' : early ? 'Due after 6 shocks' : d ? esc(value + ' mg IV') : 'Enter weight'}</div><strong class="drug-clock" id="${type}Clock">—</strong><p class="caption" id="${type}Status"></p>${selectDose ? `<button class="record" data-select-dose="amiodarone">Select dose</button>` : `<button class="record" data-drug="${type}"${a5Attr} ${canRef && !a5 ? '' : 'disabled'}>`}${selectDose ? '' : canRef ? 'Record ' + value + ' mg IV' : blocked ? 'Withhold · torsades' : advice ? 'Seek clinical advice' : early ? 'Not yet due' : st.s.special ? 'Manual review' : !adr && c.amio >= 2 ? '2 doses recorded' : st.s.phase === 'ROSC' ? 'ROSC recorded' : st.s.phase === 'Ended' ? 'Session ended' : 'Weight needed'}${selectDose ? '' : '</button>'}<div class="drug-links"><button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button><button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button></div></section>`;
 }
 
 /* Header "Pt weight (kg)" button, with the shock energy calculated from the weight. */
@@ -246,6 +249,13 @@ export function tick() {
         ? '4 min elapsed · review'
         : 'Until 4 min review';
   $('adrenalineCard').classList.toggle('attention', enabled && t.adr !== null && t.adr <= 30000);
+  /* A5: while the lock runs the adrenaline button is greyed out (set when the card is drawn); when the
+     3 min 30 s are up, free it again, but only if it was otherwise usable (weight entered, not ROSC, etc.). */
+  const adrBtn = $('adrenalineCard').querySelector('button[data-a5-free]');
+  if (adrBtn && lockLeft('adrenaline') === 0) {
+    adrBtn.disabled = adrBtn.dataset.a5Free !== '1';
+    adrBtn.removeAttribute('data-a5-free');
+  }
   if (careMode(st.s) === 'amiodarone') {
     if (!amioCardVisible()) return; // A2: placeholder tile has nothing to update
     const due = amioDue();
