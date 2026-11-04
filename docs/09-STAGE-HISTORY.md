@@ -27,3 +27,5 @@ Read only if you need the detail of an earlier stage. Current state and next ste
 - **C6b-2 phone check passed** (owner, 4 Nov 2026). **Stage 2d confirmed complete** (owner, 4 Nov 2026; formatted code and comments are in the repo).
 
 - **A4c and A5 phone check passed** (owner, 4 Nov 2026). **A4d applied** (4 Nov 2026, needs upload + phone check): see doc 07 State. Two-line "+ Previous / shock" button; golden `main` hashes regenerated on purpose (button markup only).
+
+- **A4d phone check passed** (owner, 4 Nov 2026). **A6 applied** (4 Nov 2026, needs upload + phone check): see doc 07 State. Unreadable saved session is backed up (`resus-pocket-v1-unreadable-backup`) and a short message shown; `dom-original.json`: two `toast` hashes changed on purpose.

@@ -1,7 +1,7 @@
 /* Start-up: first save and draw, timer, service worker, reopen an unfinished rhythm sheet.
    Logic is the same as the original app files; shared memory lives in st (see state.js). */
 import './events.js'; // registers every tap/type/submit listener
-import { save } from './session.js';
+import { save, toast } from './session.js';
 import { render, tick } from './views.js';
 import { openRhythm } from './sheets.js';
 import { st } from './state.js';
@@ -10,6 +10,14 @@ import { st } from './state.js';
 save();
 
 render();
+
+// A6: tell the user when an unreadable saved session was replaced.
+if (st.recovery)
+  toast(
+    st.recovery === 'backed-up'
+      ? 'Saved case could not be read. A backup copy was kept and a new case started.'
+      : 'Saved case could not be read and no backup could be kept. A new case started.',
+  );
 
 setInterval(tick, 250);
 

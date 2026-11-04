@@ -83,7 +83,7 @@ export function openApp({ appDir, savedState = null, scriptLoader = defaultLoade
 
 // Original app: plain scripts run in index.html order, all sharing one global scope.
 // (vm.Script in the page's context gives scripts the same shared top-level scope a browser does.)
-function defaultLoader(w, dir, srcs, dom) {
+export function defaultLoader(w, dir, srcs, dom) {
   const ctx = dom.getInternalVMContext();
   // Rebuilt app (Stage 2b): one <script type=module>. jsdom cannot run modules, so bundle it into one
   // strict-mode script first (browsers run modules in strict mode, so the test does too).
