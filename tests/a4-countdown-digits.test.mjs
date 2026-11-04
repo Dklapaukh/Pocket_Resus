@@ -22,17 +22,20 @@ test('A4: rhythm-care.css is the v16 original plus one appended A4 block', () =>
 
 const block = raw.slice(at);
 
-test('A4c (owner tweak): "shocks" word hidden; "+ Previous shock" is a compact bordered button BELOW the two rows', () => {
+test('A4d (owner tweak): "shocks" word hidden; "+ Previous shock" is a compact bordered TWO-LINE button BELOW the two rows', () => {
   assert.match(block, /\.dial-shocks>span:last-child\{position:absolute;width:1px;height:1px/); // hidden visually, still read aloud
   assert.match(block, /\.dial-history\{flex-direction:column;align-items:flex-start/); // stacked: title / count / button
-  assert.match(block, /\.previous-shock\{font-size:10px;[^}]*height:19px;[^}]*border:1px solid/); // compact, with a border
-  assert.doesNotMatch(block, /previous-shock::before/); // the words "+ Previous shock" are shown, not a bare "+"
+  assert.match(block, /\.previous-shock\{font-size:10px;[^}]*border:1px solid/); // compact, with a border
+  assert.match(block, /\.ps-plus\{font-size:16px/); // the "+" sits at the left, bigger than the words
+  assert.match(block, /\.ps-words\{text-align:center/); // "Previous" over "shock", centred
+  assert.doesNotMatch(block, /previous-shock::before/); // the words are real text, not a bare "+"
   assert.doesNotMatch(block, /grid-template-columns/); // digits stay centred under the shock block, not beside it
 });
 
-test('A4c: the button text and accessible name are unchanged in the page markup', () => {
+test('A4d: the button reads "+" then "Previous" / "shock" on two lines; accessible name unchanged', () => {
   const views = readFileSync(`${ROOT}/src/app/views.js`, 'utf8');
-  assert.match(views, /aria-label="Add a shock before app start">\+ Previous shock<\/button>/);
+  assert.match(views, /aria-label="Add a shock before app start"><span class="ps-plus" aria-hidden="true">\+<\/span><span class="ps-words">Previous<br>shock<\/span><\/button>/);
+  assert.match(views, /data-action="previous-shock"/); // the tap handler hook is unchanged
 });
 
 test('A4: digit size is set in ONE place and is larger than the old floor on short screens', () => {
