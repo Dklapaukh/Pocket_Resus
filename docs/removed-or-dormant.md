@@ -19,4 +19,4 @@ After removal, all 6 screen scenarios (88 steps) still match the original golden
 
 ## Left for later cleanup
 - Unused CSS for the removed screens (e.g. `.live-checklist`, `.cause`, `.cause-actions`) in the stylesheets: handle at the CSS stage so pixels are checked on a phone.
-- Unused VF/VT/torsades images and the `rhythms/` folder.
+- (Done 4 Nov 2026) The unused VF/VT/torsades images and the `rhythms/` folder were deleted; they remain in git history.
