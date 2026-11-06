@@ -27,6 +27,7 @@ test('correcting, voiding and undoing a recorded event preserves its audit trail
   assert.equal(event.voided, true);
   assert.equal(event.audit.length, 2);
   assert.equal(event.audit[1].before.details, 'Pads checked');
+  assert.equal(Object.hasOwn(event.audit[1].before, 'audit'), false);
 
   app.click('[data-action=settings]');
   app.click('#undo');

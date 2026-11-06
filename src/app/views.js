@@ -359,18 +359,18 @@ function cycleCaption(t, on, running, due, stopped) {
 
 /* Update the visible CPR cycle; the timer itself records no treatment. */
 function tickCycle(t, on, running, due, stopped) {
-  $('cycleClock').textContent = stopped
-    ? st.s.phase === 'ROSC'
-      ? 'ROSC'
-      : 'Ended'
-    : countdown(t.left);
-  $('cycleTitle').textContent = stopped
-    ? st.s.phase === 'ROSC'
-      ? 'ROSC recorded'
-      : 'Session ended'
-    : st.s.cycle
-      ? 'CPR cycle ' + st.s.cycle
-      : 'Ready for CPR';
+  let clockText;
+  let title;
+  if (stopped) {
+    const hasRosc = st.s.phase === 'ROSC';
+    clockText = hasRosc ? 'ROSC' : 'Ended';
+    title = hasRosc ? 'ROSC recorded' : 'Session ended';
+  } else {
+    clockText = countdown(t.left);
+    title = st.s.cycle ? 'CPR cycle ' + st.s.cycle : 'Ready for CPR';
+  }
+  $('cycleClock').textContent = clockText;
+  $('cycleTitle').textContent = title;
   $('cycleCaption').textContent = cycleCaption(t, on, running, due, stopped);
   if ($('cycleAlert').textContent !== (due ? 'Cycle complete. Rhythm check.' : ''))
     $('cycleAlert').textContent = due ? 'Cycle complete. Rhythm check.' : '';
@@ -387,18 +387,30 @@ function tickCycle(t, on, running, due, stopped) {
   $('startCycle').hidden = on;
 }
 
+/* Status text is a reminder derived from the session, not a recorded dose.
+   Keep the order: several conditions can apply at once. */
+function adrenalineStatus(remaining, enabled) {
+  if (!enabled) return 'Review inactive';
+  if (remaining === null) return 'No dose recorded';
+  if (remaining < 0) return '4 min elapsed · review';
+  return 'Until 4 min review';
+}
+
+function amiodaroneStatus(elapsed, count, enabled, due) {
+  if (torsades()) return 'Withhold · torsades';
+  if (!enabled) return 'Review inactive';
+  if (due) return 'Review ' + (count ? 'second' : 'first') + ' dose';
+  if (count >= 2) return 'Since last dose';
+  if (elapsed === null) return 'Review at ' + (count ? '6' : '3') + ' shocks';
+  return 'Since last dose';
+}
+
 /* Update medication review clocks and release an expired display lock. */
 function tickMedicines(t, c, on) {
   const enabled = on && !st.s.special;
   $('adrenalineClock').textContent =
     t.adr === null ? '—' : t.adr < 0 ? '+' + clock(-t.adr) : countdown(t.adr);
-  $('adrenalineStatus').textContent = !enabled
-    ? 'Review inactive'
-    : t.adr === null
-      ? 'No dose recorded'
-      : t.adr < 0
-        ? '4 min elapsed · review'
-        : 'Until 4 min review';
+  $('adrenalineStatus').textContent = adrenalineStatus(t.adr, enabled);
   $('adrenalineCard').classList.toggle('attention', enabled && t.adr !== null && t.adr <= 30000);
   /* A5: while the lock runs the adrenaline button is greyed out (set when the card is drawn); when the
      3 min 30 s are up, free it again, but only if it was otherwise usable (weight entered, not ROSC, etc.). */
@@ -411,17 +423,7 @@ function tickMedicines(t, c, on) {
     if (!amioCardVisible()) return; // A2: placeholder tile has nothing to update
     const due = amioDue();
     $('amiodaroneClock').textContent = t.amio === null ? '—' : clock(t.amio);
-    $('amiodaroneStatus').textContent = torsades()
-      ? 'Withhold · torsades'
-      : !enabled
-        ? 'Review inactive'
-        : due
-          ? 'Review ' + (c.amio ? 'second' : 'first') + ' dose'
-          : c.amio >= 2
-            ? 'Since last dose'
-            : t.amio === null
-              ? 'Review at ' + (c.amio ? '6' : '3') + ' shocks'
-              : 'Since last dose';
+    $('amiodaroneStatus').textContent = amiodaroneStatus(t.amio, c.amio, enabled, due);
     $('amiodaroneCard').classList.toggle('attention', due);
   } else tickSupport(careMode(st.s), enabled);
 }
@@ -504,17 +506,20 @@ export function supportCard(type) {
 export function tickSupport(type, enabled) {
   const stats = R.supportStats(st.s, type);
   $('supportClock').textContent = stats.last ? clock(Date.now() - stats.last.at) : '—';
-  $('supportStatus').textContent = !enabled
-    ? 'Review inactive'
-    : type === 'magnesium'
-      ? stats.count >= 2
-        ? '2 doses · clinical review'
-        : stats.count
-          ? 'Repeat once only if TdP persists/recurs'
-          : 'Withhold amiodarone · torsades history'
-      : stats.total
-        ? stats.total + ' mL recorded · review total'
-        : (latestLowerRhythm(st.s) === 'Asystole' ? 'Asystole' : 'PEA') + ' · review fluid volume';
+  let status;
+  if (!enabled) {
+    status = 'Review inactive';
+  } else if (type === 'magnesium') {
+    if (stats.count >= 2) status = '2 doses · clinical review';
+    else if (stats.count) status = 'Repeat once only if TdP persists/recurs';
+    else status = 'Withhold amiodarone · torsades history';
+  } else if (stats.total) {
+    status = stats.total + ' mL recorded · review total';
+  } else {
+    const rhythm = latestLowerRhythm(st.s) === 'Asystole' ? 'Asystole' : 'PEA';
+    status = rhythm + ' · review fluid volume';
+  }
+  $('supportStatus').textContent = status;
 }
 
 /* The Guidance tab: a button for each checklist. */

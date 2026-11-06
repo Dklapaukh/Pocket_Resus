@@ -118,7 +118,7 @@ export function recordSupport(type, confirmed = false) {
 }
 
 /* Finish a shock / no-shock / ROSC record with the chosen rhythm and energy. ROSC moves to the
-   post-ROSC checklist. Returns true if saved. */
+   post-ROSC checklist. True means the engine accepted it; save() separately reports storage failure. */
 export function saveRhythm(
   outcome,
   rhythm,
@@ -127,11 +127,12 @@ export function saveRhythm(
   eventId = st.sheetContext?.eventId,
 ) {
   if (!canRecord()) return false;
-  if (
-    !(eventId
-      ? R.completeOutcome(st.s, eventId, rhythm, energy)
-      : outcome === 'rosc' && R.check(st.s, outcome, rhythm, energy, at))
-  ) {
+  // Shock/no-shock outcomes already have a pending event. Unexpected ROSC
+  // has no pending event, so the engine records it in one step instead.
+  const accepted = eventId
+    ? R.completeOutcome(st.s, eventId, rhythm, energy)
+    : outcome === 'rosc' && R.check(st.s, outcome, rhythm, energy, at);
+  if (!accepted) {
     error('Check the recorded energy.');
     return false;
   }

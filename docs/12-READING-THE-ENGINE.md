@@ -15,6 +15,10 @@ epoch. `validWeight` accepts a positive number up to 500 with at most one
 decimal place. `estimate`, `isPaediatric`, `dose`, `joules` and
 `needsPaediatricPads` derive references; they do not record treatment. Their
 clinical boundaries and decisions are indexed in the clinical-rule inventory.
+An empty weight causes `dose` to return an adult reference, while an invalid
+non-empty weight returns `null`. This engine result alone does not establish
+whether the live interface permits a particular administration to be recorded;
+follow the card and recording guards as well.
 
 `active` excludes voided events. `counts` combines earlier counts with active
 shock, no-shock and amiodarone events, in event-time order for the no-shock
@@ -28,6 +32,9 @@ operations take a snapshot before changing state. `begin` starts a cycle.
 `check` validates a recorded outcome, snapshots, appends it, and either stops
 at ROSC or starts another cycle. `undo` returns a restored session rather than
 mutating all fields of the current one in place.
+The snapshot itself excludes the undo stack, so undo restores the saved session
+while retaining the remaining undo history. Recorded events and their audit
+details are part of the snapshot; synthetic log rows are not.
 
 ### Reading an example without executing treatment
 

@@ -1,5 +1,5 @@
-/* Start-up: first save and draw, timer, service worker, reopen an unfinished rhythm sheet.
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+/* Start-up: save and draw, report recovery, start the timer and service worker,
+   and reopen an unfinished rhythm sheet. Shared state lives in st (see state.js). */
 import './events.js'; // registers every tap/type/submit listener
 import { save } from './session.js';
 import { toast } from './format.js';

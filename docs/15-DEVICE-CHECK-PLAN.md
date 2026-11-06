@@ -1,5 +1,13 @@
 # Deferred phone and installation checks
 
+## Result reported by owner
+
+On 6 November 2026 the owner reported **PASSED** for the phone test of the
+published readability and offline-cache update. The report did not include
+the phone, operating system, browser version, screenshots, or individual
+check outcomes; those details are not independently recorded. This result
+is not independent clinical review.
+
 The owner approved publication of the prepared test build to the existing
 GitHub Pages site on 6 November 2026. Use fictional data only and do not use
 this test build for patient care. An installed web app and service worker generally
@@ -10,7 +18,7 @@ installed environment.
 The local desktop Chrome check currently covers an offline reload, weight
 entry, a cross-tab update, accelerated countdown, session recovery and a
 v17-to-v18 service-worker upgrade. It uses a controlled clock and is not
-evidence of phone background behavior. The v18 worker waits for older app
+evidence of phone background behavior. The v19 worker waits for older app
 windows to close before activating; close all open app tabs and installed-app
 windows, then reopen online before checking offline.
 

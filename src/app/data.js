@@ -1,5 +1,5 @@
-/* Fixed lists: checklists, equipment, causes, colours, guideline links, tutorial slides.
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+/* Fixed lists: checklists, equipment, causes, colours, guideline links and
+   tutorial slides. Clinical wording and references require appropriate review. */
 
 /* Checklist wording shown to the clinician. */
 export const ARREST_CHECKLISTS = [

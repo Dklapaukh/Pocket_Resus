@@ -1,5 +1,5 @@
-/* All tap / type / submit listeners. Order of listeners is the same as the original app.
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+/* Tap, typing and form listeners. Later owner-approved changes are marked near
+   the relevant paths. Shared screen and session state lives in st (see state.js). */
 import {
   administration,
   closeSheet,
@@ -164,6 +164,32 @@ function startNewPatient() {
   toast('New patient · clocks started');
 }
 
+/* The complete export retains events and audit history, but omits the undo
+   stack. The text export is built separately and follows the log filters. */
+function downloadCompleteRecord() {
+  const data = {
+    ...st.s,
+    undo: undefined,
+    exportedAt: new Date().toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+  download(JSON.stringify(data, null, 2), 'application/json', 'json');
+}
+
+/* Use the browser's install prompt if available; otherwise show instructions. */
+async function offerInstallation() {
+  if (st.installPrompt) {
+    await st.installPrompt.prompt();
+    st.installPrompt = null;
+  } else
+    sheet(
+      'Add to home screen',
+      `<p><b>Android / Chrome:</b> open the browser menu, then choose “Add to Home screen” or “Install app”.</p>` +
+      `<p><b>iPhone / Safari:</b> tap Share, then “Add to Home Screen”.</p>` +
+      `<p class="caption">Open this site in your phone browser first. Offline files are prepared after the first successful load. Browser or device suspension can delay screen updates; clocks catch up on return. No background alarm is guaranteed.</p>`,
+    );
+}
+
 /* Named actions share the same order as the original click handler. */
 async function handleAction(action) {
   if (action === 'rhythm-check') openRhythmCheck();
@@ -212,15 +238,7 @@ async function handleAction(action) {
   if (action === 'save-history') return saveHistory();
   if (action === 'export') exportSheet();
   if (action === 'download-text') download(exportText(), 'text/plain', 'txt');
-  if (action === 'download-json') {
-    const data = {
-      ...st.s,
-      undo: undefined,
-      exportedAt: new Date().toISOString(),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    };
-    download(JSON.stringify(data, null, 2), 'application/json', 'json');
-  }
+  if (action === 'download-json') downloadCompleteRecord();
   if (action === 'copy') await copyLog();
   if (action === 'end')
     sheet(
@@ -236,18 +254,7 @@ async function handleAction(action) {
       `<button class="primary danger" data-action="confirm-new">Clear record & start new patient</button>`,
     );
   if (action === 'confirm-new') return startNewPatient();
-  if (action === 'install') {
-    if (st.installPrompt) {
-      await st.installPrompt.prompt();
-      st.installPrompt = null;
-    } else
-      sheet(
-        'Add to home screen',
-        `<p><b>Android / Chrome:</b> open the browser menu, then choose “Add to Home screen” or “Install app”.</p>` +
-        `<p><b>iPhone / Safari:</b> tap Share, then “Add to Home Screen”.</p>` +
-        `<p class="caption">Open this site in your phone browser first. Offline files are prepared after the first successful load. Browser or device suspension can delay screen updates; clocks catch up on return. No background alarm is guaranteed.</p>`,
-      );
-  }
+  if (action === 'install') await offerInstallation();
 }
 
 /* Selected tap paths keep validation and recording together. */
@@ -314,13 +321,19 @@ function recordQuickDrug(b) {
   return;
 }
 
+/* Retain the event before a correction or void. Exclude its existing audit
+   from the copy so the audit trail does not recursively contain itself. */
+function auditBeforeChange(event) {
+  event.audit = [
+    ...(event.audit || []),
+    { at: Date.now(), before: JSON.parse(JSON.stringify({ ...event, audit: undefined })) },
+  ];
+}
+
 function toggleEventVoid(b) {
   commit(() => {
     const ev = st.s.events.find((x) => x.id === b.dataset.void);
-    ev.audit = [
-      ...(ev.audit || []),
-      { at: Date.now(), before: JSON.parse(JSON.stringify({ ...ev, audit: undefined })) },
-    ];
+    auditBeforeChange(ev);
     ev.voided = !ev.voided;
     ev.correctedAt = Date.now();
     syncRhythm();
@@ -509,46 +522,49 @@ document.addEventListener('change', (e) => {
   }
 });
 
+/* Manual entries use these event types so they join the corresponding counts
+   and clocks. Other names remain general medicine events. */
+function manualMedicineType(name) {
+  switch (name.toLowerCase()) {
+    case 'adrenaline': return 'adrenaline';
+    case 'amiodarone': return 'amiodarone';
+    case 'magnesium': return 'magnesium';
+    case '0.9% sodium chloride': return 'fluids';
+    default: return 'medicine';
+  }
+}
+
 /* Form recording paths: validation, commit and dialog changes stay together. */
-function submitDrug(f, at, e) {
+function submitDrug(form, at) {
   if (!canRecord()) return;
-  const name = f.get('name').trim(),
-    dose = +f.get('dose'),
-    unit = f.get('unit'),
-    route = f.get('route');
+  const name = form.get('name').trim(),
+    dose = +form.get('dose'),
+    unit = form.get('unit'),
+    route = form.get('route');
   if (!name || !Number.isFinite(dose) || dose <= 0 || !route)
     return error('Enter medicine, actual dose and route.');
-  const type =
-    name.toLowerCase() === 'adrenaline'
-      ? 'adrenaline'
-      : name.toLowerCase() === 'amiodarone'
-        ? 'amiodarone'
-        : name.toLowerCase() === 'magnesium'
-          ? 'magnesium'
-          : name.toLowerCase() === '0.9% sodium chloride'
-            ? 'fluids'
-            : 'medicine';
+  const type = manualMedicineType(name);
   commit(
     () =>
       R.add(
         st.s,
         type,
         name,
-        dose + ' ' + unit + ' ' + route + (f.get('notes') ? ' · ' + f.get('notes') : ''),
+        dose + ' ' + unit + ' ' + route + (form.get('notes') ? ' · ' + form.get('notes') : ''),
         at,
-        { dose, unit, route, notes: f.get('notes') },
+        { dose, unit, route, notes: form.get('notes') },
       ),
     'Administration recorded',
   );
   closeSheet();
 }
 
-function submitEquipment(f, at, e) {
+function submitEquipment(form, at, submitEvent) {
   if (!canRecord()) return;
   const type = st.sheetContext.type,
-    data = Object.fromEntries(f);
+    data = Object.fromEntries(form);
   if (data.side && data.site) data.site = data.side + ' ' + data.site;
-  const confirmed = f.getAll('confirmation');
+  const confirmed = form.getAll('confirmation');
   if (
     type === 'intubation' &&
     data.size &&
@@ -572,56 +588,53 @@ function submitEquipment(f, at, e) {
     'Intervention recorded',
   );
   closeSheet();
-  if (type === 'laryngoscopy' && e.submitter?.value === 'intubation') openEquipment('intubation');
+  if (type === 'laryngoscopy' && submitEvent.submitter?.value === 'intubation') openEquipment('intubation');
 }
 
-function submitNote(f, at, e) {
+function submitNote(form, at) {
   if (!canRecord()) return;
-  const text = f.get('text').trim();
+  const text = form.get('text').trim();
   if (!text) return error('Enter the event or action.');
   commit(() => R.add(st.s, 'note', 'Event', text, at, {}), 'Event recorded');
   closeSheet();
 }
 
-function submitCorrection(f, at, e) {
-  const ev = st.s.events.find((x) => x.id === st.sheetContext.id);
-  if (ev.preApp && at >= st.s.appStart) return error('Use a time before the app opened.');
+function submitCorrection(form, at) {
+  const event = st.s.events.find((x) => x.id === st.sheetContext.id);
+  if (event.preApp && at >= st.s.appStart) return error('Use a time before the app opened.');
   if (
-    ['start', 'pause', 'resume', 'rearrest', 'end', 'rosc'].includes(ev.type) &&
-    local(at) !== local(ev.at)
+    ['start', 'pause', 'resume', 'rearrest', 'end', 'rosc'].includes(event.type) &&
+    local(at) !== local(event.at)
   )
     return error(
       'State-change times cannot be changed here. Undo and re-record the state change.',
     );
-  const dose = f.has('dose') ? +f.get('dose') : null;
-  if (f.has('dose') && (!Number.isFinite(dose) || dose <= 0))
+  const dose = form.has('dose') ? +form.get('dose') : null;
+  if (form.has('dose') && (!Number.isFinite(dose) || dose <= 0))
     return error('Enter a positive actual dose.');
   commit(() => {
-    ev.audit = [
-      ...(ev.audit || []),
-      { at: Date.now(), before: JSON.parse(JSON.stringify({ ...ev, audit: undefined })) },
-    ];
-    ev.at = at;
-    ev.details = f.get('details');
-    if (ev.type === 'equipment') delete ev.equipment;
-    ev.correctedAt = Date.now();
-    if (ev.preApp) {
-      ev.needsReview = false;
-      delete ev.timeUnknown;
+    auditBeforeChange(event);
+    event.at = at;
+    event.details = form.get('details');
+    if (event.type === 'equipment') delete event.equipment;
+    event.correctedAt = Date.now();
+    if (event.preApp) {
+      event.needsReview = false;
+      delete event.timeUnknown;
     }
-    if (f.has('rhythm')) ev.rhythm = f.get('rhythm');
-    if (f.has('dose')) {
-      ev.dose = dose;
-      ev.unit = f.get('unit');
-      ev.route = f.get('route');
-      ev.details = dose + ' ' + ev.unit + ' ' + ev.route + (ev.notes ? ' · ' + ev.notes : '');
+    if (form.has('rhythm')) event.rhythm = form.get('rhythm');
+    if (form.has('dose')) {
+      event.dose = dose;
+      event.unit = form.get('unit');
+      event.route = form.get('route');
+      event.details = dose + ' ' + event.unit + ' ' + event.route + (event.notes ? ' · ' + event.notes : '');
     }
-    if (f.has('energy')) ev.energy = f.get('energy');
-    if (['shock', 'noshock', 'rosc', 'rhythm'].includes(ev.type))
-      ev.details =
-        ev.rhythm +
-        (ev.type === 'shock'
-          ? ' · ' + (ev.energy ? ev.energy + ' J' : 'energy not recorded')
+    if (form.has('energy')) event.energy = form.get('energy');
+    if (['shock', 'noshock', 'rosc', 'rhythm'].includes(event.type))
+      event.details =
+        event.rhythm +
+        (event.type === 'shock'
+          ? ' · ' + (event.energy ? event.energy + ' J' : 'energy not recorded')
           : '');
     syncRhythm();
   }, 'Event corrected');
@@ -629,16 +642,17 @@ function submitCorrection(f, at, e) {
 }
 
 /* Each recognized form validates its time before its specific recording path. */
-document.addEventListener('submit', (e) => {
-  if (!['drugForm', 'equipmentForm', 'noteForm', 'editForm'].includes(e.target.id)) return;
-  e.preventDefault();
-  const f = new FormData(e.target),
-    at = dateValue(f);
+document.addEventListener('submit', (submitEvent) => {
+  const formId = submitEvent.target.id;
+  if (!['drugForm', 'equipmentForm', 'noteForm', 'editForm'].includes(formId)) return;
+  submitEvent.preventDefault();
+  const form = new FormData(submitEvent.target),
+    at = dateValue(form);
   if (at === null) return;
-  if (e.target.id === 'drugForm') return submitDrug(f, at, e);
-  if (e.target.id === 'equipmentForm') return submitEquipment(f, at, e);
-  if (e.target.id === 'noteForm') return submitNote(f, at, e);
-  if (e.target.id === 'editForm') return submitCorrection(f, at, e);
+  if (formId === 'drugForm') return submitDrug(form, at);
+  if (formId === 'equipmentForm') return submitEquipment(form, at, submitEvent);
+  if (formId === 'noteForm') return submitNote(form, at);
+  if (formId === 'editForm') return submitCorrection(form, at);
 });
 
 /* App returns to the foreground: refresh clocks and wake lock. */

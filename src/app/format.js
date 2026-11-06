@@ -1,5 +1,5 @@
 /* Display helpers (escape, clock, time, notes, guideline links and short messages).
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+   Shared screen state, including the toast timeout, lives in st (see state.js). */
 import { $ } from './base.js';
 import { st } from './state.js';
 
@@ -115,12 +115,11 @@ export function compactOptionalFields() {
       summary = document.createElement('summary'),
       isTime = field.name === 'at';
     details.className = 'optional-entry ' + (isTime ? 'optional-time' : 'optional-note');
-    const update = () =>
-      (summary.textContent = isTime
-        ? 'Time: ' + field.value + ' · Edit'
-        : field.value.trim()
-          ? 'Note added · Edit'
-          : '+ Add note');
+    const update = () => {
+      if (isTime) summary.textContent = 'Time: ' + field.value + ' · Edit';
+      else if (field.value.trim()) summary.textContent = 'Note added · Edit';
+      else summary.textContent = '+ Add note';
+    };
     update();
     details.append(summary);
     label.before(details);

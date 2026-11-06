@@ -1,5 +1,5 @@
-/* Shortcuts every other module uses: the arrest engine (R), $ (find element by id) and the saved-data key.
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+/* Shared engine and DOM shortcuts, plus keys for the current session and its
+   unreadable-data backup. Shared session state lives in st (see state.js). */
 import { Resus } from '../engine/index.js';
 
 export const R = Resus,

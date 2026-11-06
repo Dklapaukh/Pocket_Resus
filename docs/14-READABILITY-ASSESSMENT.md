@@ -16,8 +16,11 @@ clinical review is deferred until code and other key goals are ready.
   existing tests check offline file-list completeness, and a simulated worker
   test checks install failure and cached responses offline. A local Chrome
   check also passed offline reload, weight entry, cross-tab update, an
-  accelerated countdown and recovery after reload. These do not replace a
-  phone, background or installation check.
+  accelerated countdown and recovery after reload. The owner subsequently
+  reported that the phone test passed on 6 November 2026; individual
+  device-check results and device details were not supplied. Later local
+  readability edits are not included in that published, phone-tested build.
+  See [doc 15](15-DEVICE-CHECK-PLAN.md).
 - The click listener was 348 lines at the start of this pass. Named action,
   recording, correction and keypad paths now make its major decisions
   traceable. The former 123-line submit listener delegates to four form
@@ -32,7 +35,7 @@ clinical review is deferred until code and other key goals are ready.
 
 ## Honest remaining limits
 
-- The main click listener is 97 lines and the named-action dispatcher is 84;
+- The main click listener and named-action dispatcher remain substantial;
   their longer recording paths are named. `drugCard`, `liveView` and
   the tutorial workflow also remain substantial. A fresh reader should
   trace representative cases and identify any genuinely confusing remainder;

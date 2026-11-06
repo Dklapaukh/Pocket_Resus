@@ -47,7 +47,7 @@ current readability work retains the existing module paths and cache list.
 | Double-tap guards | `state.js`: `A5_LOCK_MS`, `lockLeft`; `session.js`: `recordSupport`; `events.js`; `views.js` | UI disabling and recording guards both matter; manual entry follows a separate path. |
 | Rhythm and shock recording | `rhythm-care.js`: `startOutcome`, `completeOutcome`; `session.js`: `saveRhythm` | A previous shock can lack an actual time; do not invent one. Corrected and voided events affect derived state. |
 | Recovery and storage | `state.js`, `session.js`: `save`, `main.js` | Only one unreadable raw backup is kept. The warning does not provide an in-app restore tool. |
-| Log and export | `src/engine/log-view.js`, `state.js`: `logRows`, `sheets.js`: `exportText` | A display filter is not a clinical event. Preserve event times, corrections and voids. |
+| Log and export | `src/engine/log-view.js`, `state.js`: `logRows`, `sheets.js`: `exportText`, `events.js`: `downloadCompleteRecord` | Text uses log filters; complete JSON retains events and audit but leaves out undo snapshots. A display filter is not a clinical event. |
 
 The source references above identify where to investigate; they are not an
 exhaustive source-to-rule audit or evidence of independent clinical validation.
@@ -57,22 +57,48 @@ decisions and history. Later dated decisions supersede older narrative notes.
 For a readable walkthrough of the fidelity-pinned compact engine, see
 [Reading the engine](12-READING-THE-ENGINE.md).
 
+## Session storage and recovery
+
+`st.s` is the in-memory session; `save` writes it as JSON under
+`resus-pocket-v1`. A `commit` snapshots the session, performs the change,
+attempts to save, redraws and may show a message. A failed storage write shows
+the storage warning; `commit` does not roll the in-memory change back.
+
+At startup, `state.js` accepts a parsed session if its version is 1, its
+`events` is an array and `appStart` is finite. These are shallow checks, not
+complete validation of every field. If saved text fails those checks, the app
+tries to retain the raw text under `resus-pocket-v1-unreadable-backup`, starts
+a fresh session and reports whether the copy succeeded. Only the newest
+unreadable backup is kept. If nothing was saved, it starts fresh without that
+recovery message. `main.js` then saves and draws the selected session.
+
+The cross-tab storage handler uses a different, narrower check: version 1 and
+an event array. It replaces the in-memory session and redraws, without running
+the startup recovery path. Undo restores a previous snapshot and saves it.
+Neither path is a JSON import feature or a general session repair tool. See the
+comma-weight investigation in doc 11 before changing how stored data is read.
+
 ## Example traces
 
 - **Suggested versus recorded medicine:** `drugCard` in `views.js` gets a
   reference from `drugDose` in `state.js` and decides what to show. A tap
   reaches `recordQuickDrug` in `events.js`, which rechecks the guard before
   `commit` adds an event. Manual entry instead uses `openDrug` and
-  `submitDrug`. Opening a reference or form does not itself record a dose.
+  `submitDrug`; `medicineEntryName` chooses a form default and
+  `manualMedicineType` maps recognised names to event types
+  used by the counts and clocks. Opening a reference or form does not
+  itself record a dose.
 - **Rhythm and the lower card:** `startOutcome` can record the selected
-  outcome before rhythm details are completed. `selectRhythm` and
+  outcome before rhythm details are completed: `recordOutcome` in `events.js`
+  saves it and opens the rhythm dialog. `selectRhythm` and
   `saveRhythm` complete it; `latestLowerRhythm` and `careMode` in `state.js`
   then select what `lowerDrugCard` renders. The engine's older PEA-only
   `careMode` is a different function.
 - **Correction and audit:** `editEvent` builds the form, and
   `submitCorrection` validates it, retains the earlier event in audit,
   updates fields and synchronizes rhythm inside `commit`. The separate
-  `toggleEventVoid` retains an audit entry while changing void status.
+  `toggleEventVoid` changes void status. Both use `auditBeforeChange` to
+  retain the earlier event without nesting its existing audit history.
 - **Elapsed cycle:** `R.timing` derives remaining time from the stored
   timestamps; `tick`, `tickCycle` and `tickMedicines` update the display.
   A timer reaching zero does not call an event-recording function.
@@ -82,6 +108,9 @@ For a readable walkthrough of the fidelity-pinned compact engine, see
   simulated offline install/fetch path are tested; they cannot establish
   device behavior. A storage event from another tab is handled in
   `events.js`, which replaces the active in-memory session and redraws.
+  Undo restores a snapshot through `R.undo` and then saves it. Neither
+  startup, cross-tab loading nor undo normalizes every saved field; see
+  the comma-weight compatibility investigation in doc 11.
 
 ## Safe refactoring
 

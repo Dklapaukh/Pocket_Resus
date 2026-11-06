@@ -1,5 +1,5 @@
-/* The single object holding what the app remembers while running, plus loading the saved session at start.
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+/* Shared in-memory session and screen state, including loading a saved session
+   at startup. Owner-approved recovery and display rules are marked below. */
 import { R, KEY, BACKUP_KEY } from './base.js';
 import { ARREST_CHECKLISTS } from './data.js';
 

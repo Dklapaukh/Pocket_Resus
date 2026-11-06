@@ -1,5 +1,5 @@
-/* Pop-up sheets (weight, rhythm, drugs, equipment, notes, edit, export, settings, explain-me).
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+/* Pop-up sheets for weight, rhythm, drugs, equipment, notes, correction,
+   export, settings and the tutorial. Shared state lives in st (see state.js). */
 import { $, R } from './base.js';
 import {
   compactOptionalFields,
@@ -185,19 +185,22 @@ export function administration(type) {
   );
 }
 
+/* Names prefilled by the card's Other… button; an unrecognised type opens
+   a blank medicine field for manual entry. */
+function medicineEntryName(type) {
+  switch (type) {
+    case 'adrenaline': return 'Adrenaline';
+    case 'amiodarone': return 'Amiodarone';
+    case 'magnesium': return 'Magnesium';
+    case 'fluids': return '0.9% sodium chloride';
+    default: return '';
+  }
+}
+
 /* Pop-up to record a drug administration (dose, time, notes). */
 export function openDrug(type) {
-  const name =
-      type === 'adrenaline'
-        ? 'Adrenaline'
-        : type === 'amiodarone'
-          ? 'Amiodarone'
-          : type === 'magnesium'
-            ? 'Magnesium'
-            : type === 'fluids'
-              ? '0.9% sodium chloride'
-              : '',
-    now = Date.now();
+  const name = medicineEntryName(type);
+  const now = Date.now();
   const defaultUnit = type === 'magnesium' ? 'mmol' : type === 'fluids' ? 'mL' : 'mg';
   const units = ['mg', 'mcg', 'mmol', 'mL', 'g']
     .map((unit) => `<option ${unit === defaultUnit ? 'selected' : ''}>${unit}</option>`).join('');
@@ -609,25 +612,25 @@ export function openExplainMe() {
     bar = progress.firstElementChild,
     prev = dialog.querySelector('[data-explain-prev]'),
     next = dialog.querySelector('[data-explain-next]');
-  let index = 0;
-  function update(i) {
-    index = i;
+  let currentIndex = 0;
+  function updateProgress(i) {
+    currentIndex = i;
     const amount = ((i + 1) / slides.length) * 100;
     bar.style.width = amount + '%';
     progress.setAttribute('aria-valuenow', amount);
     prev.disabled = i === 0;
     next.textContent = i === slides.length - 1 ? 'Done' : 'Next ↓';
   }
-  function go(i) {
+  function scrollToSlide(i) {
     i = Math.max(0, Math.min(slides.length - 1, i));
     pages.scrollTo({
       top: slides[i].offsetTop - slides[0].offsetTop,
       behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
     });
   }
-  prev.addEventListener('click', () => go(index - 1));
+  prev.addEventListener('click', () => scrollToSlide(currentIndex - 1));
   next.addEventListener('click', () =>
-    index === slides.length - 1 ? closeSheet() : go(index + 1),
+    currentIndex === slides.length - 1 ? closeSheet() : scrollToSlide(currentIndex + 1),
   );
   const onScroll = () => {
     const line = pages.scrollTop + pages.clientHeight * 0.35;
@@ -635,7 +638,7 @@ export function openExplainMe() {
     slides.forEach((slide, i) => {
       if (slide.offsetTop - slides[0].offsetTop <= line) current = i;
     });
-    update(current);
+    updateProgress(current);
   };
   pages.addEventListener('scroll', onScroll, { passive: true });
   explainCleanup = () => pages.removeEventListener('scroll', onScroll);

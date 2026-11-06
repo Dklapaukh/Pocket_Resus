@@ -181,8 +181,19 @@ normalizing every field. We have not established whether any genuine saved
 session can contain such a weight; this is a software compatibility question,
 not a clinical ruling.
 The fidelity-pinned engine and existing behavior have not been changed.
-Investigate real migration/import paths and an appropriately reviewed fix
-before treating comma-formatted persisted weights as supported.
+Investigation on 6 November: the current app has JSON export but no session
+JSON import or restore control. Startup and cross-tab updates load version 1
+session objects directly; undo restores an earlier session snapshot. Therefore
+any externally altered or otherwise malformed session could propagate a comma
+weight, including through undo, but these paths do not establish that ordinary
+entry produces one. The five historical `app.js` revisions available in this
+checkout all normalize comma input and save `String(+w)`; this does not prove
+what every earlier or separately distributed build did, or what exists on real
+devices. No real saved session was inspected. Changing load behavior or the
+fidelity-pinned calculations would change behavior for this constructed state;
+leave it documented rather than assuming a migration is needed. A future fix
+must consider startup, cross-tab updates and undo snapshots together, preserve
+recorded events and audit history, and verify both magnesium and fluids.
 
 This inventory covers the live clinical references and their recording paths,
 but does **not** complete an independent passage-by-passage source audit. A

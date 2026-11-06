@@ -3,11 +3,10 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
 const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..');
-const previousWorker = execFileSync('git', ['show', 'HEAD:sw.js'], { cwd: root });
+const previousWorker = fs.readFileSync(path.join(root, 'tests/fixtures/sw-v18.js'));
 let servePreviousWorker = false;
 const mime = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
@@ -90,7 +89,7 @@ const server = http.createServer((request, response) => {
     await oldPage.fill('#weightInput', '42');
     await oldPage.click('[data-action="save-weight"]');
     const beforeCaches = await oldPage.evaluate(() => caches.keys());
-    if (!beforeCaches.includes('resus-pocket-v17-modules')) throw new Error('Previous cache was not installed');
+    if (!beforeCaches.includes('resus-pocket-v18-readable')) throw new Error('Previous cache was not installed');
     servePreviousWorker = false;
     await oldPage.evaluate(async () => (await navigator.serviceWorker.ready).update());
     await oldPage.waitForFunction(async () => (await navigator.serviceWorker.getRegistration()).waiting !== null);
@@ -100,7 +99,7 @@ const server = http.createServer((request, response) => {
     await newPage.waitForFunction(async () => {
       const names = await caches.keys();
       const registration = await navigator.serviceWorker.getRegistration();
-      return names.includes('resus-pocket-v18-readable') && registration?.active?.state === 'activated' &&
+      return names.includes('resus-pocket-v19-readable') && registration?.active?.state === 'activated' &&
         !registration.waiting && !registration.installing;
     });
     const recovered = await newPage.evaluate(() => JSON.parse(localStorage.getItem('resus-pocket-v1')));
