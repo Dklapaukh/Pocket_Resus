@@ -19,4 +19,14 @@ test('a failed save shows the warning while the current screen retains the chang
   assert.equal(app.window.document.querySelector('#storageError').hidden, false);
   assert.match(app.window.document.querySelector('#headerWeight').textContent, /70 kg/);
   assert.equal(app.surfaces().stored, initial);
+
+  // A later successful save writes the in-memory session and clears the warning.
+  storage.setItem = realSetItem;
+  app.click('[data-action=weight]');
+  app.type('#weightInput', '71');
+  app.click('[data-action=save-weight]');
+  assert.equal(app.window.document.querySelector('#storageError').hidden, true);
+  const saved = JSON.parse(app.surfaces().stored);
+  assert.equal(saved.weight, '71');
+  assert.equal(saved.events.filter(event => event.type === 'weight').length, 2);
 });
