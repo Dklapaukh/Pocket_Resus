@@ -23,7 +23,7 @@ test('sw.js: every module and stylesheet the page uses is in the offline list', 
   for (const f of need) assert.ok(files.includes(f), f + ' not cached for offline use');
 });
 test('sw.js: cache name changed so phones fetch the new files', () => {
-  assert.match(sw, /const CACHE='resus-pocket-v17-modules'/);
+  assert.match(sw, /const CACHE='resus-pocket-v18-readable'/);
 });
 test('every module only uses names that exist (no missing import)', () => {
   const browser = new Set('document window navigator localStorage Date Math Number String Array Object JSON Promise Set Map Intl URL Blob Error Boolean RegExp parseInt parseFloat isNaN isFinite setInterval setTimeout clearTimeout clearInterval console location NodeFilter FormData Event matchMedia undefined NaN Infinity encodeURIComponent decodeURIComponent'.split(' '));
@@ -32,4 +32,27 @@ test('every module only uses names that exist (no missing import)', () => {
     const bad = new Set(eslintScope.analyze(ast, { ecmaVersion: 2022, sourceType: 'module' }).globalScope.through.map(r => r.identifier.name).filter(n => !browser.has(n)));
     assert.deepEqual([...bad], [], f);
   }
+});
+
+test('app modules have no circular imports', () => {
+  const names = readdirSync(ROOT + '/src/app').filter(name => name.endsWith('.js'));
+  const graph = new Map(names.map(name => {
+    const ast = parse(readFileSync(ROOT + '/src/app/' + name, 'utf8'), {
+      ecmaVersion: 'latest', sourceType: 'module',
+    });
+    const dependencies = ast.body
+      .filter(node => ['ImportDeclaration', 'ExportNamedDeclaration', 'ExportAllDeclaration'].includes(node.type) && node.source)
+      .map(node => node.source.value)
+      .filter(source => source.startsWith('./'))
+      .map(source => source.slice(2));
+    return [name, dependencies];
+  }));
+  const visited = new Set();
+  function visit(name, path) {
+    assert.ok(!path.includes(name), `circular app imports: ${[...path, name].join(' → ')}`);
+    if (visited.has(name)) return;
+    for (const dependency of graph.get(name) ?? []) visit(dependency, [...path, name]);
+    visited.add(name);
+  }
+  for (const name of names) visit(name, []);
 });

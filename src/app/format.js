@@ -1,6 +1,7 @@
-/* Small helpers that turn values into text (escape, clock, time, notes, guideline links).
+/* Display helpers (escape, clock, time, notes, guideline links and short messages).
    Logic is the same as the original app files; shared memory lives in st (see state.js). */
 import { $ } from './base.js';
+import { st } from './state.js';
 
 /* Make text safe to put inside HTML (stops typed notes being treated as page code). */
 export const esc = (v) =>
@@ -127,4 +128,13 @@ export function compactOptionalFields() {
     field.addEventListener('input', update);
     field.addEventListener('change', update);
   }
+}
+
+
+/* Show a short message at the bottom for 4 seconds. */
+export function toast(message) {
+  $('toast').textContent = message;
+  $('toast').classList.add('show');
+  clearTimeout(st.toastTimeout);
+  st.toastTimeout = setTimeout(() => $('toast').classList.remove('show'), 4000);
 }

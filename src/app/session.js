@@ -1,9 +1,11 @@
 /* Saving, recording events, drug doses, rhythm choices, screen wake lock.
-   Logic is the same as the original app files; shared memory lives in st (see state.js). */
+   The rebuild preserved the original behaviour first; later approved changes are marked below.
+   Shared screen and session state lives in st (see state.js). */
 import { $, KEY, R } from './base.js';
-import { peaSnippet, render, torsadesSnippet } from './views.js';
-import { closeSheet, error, openDrug, openSettings, sheet } from './sheets.js';
-import { st } from './state.js';
+import { render } from './views.js';
+import { closeSheet, error, openDrug, openSettings, peaSnippet, sheet, torsadesSnippet } from './sheets.js';
+import { careMode, finished, lockLeft, st } from './state.js';
+import { toast } from './format.js';
 
 /* Save the session to the phone. If storage is blocked or full, show the warning banner. */
 export function save() {
@@ -16,27 +18,15 @@ export function save() {
   $('storageError').hidden = st.storageOK;
 }
 
-/* Show a short message at the bottom for 4 seconds. */
-export function toast(message) {
-  $('toast').textContent = message;
-  $('toast').classList.add('show');
-  clearTimeout(st.toastTimeout);
-  st.toastTimeout = setTimeout(() => $('toast').classList.remove('show'), 4000);
-}
-
-/* The one way to change the session: remember an undo point, make the change (fn), save,
-   redraw, and optionally show a message. Every recorded action goes through here. */
+/* Commit a change with an undo point, save, redraw and optional message.
+   Some workflows (including starting a rhythm outcome) use their own engine
+   snapshot and persistence path; do not assume every event goes through here. */
 export function commit(fn, message) {
   R.snapshot(st.s);
   fn();
   save();
   render();
   if (message) toast(message);
-}
-
-/* True once the session has been ended. */
-export function finished() {
-  return st.s.phase === 'Ended';
 }
 
 /* Recording is blocked after the session has ended (the user must undo the end first). */
@@ -46,49 +36,6 @@ export function canRecord() {
     return false;
   }
   return true;
-}
-
-/* A2c (owner ruling, 3 Nov 2026): which card fills the lower drug slot. Same as the engine's R.careMode except that
-   ANY non-shockable rhythm (PEA or Asystole) at the latest check gives fluids. "Other" and "Not recorded" are still
-   ignored. VF/VT then bring amiodarone back (or magnesium if torsades was ever recorded). The engine file is untouched. */
-export function latestLowerRhythm(s) {
-  const latest = R.active(s)
-    .filter((e) => ['shock', 'noshock', 'rhythm', 'rosc'].includes(e.type) && ['PEA', 'Asystole', 'VF', 'VT', 'Torsades'].includes(e.rhythm))
-    .sort((a, b) => a.at - b.at)
-    .at(-1);
-  return latest?.rhythm || s.rhythm;
-}
-
-export function careMode(s) {
-  const rhythm = latestLowerRhythm(s);
-  if (rhythm === 'PEA' || rhythm === 'Asystole') return 'fluids';
-  return R.hasTorsades(s) ? 'magnesium' : 'amiodarone';
-}
-
-/* True if torsades has been recorded (amiodarone is then withheld and magnesium offered). */
-export function torsades() {
-  return R.hasTorsades(st.s);
-}
-
-/* Dose in mg for the drug card: adrenaline, or amiodarone first/second dose. null with no weight. */
-export function drugDose(type) {
-  const d = R.dose(st.s),
-    c = R.counts(st.s);
-  return !d ? null : type === 'adrenaline' ? d.adr : c.amio === 0 ? d.amio1 : d.amio2;
-}
-
-/* C6b (owner ruling 3 Nov 2026): the child second amiodarone dose has no EAS source, so once a child has had
-   one dose and 6 shocks are reached the app shows "Seek clinical advice" instead of a number. */
-export function childSecondAmio() {
-  const c = R.counts(st.s);
-  return R.isPaediatric(st.s) && c.amio === 1 && c.shocks >= 6;
-}
-
-/* C6b-2 (owner ruling 3 Nov 2026): the second amiodarone dose is only an option from the 6th shock. True while one
-   dose is recorded and fewer than 6 shocks (including earlier shocks) have been counted. */
-export function secondAmioEarly() {
-  const c = R.counts(st.s);
-  return c.amio === 1 && c.shocks < 6;
 }
 
 /* Settings toggle: hold or release the screen wake lock (keeps the screen on). */
@@ -128,20 +75,8 @@ export async function requestWakeSilently() {
   } catch {}
 }
 
-/* A5 (owner ruling, 4 Nov 2026): protection against accidental double-taps on the Live drug cards.
-   Adrenaline: after a dose is recorded the card is greyed out and cannot be used for 3 min 30 s.
-   Magnesium and fluids: the card cannot record a repeat for 5 s (not greyed out). Amiodarone is already
-   protected by its dose-count rules. Returns the milliseconds left (0 = free). An undone dose frees the card. */
-export const A5_LOCK_MS = { adrenaline: 210000, magnesium: 5000, fluids: 5000 };
-export function lockLeft(type) {
-  const last = R.supportStats(st.s, type).last;
-  if (!last || !A5_LOCK_MS[type]) return 0;
-  const gone = Date.now() - last.at;
-  return gone >= 0 && gone < A5_LOCK_MS[type] ? A5_LOCK_MS[type] - gone : 0;
-}
-
 /* Record the second-line support item for the current rhythm: magnesium (torsades; a repeat
-   needs confirming; maximum 2) or open the fluids sheet (PEA). */
+   needs confirming; maximum 2) or open the fluids sheet (PEA or Asystole). */
 export function recordSupport(type, confirmed = false) {
   if (
     !canRecord() ||
@@ -161,7 +96,9 @@ export function recordSupport(type, confirmed = false) {
   if (stats.count && !confirmed) {
     sheet(
       'Repeat magnesium?',
-      `${torsadesSnippet()}<p>One dose is already recorded. Record a second dose only if it was given for persistent or recurrent torsades.</p><button class="primary" data-confirm-magnesium>Record repeat ${ref.dose} mmol IV</button><button class="primary" data-close>Back</button>`,
+      `${torsadesSnippet()}<p>One dose is already recorded. Record a second dose only if it was given for persistent or recurrent torsades.</p>` +
+      `<button class="primary" data-confirm-magnesium>Record repeat ${ref.dose} mmol IV</button>` +
+      `<button class="primary" data-close>Back</button>`,
       { kind: 'repeat-magnesium' },
     );
     return;
@@ -225,7 +162,9 @@ export function selectRhythm(rhythm) {
     }
     sheet(
       'Confirm Torsades',
-      `${torsadesSnippet()}<p>Confirm the observed rhythm to record the delivered shock. This does not record a magnesium administration.</p><button class="primary" data-confirm-torsades>Confirm Torsades</button><button class="primary" data-back-rhythms>Back to rhythms</button>`,
+      `${torsadesSnippet()}<p>Confirm the observed rhythm to record the delivered shock. This does not record a magnesium administration.</p>` +
+      `<button class="primary" data-confirm-torsades>Confirm Torsades</button>` +
+      `<button class="primary" data-back-rhythms>Back to rhythms</button>`,
       {
         kind: 'torsades-confirm',
         outcome,

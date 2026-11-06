@@ -1,6 +1,7 @@
 /* The single object holding what the app remembers while running, plus loading the saved session at start.
    Logic is the same as the original app files; shared memory lives in st (see state.js). */
 import { R, KEY, BACKUP_KEY } from './base.js';
+import { ARREST_CHECKLISTS } from './data.js';
 
 /* Everything the app remembers while it runs, in one object (was loose variables). */
 /* st.s is the current patient/session (events, weight, phase, timers). The other fields are
@@ -55,3 +56,79 @@ if (
 /* A saved session that was running gets its countdown restarted from the time that was left. */
 if (st.s.phase === 'Active' && st.s.deadline === null)
   st.s.deadline = Date.now() + Math.max(0, st.s.remaining);
+
+/* Log entries for the chosen scope and checklist display; voided ones optional. */
+export function logRows(includeVoided = true) {
+  return R.logEntries(st.s, ARREST_CHECKLISTS, {
+    scope: st.logScope,
+    checklists: st.checklistDisplay,
+    includeVoided,
+  });
+}
+
+/* True once the session has been ended. */
+export function finished() {
+  return st.s.phase === 'Ended';
+}
+
+/* True if torsades has been recorded (amiodarone is then withheld and magnesium offered). */
+export function torsades() {
+  return R.hasTorsades(st.s);
+}
+
+/* A2c (owner ruling, 3 Nov 2026): which card fills the lower drug slot. Same as the engine's R.careMode except that
+   PEA or Asystole at the latest relevant check gives fluids. "Other" and "Not recorded" are still
+   ignored. VF/VT then bring amiodarone back (or magnesium if torsades was ever recorded). The engine file is untouched. */
+export function latestLowerRhythm(s) {
+  const latest = R.active(s)
+    .filter(
+      (event) =>
+        ['shock', 'noshock', 'rhythm', 'rosc'].includes(event.type) &&
+        ['PEA', 'Asystole', 'VF', 'VT', 'Torsades'].includes(event.rhythm),
+    )
+    .sort((a, b) => a.at - b.at)
+    .at(-1);
+  return latest?.rhythm || s.rhythm;
+}
+
+export function careMode(s) {
+  const rhythm = latestLowerRhythm(s);
+  if (rhythm === 'PEA' || rhythm === 'Asystole') return 'fluids';
+  return R.hasTorsades(s) ? 'magnesium' : 'amiodarone';
+}
+
+/* Select the engine's dose reference in mg. The card separately decides whether
+   a reference may be shown or recorded, including the child second-dose rule. */
+export function drugDose(type) {
+  const doseReference = R.dose(st.s);
+  const counts = R.counts(st.s);
+  if (!doseReference) return null;
+  if (type === 'adrenaline') return doseReference.adr;
+  return counts.amio === 0 ? doseReference.amio1 : doseReference.amio2;
+}
+
+/* C6b (owner ruling 3 Nov 2026): the child second amiodarone dose has no EAS source, so once a child has had
+   one dose and 6 shocks are reached the app shows "Seek clinical advice" instead of a number. */
+export function childSecondAmio() {
+  const c = R.counts(st.s);
+  return R.isPaediatric(st.s) && c.amio === 1 && c.shocks >= 6;
+}
+
+/* C6b-2 (owner ruling 3 Nov 2026): the second amiodarone dose is only an option from the 6th shock. True while one
+   dose is recorded and fewer than 6 shocks (including earlier shocks) have been counted. */
+export function secondAmioEarly() {
+  const c = R.counts(st.s);
+  return c.amio === 1 && c.shocks < 6;
+}
+
+/* A5 (owner ruling, 4 Nov 2026): protection against accidental double-taps on the Live drug cards.
+   Adrenaline: after a dose is recorded the card is greyed out and cannot be used for 3 min 30 s.
+   Magnesium and fluids: the card cannot record a repeat for 5 s (not greyed out). Amiodarone is already
+   protected by its dose-count rules. Returns the milliseconds left (0 = free). An undone dose frees the card. */
+export const A5_LOCK_MS = { adrenaline: 210000, magnesium: 5000, fluids: 5000 };
+export function lockLeft(type) {
+  const last = R.supportStats(st.s, type).last;
+  if (!last || !A5_LOCK_MS[type]) return 0;
+  const gone = Date.now() - last.at;
+  return gone >= 0 && gone < A5_LOCK_MS[type] ? A5_LOCK_MS[type] - gone : 0;
+}

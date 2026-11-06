@@ -1,6 +1,6 @@
 // A2c (owner ruling, 3 Nov 2026): fluids are offered after ANY non-shockable rhythm (PEA or Asystole) at the latest
 // rhythm check. VF/VT bring amiodarone back (magnesium if torsades was ever recorded). "Other" and "Not recorded"
-// do not change the lower slot. The engine file src/engine/rhythm-care.js is untouched; the rule is in session.js.
+// do not change the lower slot. The engine file src/engine/rhythm-care.js is untouched; the live rule is in state.js.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { openApp } from './helpers/dom-app.mjs';

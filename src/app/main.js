@@ -1,7 +1,8 @@
 /* Start-up: first save and draw, timer, service worker, reopen an unfinished rhythm sheet.
    Logic is the same as the original app files; shared memory lives in st (see state.js). */
 import './events.js'; // registers every tap/type/submit listener
-import { save, toast } from './session.js';
+import { save } from './session.js';
+import { toast } from './format.js';
 import { render, tick } from './views.js';
 import { openRhythm } from './sheets.js';
 import { st } from './state.js';
