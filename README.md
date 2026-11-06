@@ -8,6 +8,8 @@ while developing or testing.
 
 The root JavaScript files such as `core.js` and `app.js` are historical
 baselines used by tests. They are not the modules loaded by the live page.
+For a focused software review, start with the
+[software review guide](docs/16-SOFTWARE-REVIEW-GUIDE.md).
 Start with [the code map](docs/10-DEVELOPER-CODE-MAP.md) before changing code.
 The current decisions and handover are in
 [doc 07](docs/07-HANDOFF-AND-CHANGE-BACKLOG.md). The source comparison,
