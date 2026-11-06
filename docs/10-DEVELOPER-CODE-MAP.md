@@ -76,7 +76,9 @@ The cross-tab storage handler uses a different, narrower check: version 1 and
 an event array. It replaces the in-memory session and redraws, without running
 the startup recovery path. Undo restores a previous snapshot and saves it.
 Neither path is a JSON import feature or a general session repair tool. See the
-comma-weight investigation in doc 11 before changing how stored data is read.
+comma-weight investigation in doc 11 and the incomplete-session reproduction
+in [doc 17](17-STORAGE-RECOVERY-INVESTIGATION.md) before changing how stored
+data is read.
 
 ## Example traces
 

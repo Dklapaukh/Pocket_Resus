@@ -37,7 +37,8 @@ needs Playwright and Chrome in addition to the package-lock dependencies.
   which values are retained in the audit trail?
 - Can you follow startup, write failure, cross-tab updates and unreadable-data
   backup? Validation is deliberately shallow and differs across load paths;
-  the code map and comma-weight note in doc 11 explain the limits.
+  the code map, comma-weight note in doc 11 and [storage investigation](17-STORAGE-RECOVERY-INVESTIGATION.md)
+  explain the limits.
 - Can you understand timer expiry and offline cache upgrades without assuming
   that time passing records treatment? The v19 release passed desktop tests;
   the preceding v18 build, not v19, was reported as passing the phone check.
