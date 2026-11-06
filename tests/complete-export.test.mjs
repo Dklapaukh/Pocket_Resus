@@ -6,6 +6,9 @@ import { ROOT } from './helpers/engines.mjs';
 test('complete JSON export retains corrected events and audit but excludes undo snapshots', async () => {
   const app = openApp({ appDir: ROOT });
   app.window.scrollTo = () => {};
+  app.click('[data-action=weight]');
+  app.type('#weightInput', '70');
+  app.click('[data-action=save-weight]');
   app.click('[data-action=note]');
   app.type('#noteForm [name=text]', 'Pads on');
   app.submit('#noteForm');
@@ -14,6 +17,8 @@ test('complete JSON export retains corrected events and audit but excludes undo 
   app.click(`[data-edit="${original.id}"]`);
   app.type('#editForm [name=details]', 'Pads checked');
   app.submit('#editForm');
+  app.select('#logScope', 'interventions');
+  assert.doesNotMatch(app.window.document.querySelector('#main').textContent, /Patient weight updated/);
 
   let exportedBlob;
   app.window.URL.createObjectURL = blob => { exportedBlob = blob; return 'blob:test'; };
@@ -30,6 +35,7 @@ test('complete JSON export retains corrected events and audit but excludes undo 
   });
   const exported = JSON.parse(json);
   const event = exported.events.find(entry => entry.id === original.id);
+  assert.ok(exported.events.some(entry => entry.type === 'weight'));
   assert.equal(event.details, 'Pads checked');
   assert.equal(event.audit[0].before.details, 'Pads on');
   assert.equal(Object.hasOwn(exported, 'undo'), false);
