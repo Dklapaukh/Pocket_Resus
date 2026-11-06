@@ -18,8 +18,9 @@ clinical review is deferred until code and other key goals are ready.
   check also passed offline reload, weight entry, cross-tab update, an
   accelerated countdown and recovery after reload. The owner subsequently
   reported that the phone test passed on 6 November 2026; individual
-  device-check results and device details were not supplied. Later local
-  readability edits are not included in that published, phone-tested build.
+  device-check results and device details were not supplied. Later readability
+  edits are in the v19 build, which passed desktop checks but has not been
+  phone tested.
   See [doc 15](15-DEVICE-CHECK-PLAN.md).
 - The click listener was 348 lines at the start of this pass. Named action,
   recording, correction and keypad paths now make its major decisions
