@@ -1,9 +1,8 @@
 # Deferred phone and installation checks
 
-This is a prepared test plan, not a request to deploy. The project is local
-and undeployed. Decide on an appropriate test environment when the code and
-other key goals are ready. Use fictional data only and do not use this test
-build for patient care. An installed web app and service worker generally
+The owner approved publication of the prepared test build to the existing
+GitHub Pages site on 6 November 2026. Use fictional data only and do not use
+this test build for patient care. An installed web app and service worker generally
 need a suitable secure origin; a desktop localhost address is not the phone's
 localhost. Do not assume a plain LAN address is equivalent to the final
 installed environment.
