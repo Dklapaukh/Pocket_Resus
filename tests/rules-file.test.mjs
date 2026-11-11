@@ -62,9 +62,11 @@ test('double-tap locks (A5): adrenaline 3 min 30 s, magnesium and fluids 5 s', (
   assert.deepEqual(RULES.numbers.doubleTapLockMs, { adrenaline: 210000, magnesium: 5000, fluids: 5000 });
 });
 
+const AGE_GAPS = ['underOneYearKg', 'tenMaxAge', 'tenAddYears', 'tenMultiplyBy', 'fourteenFromAge', 'fourteenMaxAge', 'fourteenMultiplyBy'];
 test('reference wording is plain text, and every {gap} is one the app fills', () => {
   const gaps = { adultDoseBasis: ['adultAboveKg'], childDoseBasis: ['band'], childMagnesiumBasis: ['band'], noMagnesiumDoseBasis: ['band'],
-    childFluidBasis: ['minPerKg', 'maxPerKg'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'] };
+    childFluidBasis: ['minPerKg', 'maxPerKg'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'],
+    weightSheetAgeEstimate: AGE_GAPS, tubeSheetAgeEstimate: AGE_GAPS };
   for (const [key, text] of Object.entries(RULES.wording)) {
     assert.equal(typeof text, 'string', key);
     assert.deepEqual([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]), gaps[key] || [], key);

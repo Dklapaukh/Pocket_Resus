@@ -115,6 +115,9 @@ export const RULES = {
     amiodaroneSecondNotYetDue: 'Due after {second} shocks',
     childSecondAmiodarone: 'Seek clinical advice', // C6b: no EAS source for a child second dose
     invalidWeight: 'Enter weight above zero and no more than {maxKg} kg, with up to one decimal.',
+    // Age-estimate captions (weight sheet, tube sheet); gaps come from numbers.ageEstimate
+    weightSheetAgeEstimate: 'Under 1 year: {underOneYearKg} kg. 1–{tenMaxAge} years: (age + {tenAddYears}) × {tenMultiplyBy}. {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy}. CPG 7.2; estimates may underestimate. Excludes newborn resuscitation.',
+    tubeSheetAgeEstimate: 'Under 1 year: {underOneYearKg} kg. Ages 1–{tenMaxAge}: (age + {tenAddYears}) × {tenMultiplyBy} kg. Ages {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy} kg. Estimates may underestimate actual weight.',
   },
 
   /* ===== PART 3: CHECKLISTS AND REVERSIBLE CAUSES (filled in step 3a, sub-step 5) ===== */

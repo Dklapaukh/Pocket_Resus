@@ -64,7 +64,7 @@ function saveWeight() {
   commit(() => {
     Object.assign(st.s, {
       weight: String(+w),
-      group: +w <= 40 ? 'Child' : 'Adult',
+      group: +w <= R.RULES.numbers.weight.adultAboveKg ? 'Child' : 'Adult',
       weightSource: source,
       age,
     });

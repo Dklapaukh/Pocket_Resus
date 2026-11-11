@@ -157,7 +157,7 @@ export function selectRhythm(rhythm) {
   const energy = $('shockEnergy')?.value || '',
     outcome = ctx.outcome;
   if (rhythm === 'Torsades' && outcome === 'shock') {
-    if (energy !== '' && (!Number.isFinite(+energy) || +energy <= 0 || +energy > 1000)) {
+    if (R.invalidEnergy(energy)) {
       error('Check the recorded energy.');
       return;
     }

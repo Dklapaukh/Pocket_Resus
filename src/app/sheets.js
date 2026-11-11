@@ -60,14 +60,10 @@ export function openRhythm(outcome) {
     noshock: 'Record no-shock cycle',
     rosc: 'Record ROSC',
   };
-  const options = outcome === 'shock'
-    ? ['VF', 'VT', 'Torsades']
-    : outcome === 'noshock'
-      ? ['PEA', 'Asystole', 'Other', 'Unknown']
-      : ['Sinus rhythm', 'Organised rhythm', 'AF', 'Other', 'Unknown'];
+  const options = R.RULES.numbers.rhythms[outcome];
   const isShock = outcome === 'shock';
   const energy = isShock
-    ? '<label>Energy delivered (J) · optional<input id="shockEnergy" type="number" inputmode="numeric" min="1" max="1000" value="' + (R.shockEnergy(st.s) ?? '') + '" placeholder="Not recorded"></label>'
+    ? '<label>Energy delivered (J) · optional<input id="shockEnergy" type="number" inputmode="numeric" min="1" max="' + R.RULES.numbers.shock.maxRecordableJ + '" value="' + (R.shockEnergy(st.s) ?? '') + '" placeholder="Not recorded"></label>'
     : '';
   const rhythms = isShock
     ? rhythmImages()
@@ -88,8 +84,8 @@ export function openWeight() {
     'Patient weight',
     `<label>Weight (kg)<input id="weightInput" type="text" inputmode="decimal" value="${esc(st.s.weight)}" autocomplete="off"></label>` +
       `<div class="number-pad">${numberKeys}</div>` +
-      `<details><summary>Estimate weight from age</summary><label>Age in years<input id="ageInput" type="number" inputmode="decimal" min="0.01" max="14" step="any" value="${esc(st.s.age)}"></label>` +
-      `<button data-action="estimate">Use age estimate</button><p class="caption">Under 1 year: 5 kg. 1–10 years: (age + 4) × 2. 11–14: age × 3. CPG 7.2; estimates may underestimate. Excludes newborn resuscitation.</p></details>` +
+      `<details><summary>Estimate weight from age</summary><label>Age in years<input id="ageInput" type="number" inputmode="decimal" min="0.01" max="${R.RULES.numbers.ageEstimate.elevenToFourteenYears.maxAge}" step="any" value="${esc(st.s.age)}"></label>` +
+      `<button data-action="estimate">Use age estimate</button><p class="caption">${R.wording('weightSheetAgeEstimate', R.ageEstimateGaps())}</p></details>` +
       `<p id="weightBasis" class="caption">${esc(st.s.weightSource)}</p>` +
       `<p id="weightPadPrompt" class="pads-entry" ${R.needsPaediatricPads(st.s.weight) ? '' : 'hidden'}>▰ ▰ Use paediatric pads · 100 J or less</p>` +
       `<button class="primary" data-action="save-weight">Use weight</button>`,
@@ -400,7 +396,7 @@ export function editEvent(id) {
       '<label>Route<input name="route" value="' + esc(event.route || 'IV') + '" required></label>'
     : '';
   const energyField = event.type === 'shock'
-    ? '<label>Energy (J)<input name="energy" type="number" min="1" max="1000" inputmode="numeric" value="' + esc(event.energy || '') + '"></label>'
+    ? '<label>Energy (J)<input name="energy" type="number" min="1" max="' + R.RULES.numbers.shock.maxRecordableJ + '" inputmode="numeric" value="' + esc(event.energy || '') + '"></label>'
     : '';
   const stateChange = ['start', 'pause', 'resume', 'rearrest', 'end', 'rosc'].includes(event.type);
   const voidControl = stateChange

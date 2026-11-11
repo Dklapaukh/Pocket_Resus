@@ -27,6 +27,8 @@ const ADDED_BY_REWRITE = ['childBand', 'invalidEnergy', 'rhythmDetails'];
 // plus the rule set, its wording helper and the saved-session check. Listed by name so nothing slips in.
 const ADDED_BY_STEP_2 = ['RULES', 'wording', 'restoreSaved', 'latestLowerRhythm', 'lowerCard', 'amiodaroneDue', 'amiodaroneDosesComplete',
   'childAmiodaroneAdvice', 'childSecondAmiodarone', 'secondAmiodaroneEarly', 'doseFor', 'lockLeft'];
+// Doc 18 step 3a (12 Nov 2026): helpers that fill rules-file wording and calculate reference values.
+const ADDED_BY_STEP_3A = ['ageEstimateGaps'];
 test('ported engine exposes the same functions and constants as the original (plus the named helpers)', () => {
-  assert.deepEqual(Object.keys(ported).sort(), [...Object.keys(original), ...ADDED_BY_REWRITE, ...ADDED_BY_STEP_2].sort());
+  assert.deepEqual(Object.keys(ported).sort(), [...Object.keys(original), ...ADDED_BY_REWRITE, ...ADDED_BY_STEP_2, ...ADDED_BY_STEP_3A].sort());
 });

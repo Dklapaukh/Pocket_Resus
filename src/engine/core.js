@@ -127,6 +127,20 @@ export function estimate(age) {
   return years * rules.elevenToFourteenYears.multiplyBy;
 }
 
+/* The numbers the age-estimate wording shows, all taken from numbers.ageEstimate. */
+export function ageEstimateGaps() {
+  const { underOneYearKg, oneToTenYears: ten, elevenToFourteenYears: fourteen } = RULES.numbers.ageEstimate;
+  return {
+    underOneYearKg,
+    tenMaxAge: ten.maxAge,
+    tenAddYears: ten.addYears,
+    tenMultiplyBy: ten.multiplyBy,
+    fourteenFromAge: ten.maxAge + 1,
+    fourteenMaxAge: fourteen.maxAge,
+    fourteenMultiplyBy: fourteen.multiplyBy,
+  };
+}
+
 /* ---------- Shock energy ---------- */
 
 /* Shock energy reference in joules (change A1): the child band's energy, or the adult energy above

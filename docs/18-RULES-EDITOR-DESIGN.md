@@ -12,6 +12,7 @@ goes live.
 | # | Date | Decision |
 |---|---|---|
 | 1 | 12 Nov 2026 | **One rule set per service holds everything** (numbers AND guideline text), approved together as one package (Option A). **Before any editor is built**, every remaining rule and guideline extract is moved out of the app code into the rule set and clearly partitioned (step 3a below). |
+| 2 | 12 Nov 2026 | Typed-in 1000 J (`session.js`, two `sheets.js` fields) now uses `shock.maxRecordableJ`; age-estimate captions (weight and tube sheets) and the age box limit built from `ageEstimate` (new engine helper `ageEstimateGaps`); rhythm choices from `rhythms`; Child/Adult label from `adultAboveKg`. Screens identical. 164 tests pass. Left for later: the edit sheet's rhythm lists (different order from the rules lists). |
 | 2 | 12 Nov 2026 | **Five parts, divided by kind, each with its own checks** (Option A): 1 clinical numbers and rules; 2 clinical wording; 3 checklists and reversible causes; 4 equipment; 5 sources. Each number is stored once; text gets numbers only through `{gaps}`. |
 
 ## Step 3a: gather and partition (before the editor)
