@@ -39,7 +39,8 @@ so rules can be updated, and new rule sets made for other services, without touc
 3. **Next: rules editor (design in progress, doc 18, branch `rules-editor`).** Owner 12 Nov 2026:
    one rule set per service holds numbers AND guideline text, approved together. First (3a) move
    every remaining rule and guideline extract out of the app code into the rule set, clearly
-   partitioned; then design and build the editor.
+   partitioned into five parts (owner, decision 2); then design and build the editor.
+   **Next action: step 3a, sub-step 0** (plan in doc 18).
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner
