@@ -36,11 +36,10 @@ Goal: readable, auditable code with all clinical rules in a rules file, then a *
 so rules can be updated, and new rule sets made for other services, without touching code.
 1. **Done:** readable engine + rules file for engine numbers (11 Nov).
 2. **Done:** app-layer clinical rules moved into the engine / rules file; storage fixes (12 Nov).
-3. **Next (started 12 Nov 2026, new chat):** design the rules editor (plain data in, checks that block impossible values, a "what
-   changed" view, automatic tests per rule set, owner approval before a rule set goes live).
-   Open question for the design: whether the long guideline extracts (checklists, guidance
-   pop-ups, RSI and tube references, still text in `data.js`/`sheets.js`/`views.js`) belong in
-   the editable rule set.
+3. **Next: rules editor (design in progress, doc 18, branch `rules-editor`).** Owner 12 Nov 2026:
+   one rule set per service holds numbers AND guideline text, approved together. First (3a) move
+   every remaining rule and guideline extract out of the app code into the rule set, clearly
+   partitioned; then design and build the editor.
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner
