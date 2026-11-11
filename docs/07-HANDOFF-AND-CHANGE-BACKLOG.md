@@ -47,7 +47,9 @@ so rules can be updated, and new rule sets made for other services, without touc
    (five parts); screens proved identical to v21 (278 recorded screens); lock-in test stops them
    creeping back. 182 tests pass. **Sub-step 9:** owner chose to publish first, then phone-check
    the live app (published as v22, 12 Nov 2026). **Next: owner's v22 phone check, and the
-   remaining editor decisions in doc 18, one at a time.**
+   remaining editor decisions in doc 18, one at a time.** Owner 12 Nov 2026: format JSON (doc 18
+   decision 9); editor must cover any clinically relevant function plus visual settings
+   (decision 10), which the current plan does not, so **re-plan in a new chat first**.
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner
