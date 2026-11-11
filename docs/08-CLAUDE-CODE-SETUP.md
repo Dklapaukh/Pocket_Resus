@@ -1,6 +1,6 @@
 # Using Claude Code for this project (plain-English guide)
 
-**Only applies if the owner subscribes to a paid Claude plan. Until then, keep using chat + zip upload.**
+**Not currently needed:** the owner works in the Claude app with the GitHub repo attached, where Claude can edit, test and push directly (11 Nov 2026).
 
 ## Why
 Claude Code works directly on your repo and your computer: it runs the tests itself and can save to GitHub, so no more zip files or uploads. Chat is still best for discussions and clinical decisions.

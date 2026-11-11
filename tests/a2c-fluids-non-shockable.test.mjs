@@ -68,8 +68,9 @@ test('A2c: torsades history: asystole shows fluids, then magnesium (never amioda
 test('A2c: the engine file is untouched (R.careMode still the original, PEA-only)', async () => {
   const { readFileSync } = await import('node:fs');
   const src = readFileSync(ROOT + '/src/engine/rhythm-care.js', 'utf8');
-  assert.ok(src.includes("if(rhythm==='PEA')return 'fluids';"));
-  assert.ok(!src.includes('Asystole\'].includes(e.rhythm)'));
+  // Updated 11 Nov 2026 for the readable engine rewrite: same check, new formatting.
+  assert.ok(src.includes("if (rhythm === 'PEA') return 'fluids';"));
+  assert.ok(!src.includes("'Asystole'].includes(event.rhythm)"));
 });
 
 test('A2c: the fluids card names the actual rhythm (never says PEA after asystole)', () => {

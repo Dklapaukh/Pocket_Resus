@@ -1,42 +1,114 @@
-/* PORTED UNCHANGED from the original rhythm-care.js (Stage 1). Only the wrapper differs:
-   the old global-script wrapper became an ES module. Logic lines are identical;
-   tests/engine-fidelity.test.mjs proves it. Do not edit clinical logic here. */
-/* NZCPG EAS 3.14 / EAS 14.27 checked 28 October 2026; EAS 7.2 packaged tables.
-   Pure, event-derived state: corrections, voids and undo remain authoritative. */
+/* RHYTHM CARE: torsades, magnesium and fluid references, and two-step rhythm checks.
+
+   Rewritten for readability on 11 Nov 2026 (owner-approved); results are identical to the original
+   (see tests/side-by-side.test.mjs). Clinical numbers come from src/rules/nz-eas.js.
+   Everything is worked out from the recorded events, so corrections, voids and undo always win. */
+import { RULES } from '../rules/nz-eas.js';
 import * as R from './core.js';
-function hasTorsades(s){return s.rhythm==='Torsades'||R.active(s).some(e=>e.rhythm==='Torsades');}
-function careMode(s){
- const relevant=R.active(s).filter(e=>['shock','noshock','rhythm','rosc'].includes(e.type)&&['PEA','VF','VT','Torsades'].includes(e.rhythm)).sort((a,b)=>a.at-b.at);
- const rhythm=relevant.at(-1)?.rhythm||s.rhythm;
- if(rhythm==='PEA')return 'fluids';
- return hasTorsades(s)?'magnesium':'amiodarone';
+
+/* True if torsades is the current rhythm or appears on any active event. */
+export function hasTorsades(session) {
+  return session.rhythm === 'Torsades' || R.active(session).some((event) => event.rhythm === 'Torsades');
 }
-function magnesiumReference(s){
- if(!String(s.weight).trim())return {dose:10,basis:'Adult · EAS 3.14 / EAS 14.27'};
- if(!R.validWeight(s.weight))return {dose:null,basis:'Enter a valid weight for a dose reference'};
- if(!R.isPaediatric(s))return {dose:10,basis:'Adult · EAS 3.14 / EAS 14.27'};
- const band=[5,10,20,30,40].find(w=>+s.weight<=w);
- return {dose:({20:4,30:6,40:8})[band]??null,basis:band<=10?'No magnesium dose listed for the '+band+' kg CPG band · seek clinical advice':'Child · '+band+' kg CPG band · EAS 7.2'};
+
+/* ORIGINAL lower-card rule (fluids after PEA only). The live app no longer uses this: it uses
+   careMode() in src/app/state.js, which adds Asystole (A2c) and Other (A7). Kept so the
+   side-by-side test can still compare against the original engine. */
+export function careMode(session) {
+  const relevant = R.active(session)
+    .filter((event) => ['shock', 'noshock', 'rhythm', 'rosc'].includes(event.type) && ['PEA', 'VF', 'VT', 'Torsades'].includes(event.rhythm))
+    .sort((a, b) => a.at - b.at);
+  const rhythm = relevant.at(-1)?.rhythm || session.rhythm;
+  if (rhythm === 'PEA') return 'fluids';
+  return hasTorsades(session) ? 'magnesium' : 'amiodarone';
 }
-function fluidReference(s){
- if(!R.validWeight(s.weight))return {min:null,max:null,basis:'Enter weight for a volume reference'};
- return R.isPaediatric(s)?{min:20*(+s.weight),max:40*(+s.weight),basis:'20–40 mL/kg · EAS 3.14'}:{min:1000,max:2000,basis:'Adult · EAS 3.14'};
+
+const ADULT_MAGNESIUM = { basis: 'Adult · EAS 3.14 / EAS 14.27' };
+
+/* Magnesium dose reference in mmol. No weight or above 40 kg = adult.
+   Known quirk, kept on purpose: the child band here is read WITHOUT the decimal-comma
+   conversion, so a saved weight like "15,5" finds no band (doc 11, comma-weight note). */
+export function magnesiumReference(session) {
+  if (!String(session.weight).trim()) return { dose: RULES.adult.magnesiumMmol, ...ADULT_MAGNESIUM };
+  if (!R.validWeight(session.weight)) return { dose: null, basis: 'Enter a valid weight for a dose reference' };
+  if (!R.isPaediatric(session)) return { dose: RULES.adult.magnesiumMmol, ...ADULT_MAGNESIUM };
+  const band = R.childBand(+session.weight);
+  const bandKg = band?.maxKg;
+  const basis = bandKg <= 10
+    ? 'No magnesium dose listed for the ' + bandKg + ' kg CPG band · seek clinical advice'
+    : 'Child · ' + bandKg + ' kg CPG band · EAS 7.2';
+  return { dose: band?.magnesiumMmol ?? null, basis };
 }
-function supportStats(s,type){const events=R.active(s).filter(e=>e.type===type),last=events.slice().sort((a,b)=>a.at-b.at).at(-1);return {count:events.length,last,total:events.reduce((sum,e)=>sum+(e.unit==='mL'&&Number.isFinite(+e.dose)?+e.dose:0),0)};}
-function startOutcome(s,outcome,now=Date.now()){
- if(!['shock','noshock'].includes(outcome)||!R.canRhythmCheck(s,now))return null;
- R.snapshot(s);const event=R.add(s,outcome,outcome==='shock'?'Shock delivered':'No shock · rhythm check','Rhythm not recorded',now,{rhythm:'Unknown',energy:''});
- s.rhythm='Unknown';R.begin(s,now);s.pendingRhythm={id:event.id,outcome,at:now};return event.id;
+
+/* Fluid volume reference in mL: adult range, or 20-40 mL/kg of the ACTUAL child weight.
+   Same comma quirk as magnesium: "15,5" gives NaN (doc 11). */
+export function fluidReference(session) {
+  if (!R.validWeight(session.weight)) return { min: null, max: null, basis: 'Enter weight for a volume reference' };
+  if (R.isPaediatric(session)) {
+    const kg = +session.weight;
+    return { min: RULES.child.fluidsMinMlPerKg * kg, max: RULES.child.fluidsMaxMlPerKg * kg, basis: '20–40 mL/kg · EAS 3.14' };
+  }
+  return { min: RULES.adult.fluidsMinMl, max: RULES.adult.fluidsMaxMl, basis: 'Adult · EAS 3.14' };
 }
-function completeOutcome(s,id,rhythm,energy=''){
- const e=s.events.find(e=>e.id===id&&!e.voided),allowed=e?.type==='shock'?['VF','VT','Torsades']:['PEA','Asystole','Other','Unknown'];
- if(!e||!['shock','noshock'].includes(e.type)||s.pendingRhythm?.id!==id||!allowed.includes(rhythm)||(energy!==''&&(!Number.isFinite(+energy)||+energy<=0||+energy>1000)))return false;
- R.snapshot(s);e.rhythm=rhythm;e.energy=energy;e.details=rhythm+(e.type==='shock'?' · '+(energy?energy+' J':'energy not recorded'):'');s.rhythm=rhythm;delete s.pendingRhythm;return true;
+
+/* For one medicine type: how many active doses, the latest one, and the total mL recorded. */
+export function supportStats(session, type) {
+  const events = R.active(session).filter((event) => event.type === type);
+  const last = events.slice().sort((a, b) => a.at - b.at).at(-1);
+  const total = events.reduce((sum, event) => sum + (event.unit === 'mL' && Number.isFinite(+event.dose) ? +event.dose : 0), 0);
+  return { count: events.length, last, total };
 }
-function addPreAppShock(s,now=Date.now()){
- return R.add(s,'shock','Shock delivered','Before app opened · time/details not recorded',s.appStart-1,{rhythm:'Unknown',energy:'',preApp:true,timeUnknown:true,needsReview:true,recordedAt:now});
+
+/* Step 1 of a two-step rhythm check: record shock / no shock now (rhythm still unknown) and start
+   the next cycle. Returns the new event id, or null if a rhythm check is not due. */
+export function startOutcome(session, outcome, now = Date.now()) {
+  if (!['shock', 'noshock'].includes(outcome) || !R.canRhythmCheck(session, now)) return null;
+  R.snapshot(session);
+  const title = outcome === 'shock' ? 'Shock delivered' : 'No shock · rhythm check';
+  const event = R.add(session, outcome, title, 'Rhythm not recorded', now, { rhythm: 'Unknown', energy: '' });
+  session.rhythm = 'Unknown';
+  R.begin(session, now);
+  session.pendingRhythm = { id: event.id, outcome, at: now };
+  return event.id;
 }
-function checklistPrompt(s,now=Date.now()){
- return s.phase==='Active'&&s.deadline!==null&&R.timing(s,now).left>=90000&&R.active(s).some(e=>e.type==='adrenaline');
+
+/* Step 2: add the rhythm (and energy) to the event from step 1. Returns false if refused:
+   not the pending event, a rhythm not allowed for its outcome, or an invalid energy. */
+export function completeOutcome(session, id, rhythm, energy = '') {
+  const event = session.events.find((candidate) => candidate.id === id && !candidate.voided);
+  const allowed = event?.type === 'shock' ? RULES.rhythms.shock : RULES.rhythms.noshock;
+  const refused = !event
+    || !['shock', 'noshock'].includes(event.type)
+    || session.pendingRhythm?.id !== id
+    || !allowed.includes(rhythm)
+    || R.invalidEnergy(energy);
+  if (refused) return false;
+  R.snapshot(session);
+  event.rhythm = rhythm;
+  event.energy = energy;
+  event.details = R.rhythmDetails(event.type, rhythm, energy);
+  session.rhythm = rhythm;
+  delete session.pendingRhythm;
+  return true;
 }
-export {addPreAppShock,checklistPrompt,startOutcome,completeOutcome,hasTorsades,careMode,magnesiumReference,fluidReference,supportStats};
+
+/* "+ Previous shock": a shock given before the app was opened. Time and details are unknown,
+   so it is placed just before app start and flagged for review. */
+export function addPreAppShock(session, now = Date.now()) {
+  return R.add(session, 'shock', 'Shock delivered', 'Before app opened · time/details not recorded', session.appStart - 1, {
+    rhythm: 'Unknown',
+    energy: '',
+    preApp: true,
+    timeUnknown: true,
+    needsReview: true,
+    recordedAt: now,
+  });
+}
+
+/* Offer the checklist during a running cycle with enough time left, once adrenaline has been given. */
+export function checklistPrompt(session, now = Date.now()) {
+  return session.phase === 'Active'
+    && session.deadline !== null
+    && R.timing(session, now).left >= RULES.timing.checklistPromptMinLeftMs
+    && R.active(session).some((event) => event.type === 'adrenaline');
+}

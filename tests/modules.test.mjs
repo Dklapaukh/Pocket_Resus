@@ -18,7 +18,7 @@ test('sw.js: every offline file exists', () => {
   for (const f of files) if (f !== './') assert.ok(existsSync(ROOT + '/' + f), f + ' missing');
 });
 test('sw.js: every module and stylesheet the page uses is in the offline list', () => {
-  const need = [...readdirSync(ROOT + '/src/app').map(f => 'src/app/' + f), ...readdirSync(ROOT + '/src/engine').map(f => 'src/engine/' + f),
+  const need = [...readdirSync(ROOT + '/src/app').map(f => 'src/app/' + f), ...readdirSync(ROOT + '/src/engine').map(f => 'src/engine/' + f), ...readdirSync(ROOT + '/src/rules').map(f => 'src/rules/' + f),
     ...[...html.matchAll(/href="([^"]+\.css)"/g)].map(m => m[1])];
   for (const f of need) assert.ok(files.includes(f), f + ' not cached for offline use');
 });

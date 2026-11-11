@@ -10,9 +10,9 @@ is planned separately. Use fictional data only.
 
 1. Read the [developer code map](10-DEVELOPER-CODE-MAP.md), especially session
    storage and the example traces. `index.html` loads `src/app/main.js`.
-2. Read [the engine guide](12-READING-THE-ENGINE.md). The compact engine source
-   is intentional: an exact-line test pins it to the original logic, with the
-   separately approved A1 energy change. The root JavaScript files are test
+2. Read [the engine and rules guide](12-READING-THE-ENGINE.md). Clinical numbers
+   are in `src/rules/nz-eas.js`; the engine is proven equivalent to the original
+   by side-by-side, golden and rules-file tests. The root JavaScript files are test
    baselines, not the code loaded by the live page.
 3. See the [readability assessment](14-READABILITY-ASSESSMENT.md) for the
    author's subjective assessment and known limits, and the [clinical rule
@@ -23,7 +23,7 @@ is planned separately. Use fictional data only.
 Follow the [README](../README.md#tests). Use an LF-preserving checkout: some
 tests deliberately compare exact source lines or baseline file hashes. The
 full Node suite checks behaviour, displayed output, original engine fidelity,
-storage and several event workflows. Do not weaken the fidelity test or update
+storage and several event workflows. Do not weaken the side-by-side test or update
 golden files just to make a refactor pass. The optional local Chrome script
 needs Playwright and Chrome in addition to the package-lock dependencies.
 
@@ -46,4 +46,4 @@ needs Playwright and Chrome in addition to the package-lock dependencies.
 Concrete confusing locations, incorrect comments, missing tests and suggested
 improvements are more useful than a numerical readability score. Keep
 clinical questions separate from software findings and preserve recorded
-behaviour and the engine fidelity check while investigating.
+behaviour and the engine equivalence checks while investigating.

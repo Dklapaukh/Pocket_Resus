@@ -8,9 +8,10 @@ clinical review is deferred until code and other key goals are ready.
 ## Evidence so far
 
 - The entry point, state, event recording, rendering, offline cache and
-  engine have a [code map](10-DEVELOPER-CODE-MAP.md). The compact engine has
-  a separate [reading guide](12-READING-THE-ENGINE.md); its exact-line
-  fidelity test remains intact.
+  engine have a [code map](10-DEVELOPER-CODE-MAP.md). Since 11 Nov 2026 the
+  engine is readable code with its clinical numbers in `src/rules/nz-eas.js`
+  ([guide](12-READING-THE-ENGINE.md)); equivalence is proven by side-by-side,
+  golden and rules-file tests.
 - The application module graph is now acyclic. The service worker still
   caches the same module paths. A test checks for application import cycles,
   existing tests check offline file-list completeness, and a simulated worker
@@ -41,9 +42,10 @@ clinical review is deferred until code and other key goals are ready.
   the tutorial workflow also remain substantial. A fresh reader should
   trace representative cases and identify any genuinely confusing remainder;
   splitting solely to reduce line counts can obscure execution order.
-- The original engine remains compact because its exact logic lines are
-  deliberately pinned. The guide helps readers but is not the same as
-  readable engine source. Do not relax the fidelity check to improve a score.
+- Clinical rules still live partly in the app layer (amiodarone gate, lower-card
+  choice, child second dose, locks, wording). Moving them into the engine and
+  rules file is the next step (doc 07). Fresh assessment 11 Nov 2026: about 7/10
+  for clinical audit until that is done.
 - Golden scenarios and targeted tests do not exhaust all possible state,
   browser, device, and timing combinations. The source comparisons are not
   independent clinical review. See the [review brief](13-INDEPENDENT-REVIEW-BRIEF.md).

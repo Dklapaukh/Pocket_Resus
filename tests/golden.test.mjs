@@ -21,6 +21,8 @@ test('ported engine matches the golden file except shock-energy / pads values (A
   assert.ok(changed.length > 0, 'sanity: A1 does change some energy values');
   for (const p of changed) assert.match(p, /joules|energy|padsPaed|pads/i, 'unexpected change at ' + p);
 });
-test('ported engine exposes exactly the same functions and constants as the original', () => {
-  assert.deepEqual(Object.keys(ported).sort(), Object.keys(original).sort());
+// The readable rewrite (11 Nov 2026) shares three small helpers between engine files; nothing else may be added or lost.
+const ADDED_BY_REWRITE = ['childBand', 'invalidEnergy', 'rhythmDetails'];
+test('ported engine exposes the same functions and constants as the original (plus the named helpers)', () => {
+  assert.deepEqual(Object.keys(ported).sort(), [...Object.keys(original), ...ADDED_BY_REWRITE].sort());
 });

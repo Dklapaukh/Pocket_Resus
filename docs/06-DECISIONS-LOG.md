@@ -21,6 +21,10 @@
 | 10 | **A2b amiodarone gate (owner rule, 3 Nov 2026):** card opens at 3 shocks (second dose at 6), counting previous shocks, whatever the current rhythm; torsades at any point = magnesium keeps the lower slot, amiodarone never; PEA at the latest check = fluids, and a later VF/VT can bring amiodarone back if criteria are met | Built in `amioDue()` (`views.js`); engine unchanged; 10 tests |
 | 12 | **A6 (owner, 4 Nov 2026): build it, with a message.** A saved session the app cannot read is copied to `resus-pocket-v1-unreadable-backup` before a new case starts, and a short message is shown (a different one if the copy cannot be stored) | Built in `state.js` + `main.js`; one backup only; no restore screen; 6 tests |
 
+## 11 Nov 2026
+- **Engine safeguard replaced (owner-approved):** the exact-line fidelity and syntax-tree tests were retired so the engine could be rewritten readably with clinical numbers in `src/rules/nz-eas.js`. Equivalence is now proven by 3000 side-by-side random sequences against the original engine, the golden recordings, and a rules-file test against the EAS tables.
+- **A7:** "Other" triggers fluids. **Not added:** fentanyl hypertension threshold; extra amiodarone contraindications.
+
 ## Still open
 | ID | Question | Status |
 |---|---|---|

@@ -54,8 +54,8 @@ exhaustive source-to-rule audit or evidence of independent clinical validation.
 `docs/11-CLINICAL-RULE-INVENTORY.md` maps clinical references and recording paths, with review gaps. `docs/06-DECISIONS-LOG.md` and `docs/07-HANDOFF-AND-CHANGE-BACKLOG.md` record
 decisions and history. Later dated decisions supersede older narrative notes.
 
-For a readable walkthrough of the fidelity-pinned compact engine, see
-[Reading the engine](12-READING-THE-ENGINE.md).
+The engine (`src/engine/`) is readable code; all its clinical numbers are in the rules file
+`src/rules/nz-eas.js`. See [the engine and rules guide](12-READING-THE-ENGINE.md).
 
 ## Session storage and recovery
 
@@ -116,12 +116,13 @@ data is read.
 
 ## Safe refactoring
 
-- Keep the existing line-by-line engine fidelity check intact until an equally
-  strong, explicitly reviewed replacement exists. It currently requires the
-  compact original logic lines, except the pinned A1 energy change.
+- Engine changes must keep `tests/side-by-side.test.mjs` (3000 random sequences
+  against the original engine), the golden tests and `tests/rules-file.test.mjs`
+  passing. These replaced the exact-line fidelity check on 11 Nov 2026.
 - Run the full suite before and after a coherent change. Read failing tests;
   do not regenerate golden outputs to hide differences.
 - Keep event occurrence, displayed suggestions, clinical actions actually
   recorded, corrections and undo distinct. Preserve offline and storage paths.
 - A future guideline pack needs its own version, source, reviewed rules and
-  scenario checks. The current app does not yet implement editable packs.
+  scenario checks. Engine numbers are already in `src/rules/nz-eas.js`; rules in the
+  app layer still need moving there before editable packs are possible (doc 07).

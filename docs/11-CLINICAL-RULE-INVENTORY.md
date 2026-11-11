@@ -180,7 +180,7 @@ the current startup and cross-tab paths accept session objects without
 normalizing every field. We have not established whether any genuine saved
 session can contain such a weight; this is a software compatibility question,
 not a clinical ruling.
-The fidelity-pinned engine and existing behavior have not been changed.
+The engine and existing behavior have not been changed.
 Investigation on 6 November: the current app has JSON export but no session
 JSON import or restore control. Startup and cross-tab updates load version 1
 session objects directly; undo restores an earlier session snapshot. Therefore
@@ -190,7 +190,7 @@ entry produces one. The five historical `app.js` revisions available in this
 checkout all normalize comma input and save `String(+w)`; this does not prove
 what every earlier or separately distributed build did, or what exists on real
 devices. No real saved session was inspected. Changing load behavior or the
-fidelity-pinned calculations would change behavior for this constructed state;
+engine calculations would change behavior for this constructed state;
 leave it documented rather than assuming a migration is needed. A future fix
 must consider startup, cross-tab updates and undo snapshots together, preserve
 recorded events and audit history, and verify both magnesium and fluids.
