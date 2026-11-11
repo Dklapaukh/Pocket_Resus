@@ -40,7 +40,7 @@ import {
 } from './session.js';
 import { checkStatus, openCycleLog, referenceSheet, render, tick } from './views.js';
 import { $, KEY, R } from './base.js';
-import { ARREST_CHECKLISTS, ARREST_EQUIPMENT, CAUSES } from './data.js';
+import { ARREST_EQUIPMENT } from './data.js';
 import { fitNote, fitNotes, formatGuidelineReference, local, toast } from './format.js';
 import { st, torsades } from './state.js';
 
@@ -489,7 +489,7 @@ document.addEventListener('change', (e) => {
     const key = e.target.dataset.check,
       checked = e.target.checked,
       [id, i] = key.split(':'),
-      list = ARREST_CHECKLISTS.find((c) => c.id === id);
+      list = R.RULES.checklists.lists.find((c) => c.id === id);
     commit(() => {
       R.add(
         st.s,
@@ -733,7 +733,7 @@ document.addEventListener('click', (e) => {
   }
   if (b.dataset.reference) referenceSheet(b.dataset.reference);
   if (b.dataset.causeGuide) {
-    const c = CAUSES.find((x) => x.id === b.dataset.causeGuide);
+    const c = R.RULES.checklists.causes.find((x) => x.id === b.dataset.causeGuide);
     sheet(c.name, `<h3>${c.plain}</h3><p>${c.text}</p>`);
   }
   if (b.hasAttribute('data-save-age')) {

@@ -10,7 +10,6 @@ import {
   normalizeGuidelineReferences,
   time,
 } from './format.js';
-import { ARREST_CHECKLISTS, CAUSES } from './data.js';
 import { sheet } from './sheets.js';
 import { finished, logRows, st, torsades } from './state.js';
 
@@ -242,7 +241,7 @@ export function checkStatus(key) {
 
 /* The checklist screen. */
 export function checksView() {
-  const list = ARREST_CHECKLISTS.find((c) => c.id === st.checklist);
+  const list = R.RULES.checklists.lists.find((c) => c.id === st.checklist);
   const done = list.items.filter((_, i) => checkStatus(st.checklist + ':' + i)?.checked).length;
   const items = list.items.map((text, i) => {
     const key = list.id + ':' + i;
@@ -511,11 +510,11 @@ export function tickSupport(type, enabled) {
 
 /* The Guidance tab: a button for each checklist. */
 export function guidanceGrid() {
-  const checklistButtons = ARREST_CHECKLISTS
+  const checklistButtons = R.RULES.checklists.lists
     .map((c) => `<button data-open-check="${c.id}">☑ ${c.label}</button>`).join('');
   const weight = st.s.weight ? esc(st.s.weight) + ' kg' : 'Enter weight';
   const age = st.s.age ? esc(st.s.age) + ' years' : 'Age criteria';
-  const causeButtons = CAUSES
+  const causeButtons = R.RULES.checklists.causes
     .map((c) => `<button data-cause-guide="${c.id}">${c.name}</button>`).join('');
   return `<h2>Guidance</h2><div class="guidance-grid">${checklistButtons}` +
     `<button data-reference="rsi">RSI doses<br><small>${weight}</small></button>` +

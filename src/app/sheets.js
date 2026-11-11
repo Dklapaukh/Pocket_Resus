@@ -11,7 +11,7 @@ import {
   time,
   toast,
 } from './format.js';
-import { ARREST_EQUIPMENT, ARREST_SITES, CARDIAC_CPG, CAUSES, COLOURS, EXPLAIN_ME_SLIDES, MAGNESIUM_CPG } from './data.js';
+import { ARREST_EQUIPMENT, ARREST_SITES, CARDIAC_CPG, COLOURS, EXPLAIN_ME_SLIDES, MAGNESIUM_CPG } from './data.js';
 import { finished, logRows, st, torsades } from './state.js';
 
 /* Open the pop-up with a title and content. ctx records what the pop-up is for (st.sheetContext). */

@@ -1,7 +1,6 @@
 /* Shared in-memory session and screen state, including loading a saved session
    at startup. Owner-approved recovery and display rules are marked below. */
 import { R, KEY, BACKUP_KEY, REPAIRED_BACKUP_KEY } from './base.js';
-import { ARREST_CHECKLISTS } from './data.js';
 
 /* Everything the app remembers while it runs, in one object (was loose variables). */
 /* st.s is the current patient/session (events, weight, phase, timers). The other fields are
@@ -64,7 +63,7 @@ if (st.s.phase === 'Active' && st.s.deadline === null)
 
 /* Log entries for the chosen scope and checklist display; voided ones optional. */
 export function logRows(includeVoided = true) {
-  return R.logEntries(st.s, ARREST_CHECKLISTS, {
+  return R.logEntries(st.s, R.RULES.checklists.lists, {
     scope: st.logScope,
     checklists: st.checklistDisplay,
     includeVoided,
