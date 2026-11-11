@@ -92,11 +92,11 @@ export function recordSupport(type, confirmed = false) {
   }
   const ref = R.magnesiumReference(st.s),
     stats = R.supportStats(st.s, type);
-  if (ref.dose === null || stats.count >= 2) return;
+  if (ref.dose === null || stats.count >= R.RULES.numbers.magnesium.maxDoses) return;
   if (stats.count && !confirmed) {
     sheet(
       'Repeat magnesium?',
-      `${torsadesSnippet()}<p>One dose is already recorded. Record a second dose only if it was given for persistent or recurrent torsades.</p>` +
+      `${torsadesSnippet()}<p>${R.guideText('repeatMagnesium')}</p>` +
       `<button class="primary" data-confirm-magnesium>Record repeat ${ref.dose} mmol IV</button>` +
       `<button class="primary" data-close>Back</button>`,
       { kind: 'repeat-magnesium' },
@@ -163,7 +163,7 @@ export function selectRhythm(rhythm) {
     }
     sheet(
       'Confirm Torsades',
-      `${torsadesSnippet()}<p>Confirm the observed rhythm to record the delivered shock. This does not record a magnesium administration.</p>` +
+      `${torsadesSnippet()}<p>${R.guideText('confirmTorsades')}</p>` +
       `<button class="primary" data-confirm-torsades>Confirm Torsades</button>` +
       `<button class="primary" data-back-rhythms>Back to rhythms</button>`,
       {

@@ -67,11 +67,44 @@ test('reference wording is plain text, and every {gap} is one the app fills', ()
   const gaps = { adultDoseBasis: ['adultAboveKg'], childDoseBasis: ['band'], childMagnesiumBasis: ['band'], noMagnesiumDoseBasis: ['band'],
     childFluidBasis: ['minPerKg', 'maxPerKg'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'],
     weightSheetAgeEstimate: AGE_GAPS, tubeSheetAgeEstimate: AGE_GAPS,
-    tubeSizeUnderOne: ['minMm', 'maxMm'], tubeLengthUnderOne: ['timesSize'], tubeSizeFormula: ['mm'], tubeLengthFormula: ['cm'] };
-  for (const [key, text] of Object.entries(RULES.wording)) {
-    assert.equal(typeof text, 'string', key);
-    assert.deepEqual([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]), gaps[key] || [], key);
+    tubeSizeUnderOne: ['minMm', 'maxMm'], tubeLengthUnderOne: ['timesSize'], tubeSizeFormula: ['mm'], tubeLengthFormula: ['cm'],
+    // step 3a sub-step 4: wording moved from the app; gaps filled from part 1 by the engine (wordingGaps)
+    headerEnergyTitle: ['joulesPerKg', 'adultShockJ'], padsPromptWithLimit: ['padsUpToJ'], estimateAgeError: ['fourteenMaxAge'],
+    estimatedWeightSource: ['age'], adrenalineOverdue: ['adrenalineEveryMin'], adrenalineUntilReview: ['adrenalineEveryMin'],
+    amiodaroneReviewAt: ['shocks'], maxDosesRecorded: ['maxDoses'], magnesiumMaxDosesStatus: ['magnesiumMaxDoses'], fluidsCardTitle: ['fluidShort'],
+    amiodaroneChildPopupDose: ['first'], amiodaroneAdultPopupDose: ['first', 'second'],
+    adrenalineHow: ['adrenalineEveryMin', 'adultRoundedToKg', 'adultAboveKg', 'adrDiluteMg', 'adrDiluteMl', 'fluid', 'adrDiluteMgPerMl'],
+    amiodaroneHow: ['amiodaroneFirstShocks', 'amiodaroneSecondShocks'], drugPopupFooter: ['guideline'],
+    torsadesExtract: ['adultMagnesiumMmol', 'magAdultGrams', 'magOverMinMinutes', 'magOverMaxMinutes'], fluidsExtractQuote: ['fluid'],
+    fluidsExtract: ['adultFluidsMinL', 'adultFluidsMaxL', 'childFluidsMinPerKg', 'childFluidsMaxPerKg'],
+    magnesiumHow: ['adultMagnesiumMmol', 'fluid', 'magAdultDiluteToMl', 'magOverMinMinutes', 'magOverMaxMinutes', 'magChildMmolPerMl', 'magAmpouleMl', 'magAmpouleMmol', 'magAmpouleMl', 'magChildDiluteToMl'],
+    guidanceIntro: ['cprCycleMinWord', 'adrenalineEveryMin', 'amiodaroneFirstShocks', 'amiodaroneSecondShocks', 'bandList', 'joulesPerKg', 'adultShockJ'],
+    guidanceRsi: ['fentanylMcgPerKg', 'fentanylMaxMcg', 'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg'] };
+  for (const [key, entry] of Object.entries(RULES.wording)) {
+    const texts = [].concat(entry); // a list = one paragraph per item
+    assert.ok(texts.length > 0, key);
+    for (const text of texts) {
+      assert.equal(typeof text, 'string', key);
+      assert.ok(text.trim().length > 0, key + ' is empty');
+      assert.deepEqual([...text.matchAll(/<\/?(\w+)/g)].map((m) => m[1]).filter((tag) => !['b', 'em', 'br'].includes(tag)), [], key + ': only <b>, <em>, <br>');
+    }
+    assert.deepEqual([...texts.join(' ').matchAll(/\{(\w+)\}/g)].map((m) => m[1]), gaps[key] || [], key);
   }
+});
+
+test('each child band energy is joulesPerKg x band weight (A1), so the wording and the bands cannot disagree', () => {
+  assert.equal(RULES.numbers.shock.joulesPerKg, 4);
+  for (const b of RULES.numbers.childBands) assert.equal(b.shockJ, b.maxKg * RULES.numbers.shock.joulesPerKg);
+});
+
+test('magnesium: one dose and a single repeat at most; preparation values (EAS 3.14, 14.27, 7.2; EAS 14.3 adrenaline)', () => {
+  assert.equal(RULES.numbers.magnesium.maxDoses, 2);
+  assert.deepEqual(RULES.numbers.preparation, {
+    adrenalineChild: { drugMg: 1, totalMl: 10 },
+    magnesium: { adultGrams: 2.5, adultDiluteToMl: 10, overMinMinutes: 1, overMaxMinutes: 2, ampouleMmol: 10, ampouleMl: 5, childDiluteToMl: 10 },
+  });
+  assert.deepEqual(RULES.numbers.products, { fluid: '0.9% sodium chloride', fluidShort: 'NaCl 0.9%' });
+  assert.equal(RULES.numbers.weight.adultRoundedToKg, 50);
 });
 
 test('the rule set has exactly the five parts, in order (owner decision 2, doc 18)', () => {

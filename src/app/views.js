@@ -1,7 +1,7 @@
 /* Builds the screens (live, causes, checklists, log, guidance) and the 250 ms tick.
    The rebuild preserved the original behaviour first; later approved changes are marked below.
    Shared screen and session state lives in st (see state.js). */
-import { $, R } from './base.js';
+import { $, R, paras } from './base.js';
 import {
   clock,
   countdown,
@@ -63,11 +63,11 @@ export function drugCard(type) {
   let buttonText = '';
   if (!selectDose) {
     if (canRecordSuggestedDose) buttonText = 'Record ' + value + ' mg IV';
-    else if (blocked) buttonText = 'Withhold · torsades';
+    else if (blocked) buttonText = R.guideText('withholdTorsades');
     else if (needsClinicalAdvice) buttonText = 'Seek clinical advice';
     else if (secondDoseEarly) buttonText = 'Not yet due';
     else if (st.s.special) buttonText = 'Manual review';
-    else if (!isAdrenaline && counts.amio >= 2) buttonText = '2 doses recorded';
+    else if (!isAdrenaline && counts.amio >= R.RULES.numbers.amiodarone.dueAtShocks.length) buttonText = R.guideText('maxDosesRecorded', { maxDoses: R.RULES.numbers.amiodarone.dueAtShocks.length });
     else if (st.s.phase === 'ROSC') buttonText = 'ROSC recorded';
     else if (st.s.phase === 'Ended') buttonText = 'Session ended';
     else buttonText = 'Weight needed';
@@ -100,10 +100,10 @@ export function weightHeader() {
   const weightLabel = weight ? ' ' + esc(weight) + ' kg' : '';
   const displayedWeight = weight ? esc(weight) + ' kg' : 'Enter kg';
   const energyReference = weight
-    ? `<small class="header-energy" title="4 J/kg of CPG weight band · maximum 200 J">${energy} J${st.s.weightSource.startsWith('Estimated') ? ' · est.' : ''}</small>`
+    ? `<small class="header-energy" title="${R.guideText('headerEnergyTitle')}">${energy} J${st.s.weightSource.startsWith('Estimated') ? ' · est.' : ''}</small>`
     : '';
   const padsPrompt = R.needsPaediatricPads(weight)
-    ? '<div class="pads-prompt"><span aria-hidden="true">▰ ▰</span> Use paediatric pads</div>'
+    ? `<div class="pads-prompt"><span aria-hidden="true">▰ ▰</span> ${R.guideText('padsPrompt')}</div>`
     : '';
   const specialFlag = st.s.special
     ? '<span class="special-flag">Special situation · manual review</span>'
@@ -191,7 +191,7 @@ export function liveView() {
     `<button class="previous-shock" data-action="previous-shock" aria-label="Add a shock before app start"><span class="ps-plus" aria-hidden="true">+</span><span class="ps-words">Previous<br>shock</span></button>` +
     `</div>` +
     `<div class="dial-timing">` +
-    `<div class="countdown" id="cycleClock" role="timer" aria-label="Time remaining in CPR cycle">02:00</div>` +
+    `<div class="countdown" id="cycleClock" role="timer" aria-label="Time remaining in CPR cycle">${countdown(R.CYCLE)}</div>` +
     `<div class="cycle-caption" id="cycleCaption">Ready to start</div>` +
     `</div>` +
     `<div class="dial-actions">` +
@@ -381,16 +381,17 @@ function tickCycle(t, on, running, due, stopped) {
 function adrenalineStatus(remaining, enabled) {
   if (!enabled) return 'Review inactive';
   if (remaining === null) return 'No dose recorded';
-  if (remaining < 0) return '4 min elapsed · review';
-  return 'Until 4 min review';
+  if (remaining < 0) return R.guideText('adrenalineOverdue');
+  return R.guideText('adrenalineUntilReview');
 }
 
 function amiodaroneStatus(elapsed, count, enabled, due) {
-  if (torsades()) return 'Withhold · torsades';
+  if (torsades()) return R.guideText('withholdTorsades');
   if (!enabled) return 'Review inactive';
   if (due) return 'Review ' + (count ? 'second' : 'first') + ' dose';
-  if (count >= 2) return 'Since last dose';
-  if (elapsed === null) return 'Review at ' + (count ? '6' : '3') + ' shocks';
+  const [first, second] = R.RULES.numbers.amiodarone.dueAtShocks;
+  if (count >= R.RULES.numbers.amiodarone.dueAtShocks.length) return 'Since last dose';
+  if (elapsed === null) return R.guideText('amiodaroneReviewAt', { shocks: count ? second : first });
   return 'Since last dose';
 }
 
@@ -447,15 +448,10 @@ export function guidance() {
   ].map(([label, path]) => `<a href="${path}" target="_blank" rel="noopener">${label} ↗</a>`).join('');
   sheet(
     'Guidance & sources',
-    `<p><b>Standard non-traumatic cardiac arrest.</b> Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.</p>` +
-    `<p>NZCPG <em>EAS guideline 3.14</em>: two minute CPR cycles; adrenaline review every 4 minutes; amiodarone reviews at 3 and 6 VF / pulseless VT shocks. Weight references retain the source app’s 5 / 10 / 20 / 30 / 40 kg paediatric bands.</p>` +
-    `<p>Shock energy is 4 J/kg of the CPG weight band (rounded up), capped at 200 J. The adult CPG specifies maximum defibrillator setting. A no-shock cycle is counted only when recorded.</p>` +
-    `<div class="stack">${guidelineLinks}</div><details class="panel"><summary>RSI medicine references</summary>` +
-    `<p>Fentanyl: 2 mcg/kg IV, maximum 200 mcg. Only when indicated for TBI, suspected intracranial pathology or hypertension; withhold with shock.</p>` +
-    `<p>Ketamine: 2 mg/kg IV, maximum 200 mg. Consider 1 mg/kg with shock / prior sedation; do not reduce for prolonged seizures.</p>` +
-    `<p>Rocuronium <b>or</b> suxamethonium: 2 mg/kg IV, maximum 200 mg. Adult dose usually rounded to nearest 50 mg. Alternatives, not both.</p>` +
-    `<p>Use the full RSI CPG for patient context and administration.</p></details>` +
-    `<p class="caption">Packaged NZCPG exports: 24 September 2026. Reversible causes: ANZCOR 11.2. Local protocol takes precedence. This extracted app requires clinical validation before patient-care use.</p>`,
+    paras('guidanceIntro') +
+    `<div class="stack">${guidelineLinks}</div><details class="panel"><summary>${R.guideText('guidanceRsiTitle')}</summary>` +
+    paras('guidanceRsi') + `</details>` +
+    `<p class="caption">${R.guideText('guidanceCaption')}</p>`,
   );
 }
 
@@ -469,10 +465,11 @@ export function supportCard(type) {
   else value = ref.min === null ? 'Enter weight' : ref.min + '–' + ref.max + ' mL IV';
 
   const enabled = !st.s.special && !['ROSC', 'Ended'].includes(st.s.phase);
-  const canRef = enabled && (!mag || (ref.dose !== null && stats.count < 2));
+  const maxDoses = R.RULES.numbers.magnesium.maxDoses;
+  const canRef = enabled && (!mag || (ref.dose !== null && stats.count < maxDoses));
   let label;
   if (!mag) label = 'Record fluid…';
-  else if (stats.count >= 2) label = '2 doses recorded';
+  else if (stats.count >= maxDoses) label = R.guideText('maxDosesRecorded', { maxDoses });
   else if (ref.dose === null) label = 'Review dose';
   else if (stats.count) label = 'Record repeat…';
   else label = 'Record ' + ref.dose + ' mmol IV';
@@ -483,7 +480,7 @@ export function supportCard(type) {
     else if (st.s.phase === 'Ended') buttonText = 'Session ended';
     else buttonText = 'Manual review';
   }
-  return `<section class="drug ${type}" id="${type}Card"><h3>${mag ? 'Magnesium' : 'Fluids · NaCl 0.9%'}</h3>` +
+  return `<section class="drug ${type}" id="${type}Card"><h3>${mag ? 'Magnesium' : R.guideText('fluidsCardTitle')}</h3>` +
       `<div class="drug-dose">${esc(value)}</div>` +
       `<strong class="drug-clock" id="supportClock">—</strong>` +
       `<p class="caption" id="supportStatus"></p>` +
@@ -499,9 +496,9 @@ export function tickSupport(type, enabled) {
   if (!enabled) {
     status = 'Review inactive';
   } else if (type === 'magnesium') {
-    if (stats.count >= 2) status = '2 doses · clinical review';
-    else if (stats.count) status = 'Repeat once only if TdP persists/recurs';
-    else status = 'Withhold amiodarone · torsades history';
+    if (stats.count >= R.RULES.numbers.magnesium.maxDoses) status = R.guideText('magnesiumMaxDosesStatus');
+    else if (stats.count) status = R.guideText('magnesiumRepeatStatus');
+    else status = R.guideText('magnesiumFirstStatus');
   } else if (stats.total) {
     status = stats.total + ' mL recorded · review total';
   } else {
@@ -534,7 +531,7 @@ export function referenceSheet(type) {
     // These are reference values only; opening this sheet records no medicine (rule: engine rsiDoses).
     const d = R.rsiDoses(w);
     const doseList = w
-      ? `<p><b>${w} kg</b> · calculated references, not recorded administrations</p><dl>` +
+      ? `<p><b>${w} kg</b> · ${R.guideText('rsiNotRecorded')}</p><dl>` +
         `<dt>Fentanyl · conditional</dt><dd>${d.fentanylMcg} mcg IV</dd>` +
         `<dt>Ketamine · usual</dt><dd>${d.ketamineMg} mg IV</dd>` +
         `<dt>Ketamine · reduced</dt><dd>${d.reducedKetamineMg} mg IV</dd>` +
@@ -542,7 +539,7 @@ export function referenceSheet(type) {
       : '<button class="primary" data-action="weight">Enter patient weight</button>';
     sheet(
       'RSI dose references',
-      `${doseList}<p>Fentanyl only for TBI, suspected intracranial pathology or hypertension; withhold with shock. Consider reduced ketamine with shock / prior sedation; do not reduce for prolonged seizures. Neuromuscular blockers are alternatives, not both.</p>` +
+      `${doseList}${paras('rsiConditions')}` +
       `<a href="cpg-rsi.pdf" target="_blank"><em>EAS guideline 9.3</em> ↗</a>`,
     );
     return;
@@ -550,12 +547,12 @@ export function referenceSheet(type) {
   const tube = R.tubeReference(age); // rule: engine tubeReference
   const tubeReference = tube
     ? `<p><b>Cuffed ETT:</b> ${tube.size}</p><p><b>Length at lips:</b> ${tube.length}</p>`
-    : '<p>Enter age to show the paediatric ETT and length-at-lips formula results.</p>';
+    : paras('tubeNoAge');
   sheet(
     'Tube sizes & age criteria',
     `<label>Patient age (years)<input id="referenceAge" type="number" min="0" max="120" step="any" value="${esc(st.s.age)}"></label>` +
     `<button data-save-age>Use age</button>${tubeReference}` +
-    `<p class="caption">Paediatric formulae are guides; confirm actual fit. Not a weight-only adult tube-size recommendation.</p>` +
+    `<p class="caption">${R.guideText('tubeCaution')}</p>` +
     `<h3>Age-based weight estimate</h3><p>${R.wording('tubeSheetAgeEstimate', R.ageEstimateGaps())}</p>` +
     `<h3>iGel weight ranges</h3><p>1: 2–5 kg · 1.5: 5–12 kg · 2: 10–25 kg · 2.5: 25–35 kg · 3: 30–60 kg · 4: 50–90 kg · 5: 90+ kg.</p>` +
     `<a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a><p class="caption">iGel colours/ranges: Intersurgical product information.</p>`,

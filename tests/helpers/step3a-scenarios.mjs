@@ -22,6 +22,8 @@ const shock = (a, rhythm, snap, label) => {
   if (rhythm === 'Torsades') a.click('[data-confirm-torsades]');
 };
 
+const has = (a, sel) => { const b = a.window.document.querySelector(sel); return b && !b.disabled; };
+
 function weightScenario(w) {
   return (a, snap) => {
     if (w) { keypad(a, w); snap('weight entered'); close(a); }
@@ -32,14 +34,28 @@ function weightScenario(w) {
     a.window.__step3a.guidance(); snap('Guidance & sources pop-up'); close(a);
     a.click('[data-tab=live]');
     a.click('[data-action=start]'); snap('started');
+    if (has(a, '[data-drug=adrenaline]')) { a.click('[data-drug=adrenaline]'); snap('adrenaline recorded'); }
     for (let i = 1; i <= 3; i++) { a.advance(2 * MIN); shock(a, 'VF', i === 1 ? snap : null, 'shock sheet'); }
-    snap('3 shocks'); a.click('[data-drug-info=amiodarone]'); snap('amiodarone info'); close(a);
+    snap('3 shocks (adrenaline overdue)'); a.click('[data-drug-info=amiodarone]'); snap('amiodarone info'); close(a);
     a.click('[data-drug=amiodarone]'); snap('amiodarone recorded'); close(a);
-    a.advance(2 * MIN); shock(a, 'Torsades'); snap('torsades'); close(a);
+    a.advance(30000); snap('amiodarone status');
+    a.advance(2 * MIN); shock(a, 'VF'); snap('4 shocks');
+    if (has(a, '[data-select-dose]')) { a.click('[data-select-dose]'); snap('select dose sheet'); close(a); }
+    a.advance(2 * MIN);
+    a.click('[data-action=rhythm-check]'); a.click('[data-outcome=shock]'); a.click('[data-record-rhythm=Torsades]'); snap('confirm torsades');
+    a.click('[data-confirm-torsades]'); snap('torsades'); close(a);
     a.click('[data-drug-info=magnesium]'); snap('magnesium info'); close(a);
+    if (has(a, '[data-support=magnesium]')) {
+      a.click('[data-support=magnesium]'); snap('magnesium recorded'); close(a);
+      a.advance(10000); a.click('[data-support=magnesium]'); snap('repeat magnesium sheet');
+      a.click('[data-confirm-magnesium]'); snap('magnesium repeated'); close(a);
+    }
+    a.window.__step3a.openDrug('amiodarone'); snap('amiodarone form after torsades'); close(a);
     a.advance(2 * MIN); a.click('[data-action=rhythm-check]'); a.click('[data-outcome=noshock]'); snap('no-shock sheet');
     a.click('[data-record-rhythm="PEA"]'); snap('PEA pop-up'); close(a);
+    snap('fluids card');
     a.click('[data-drug-info=fluids]'); snap('fluids info'); close(a);
+    a.click('[data-support=fluids]'); snap('fluids form'); a.type('#drugForm [name=dose]', '300'); a.submit('#drugForm'); snap('fluids recorded'); close(a);
     a.click('[data-tab=log]'); snap('log');
     const edit = [...a.window.document.querySelectorAll('[data-edit]')]
       .find((b) => /^Edit Shock/.test(b.getAttribute('aria-label') || ''));

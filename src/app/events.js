@@ -48,10 +48,10 @@ import { st, torsades } from './state.js';
 /* Weight, start time and earlier-count forms validate before committing. */
 function estimateWeight() {
   const w = R.estimate($('ageInput').value);
-  if (w === null) return error('Use an infant age in years or whole years 1–14.');
+  if (w === null) return error(R.guideText('estimateAgeError'));
   $('weightInput').value = w;
   $('weightPadPrompt').hidden = !R.needsPaediatricPads(w);
-  st.sheetContext.source = 'Estimated from age ' + $('ageInput').value + ' years · CPG 7.2';
+  st.sheetContext.source = R.guideText('estimatedWeightSource', { age: $('ageInput').value });
   $('weightBasis').innerHTML = formatGuidelineReference(st.sheetContext.source);
 }
 
@@ -530,8 +530,7 @@ function manualMedicineType(name) {
     case 'adrenaline': return 'adrenaline';
     case 'amiodarone': return 'amiodarone';
     case 'magnesium': return 'magnesium';
-    case '0.9% sodium chloride': return 'fluids';
-    default: return 'medicine';
+    default: return name.toLowerCase() === R.RULES.numbers.products.fluid.toLowerCase() ? 'fluids' : 'medicine';
   }
 }
 

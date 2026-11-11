@@ -27,6 +27,7 @@ export const RULES = {
     weight: {
       maxKg: 500, // highest weight accepted as valid
       adultAboveKg: 40, // above 40 kg the patient is treated as an adult ("41 kg = 50 kg")
+      adultRoundedToKg: 50, // how the wording describes an adult weight ("rounded to 50 kg or more")
     },
 
     // Paediatric weight estimate from age, in years (EAS 7.2). Ages outside these rules give no estimate.
@@ -64,6 +65,7 @@ export const RULES = {
     },
 
     shock: {
+      joulesPerKg: 4, // each child band's shockJ = maxKg x joulesPerKg (change A1; checked by test)
       paediatricPadsUpToJ: 100, // prompt for paediatric pads when the energy reference is 100 J or less
       maxRecordableJ: 1000, // a recorded energy must be above 0 and no more than this
     },
@@ -88,6 +90,31 @@ export const RULES = {
        second at 6 (A2, A2b, C6b-2). The number of entries is the maximum number of doses. */
     amiodarone: {
       dueAtShocks: [3, 6],
+    },
+
+    // Magnesium for torsades: one dose and a single repeat at most (EAS 3.14).
+    magnesium: {
+      maxDoses: 2,
+    },
+
+    // Products named in the wording and the record forms.
+    products: {
+      fluid: '0.9% sodium chloride', // also the diluent
+      fluidShort: 'NaCl 0.9%',
+    },
+
+    // Preparation shown in the Administration pop-ups (EAS 14.3 adrenaline, EAS 14.27 / 7.2 magnesium).
+    preparation: {
+      adrenalineChild: { drugMg: 1, totalMl: 10 }, // children 40 kg or less: 1 mg to 10 mL (0.1 mg/mL)
+      magnesium: {
+        adultGrams: 2.5, // the adult 10 mmol dose in grams
+        adultDiluteToMl: 10,
+        overMinMinutes: 1, // given over 1-2 minutes
+        overMaxMinutes: 2,
+        ampouleMmol: 10, // paediatric: 10 mmol / 5 mL ampoule diluted to 10 mL = 1 mmol/mL
+        ampouleMl: 5,
+        childDiluteToMl: 10,
+      },
     },
 
     /* RSI dose references (EAS 9.3), shown on the Guidance tab from the EXACT entered weight (not the
@@ -141,6 +168,83 @@ export const RULES = {
     amiodaroneSecondNotYetDue: 'Due after {second} shocks',
     childSecondAmiodarone: 'Seek clinical advice', // C6b: no EAS source for a child second dose
     invalidWeight: 'Enter weight above zero and no more than {maxKg} kg, with up to one decimal.',
+    /* Below: wording whose {gaps} are filled automatically from part 1 (engine wordingGaps). A list
+       is shown as separate paragraphs. Only <b>, <em> and <br> are used inside the wording. */
+
+    // Header and weight pop-up
+    headerEnergyTitle: '{joulesPerKg} J/kg of CPG weight band · maximum {adultShockJ} J',
+    padsPrompt: 'Use paediatric pads',
+    padsPromptWithLimit: 'Use paediatric pads · {padsUpToJ} J or less',
+    estimateAgeError: 'Use an infant age in years or whole years 1–{fourteenMaxAge}.',
+    estimatedWeightSource: 'Estimated from age {age} years · CPG 7.2',
+
+    // Live drug cards
+    adrenalineOverdue: '{adrenalineEveryMin} min elapsed · review',
+    adrenalineUntilReview: 'Until {adrenalineEveryMin} min review',
+    amiodaroneReviewAt: 'Review at {shocks} shocks',
+    maxDosesRecorded: '{maxDoses} doses recorded',
+    withholdTorsades: 'Withhold · torsades',
+    magnesiumMaxDosesStatus: '{magnesiumMaxDoses} doses · clinical review',
+    magnesiumRepeatStatus: 'Repeat once only if TdP persists/recurs',
+    magnesiumFirstStatus: 'Withhold amiodarone · torsades history',
+    fluidsCardTitle: 'Fluids · {fluidShort}',
+
+    // Adrenaline and amiodarone Administration pop-ups
+    noWeightDoseReference: 'Enter child weight for reference',
+    referenceOnly: 'Reference only',
+    amiodaroneChildPopupDose: '{first} mg IV first; second dose: seek clinical advice',
+    amiodaroneAdultPopupDose: '{first} mg IV first; {second} mg IV second',
+    adrenalineHow: [
+      'NZCPG cardiac arrest: every {adrenalineEveryMin} minutes. Adults and children rounded to {adultRoundedToKg} kg or more: IV bolus, undiluted.',
+      'Children rounded to {adultAboveKg} kg or less: dilute {adrDiluteMg} mg to a total of {adrDiluteMl} mL with {fluid} ({adrDiluteMgPerMl} mg/mL). Draw up the dose and give as an IV bolus.',
+    ],
+    amiodaroneHow: [
+      'IV bolus, undiluted. For persistent VF / pulseless VT: first dose after {amiodaroneFirstShocks} shocks, second after {amiodaroneSecondShocks} shocks, including earlier shocks.',
+      '<b>Withhold if torsades is present or has occurred.</b>',
+    ],
+    drugPopupFooter: 'NZCPG EAS {guideline} and EAS 3.14. Reference values do not record administration.',
+
+    // Record forms
+    amiodaroneAfterTorsadesWarning: 'Torsades has occurred. CPG advises withholding amiodarone. This form records an actual event, not a recommendation.',
+    selectDoseAdvice: '<b>Seek clinical advice.</b> No second-dose value is suggested for a child. Enter the dose given.',
+    confirmTorsades: 'Confirm the observed rhythm to record the delivered shock. This does not record a magnesium administration.',
+    repeatMagnesium: 'One dose is already recorded. Record a second dose only if it was given for persistent or recurrent torsades.',
+
+    // Torsades and fluids guideline extracts, and their Administration pop-ups
+    torsadesExtractTitle: 'Torsades de pointes · guideline extract',
+    torsadesExtractQuote: 'Withhold amiodarone.<br>Administer magnesium IV:',
+    torsadesExtract: 'Adult reference: {adultMagnesiumMmol} mmol ({magAdultGrams} g), given IV over {magOverMinMinutes}–{magOverMaxMinutes} minutes. A single repeat is permitted when torsades continues or returns. Use the paediatric dose tables for children.',
+    fluidsExtractTitle: 'Fluids · guideline extract',
+    fluidsExtractQuote: 'Correct immediately reversible causes.<br>Administer {fluid} IV:',
+    fluidsExtract: 'The IV volume reference is {adultFluidsMinL}–{adultFluidsMaxL} L in adults, or {childFluidsMinPerKg}–{childFluidsMaxPerKg} mL/kg in children. Assess and treat the reversible cause.',
+    fluidsRecordNote: 'Record the actual volume given in mL. The card shows the recorded total; a rhythm change does not record fluid administration.',
+    magnesiumNoDose: 'Dose requires clinical review',
+    magnesiumHow: [
+      'For adult cardiac-arrest administration, dilute the {adultMagnesiumMmol} mmol dose with {fluid} to {magAdultDiluteToMl} mL and give over {magOverMinMinutes}–{magOverMaxMinutes} minutes. The paediatric preparation in <em>EAS guideline 7.2</em> is {magChildMmolPerMl} mmol/mL: dilute {magAmpouleMl} mL from a {magAmpouleMmol} mmol/{magAmpouleMl} mL ampoule to {magChildDiluteToMl} mL, then draw up the table dose.',
+      'Avoid the IV line carrying a concurrent adrenaline infusion because precipitation can occur. Record magnesium in mmol.',
+    ],
+
+    // Guidance & sources pop-up
+    guidanceIntro: [
+      '<b>Standard non-traumatic cardiac arrest.</b> Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.',
+      'NZCPG <em>EAS guideline 3.14</em>: {cprCycleMinWord} minute CPR cycles; adrenaline review every {adrenalineEveryMin} minutes; amiodarone reviews at {amiodaroneFirstShocks} and {amiodaroneSecondShocks} VF / pulseless VT shocks. Weight references retain the source app’s {bandList} kg paediatric bands.',
+      'Shock energy is {joulesPerKg} J/kg of the CPG weight band (rounded up), capped at {adultShockJ} J. The adult CPG specifies maximum defibrillator setting. A no-shock cycle is counted only when recorded.',
+    ],
+    guidanceRsiTitle: 'RSI medicine references',
+    guidanceRsi: [
+      'Fentanyl: {fentanylMcgPerKg} mcg/kg IV, maximum {fentanylMaxMcg} mcg. Only when indicated for TBI, suspected intracranial pathology or hypertension; withhold with shock.',
+      'Ketamine: {ketamineMgPerKg} mg/kg IV, maximum {ketamineMaxMg} mg. Consider {reducedKetamineMgPerKg} mg/kg with shock / prior sedation; do not reduce for prolonged seizures.',
+      'Rocuronium <b>or</b> suxamethonium: {blockerMgPerKg} mg/kg IV, maximum {blockerMaxMg} mg. Adult dose usually rounded to nearest {blockerRoundMg} mg. Alternatives, not both.',
+      'Use the full RSI CPG for patient context and administration.',
+    ],
+    guidanceCaption: 'Packaged NZCPG exports: 24 September 2026. Reversible causes: ANZCOR 11.2. Local protocol takes precedence. This extracted app requires clinical validation before patient-care use.',
+
+    // RSI and tube pop-ups (Guidance tab)
+    rsiNotRecorded: 'calculated references, not recorded administrations',
+    rsiConditions: 'Fentanyl only for TBI, suspected intracranial pathology or hypertension; withhold with shock. Consider reduced ketamine with shock / prior sedation; do not reduce for prolonged seizures. Neuromuscular blockers are alternatives, not both.',
+    tubeNoAge: 'Enter age to show the paediatric ETT and length-at-lips formula results.',
+    tubeCaution: 'Paediatric formulae are guides; confirm actual fit. Not a weight-only adult tube-size recommendation.',
+
     // Tube sheet results; gaps come from numbers.tubes
     tubeSizeUnderOne: '{minMm}–{maxMm} mm',
     tubeLengthUnderOne: 'ETT size × {timesSize} cm',

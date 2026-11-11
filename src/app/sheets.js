@@ -1,6 +1,6 @@
 /* Pop-up sheets for weight, rhythm, drugs, equipment, notes, correction,
    export, settings and the tutorial. Shared state lives in st (see state.js). */
-import { $, R } from './base.js';
+import { $, R, paras } from './base.js';
 import {
   compactOptionalFields,
   esc,
@@ -87,7 +87,7 @@ export function openWeight() {
       `<details><summary>Estimate weight from age</summary><label>Age in years<input id="ageInput" type="number" inputmode="decimal" min="0.01" max="${R.RULES.numbers.ageEstimate.elevenToFourteenYears.maxAge}" step="any" value="${esc(st.s.age)}"></label>` +
       `<button data-action="estimate">Use age estimate</button><p class="caption">${R.wording('weightSheetAgeEstimate', R.ageEstimateGaps())}</p></details>` +
       `<p id="weightBasis" class="caption">${esc(st.s.weightSource)}</p>` +
-      `<p id="weightPadPrompt" class="pads-entry" ${R.needsPaediatricPads(st.s.weight) ? '' : 'hidden'}>▰ ▰ Use paediatric pads · 100 J or less</p>` +
+      `<p id="weightPadPrompt" class="pads-entry" ${R.needsPaediatricPads(st.s.weight) ? '' : 'hidden'}>▰ ▰ ${R.guideText('padsPromptWithLimit')}</p>` +
       `<button class="primary" data-action="save-weight">Use weight</button>`,
     { kind: 'weight', source: st.s.weightSource, replaceWeight: !!st.s.weight },
   );
@@ -141,7 +141,7 @@ export function openSettings() {
 
 /* "Events before this app" pop-up: earlier shocks / no-shock cycles entered as counts only. */
 export function openHistory() {
-  const priorAmiodaroneOptions = [0, 1, 2]
+  const priorAmiodaroneOptions = [...Array(R.RULES.numbers.amiodarone.dueAtShocks.length + 1).keys()] // 0 up to the most doses
     .map((count) => `<option ${st.s.priorAmio === count ? 'selected' : ''}>${count}</option>`)
     .join('');
   sheet(
@@ -160,24 +160,22 @@ export function administration(type) {
   if (['magnesium', 'fluids'].includes(type)) return supportAdministration(type);
   const d = R.dose(st.s);
   const adrenaline = type === 'adrenaline';
-  let doseText = 'Enter child weight for reference';
+  let doseText = R.guideText('noWeightDoseReference');
   if (d) {
     if (adrenaline) doseText = d.adr + ' mg IV';
-    else if (R.isPaediatric(st.s)) doseText = d.amio1 + ' mg IV first; second dose: seek clinical advice';
-    else doseText = d.amio1 + ' mg IV first; ' + d.amio2 + ' mg IV second';
+    else if (R.isPaediatric(st.s)) doseText = R.guideText('amiodaroneChildPopupDose', { first: d.amio1 });
+    else doseText = R.guideText('amiodaroneAdultPopupDose', { first: d.amio1, second: d.amio2 });
     doseText = esc(doseText);
   }
-  const instructions = adrenaline
-    ? '<p>NZCPG cardiac arrest: every 4 minutes. Adults and children rounded to 50 kg or more: IV bolus, undiluted.</p><p>Children rounded to 40 kg or less: dilute 1 mg to a total of 10 mL with 0.9% sodium chloride (0.1 mg/mL). Draw up the dose and give as an IV bolus.</p>'
-    : '<p>IV bolus, undiluted. For persistent VF / pulseless VT: first dose after 3 shocks, second after 6 shocks, including earlier shocks.</p><p><b>Withhold if torsades is present or has occurred.</b></p>';
+  const instructions = paras(adrenaline ? 'adrenalineHow' : 'amiodaroneHow');
   const guideline = adrenaline ? '14.3' : '14.4';
   const pdf = adrenaline ? 'eas-14-3' : 'eas-14-4';
   sheet(
     adrenaline ? 'Adrenaline · reference' : 'Amiodarone · reference',
     `<p><b>${doseText}</b></p>` +
-      `<p class="caption">${d ? formatGuidelineReference(d.basis) : 'Reference only'}</p>` +
+      `<p class="caption">${d ? formatGuidelineReference(d.basis) : R.guideText('referenceOnly')}</p>` +
       `${instructions}<a href="cpg-drugs/${pdf}.pdf" target="_blank" rel="noopener"><em>EAS guideline ${guideline}</em> ↗</a>` +
-      `<p class="caption">NZCPG EAS ${guideline} and EAS 3.14. Reference values do not record administration.</p>`,
+      `<p class="caption">${R.guideText('drugPopupFooter', { guideline })}</p>`,
   );
 }
 
@@ -188,7 +186,7 @@ function medicineEntryName(type) {
     case 'adrenaline': return 'Adrenaline';
     case 'amiodarone': return 'Amiodarone';
     case 'magnesium': return 'Magnesium';
-    case 'fluids': return '0.9% sodium chloride';
+    case 'fluids': return R.RULES.numbers.products.fluid;
     default: return '';
   }
 }
@@ -202,7 +200,7 @@ export function openDrug(type) {
     .map((unit) => `<option ${unit === defaultUnit ? 'selected' : ''}>${unit}</option>`).join('');
   const route = ['magnesium', 'fluids'].includes(type) ? 'IV' : '';
   const torsadesWarning = type === 'amiodarone' && torsades()
-    ? '<p class="error">Torsades has occurred. CPG advises withholding amiodarone. This form records an actual event, not a recommendation.</p>'
+    ? `<p class="error">${R.guideText('amiodaroneAfterTorsadesWarning')}</p>`
     : '';
   sheet(
     'Record ' + (name || 'medicine'),
@@ -223,7 +221,7 @@ export function openSelectDose() {
   const now = Date.now();
   sheet(
     'Select amiodarone dose',
-    `<p><b>Seek clinical advice.</b> No second-dose value is suggested for a child. Enter the dose given.</p>` +
+    `<p>${R.guideText('selectDoseAdvice')}</p>` +
       `<form id="drugForm"><input type="hidden" name="name" value="Amiodarone">` +
       `<input type="hidden" name="unit" value="mg"><input type="hidden" name="route" value="IV">` +
       `<label>Dose given (mg IV)<input name="dose" type="number" inputmode="decimal" min="0.001" step="any" required placeholder="mg"></label>` +
@@ -422,14 +420,14 @@ export function cpgSource() {
 
 /* Torsades guideline extract (withhold amiodarone; magnesium IV), reused in several pop-ups. */
 export function torsadesSnippet() {
-  return `<div class="rhythm-snippet"><h3>Torsades de pointes · guideline extract</h3><blockquote>Withhold amiodarone.<br>Administer magnesium IV:</blockquote>` +
-      `<p>Adult reference: 10 mmol (2.5 g), given IV over 1–2 minutes. A single repeat is permitted when torsades continues or returns. Use the paediatric dose tables for children.</p></div>${cpgSource()}`;
+  return `<div class="rhythm-snippet"><h3>${R.guideText('torsadesExtractTitle')}</h3><blockquote>${R.guideText('torsadesExtractQuote')}</blockquote>` +
+      `${paras('torsadesExtract')}</div>${cpgSource()}`;
 }
 
 /* Fluids guideline extract for a non-shockable rhythm (PEA or asystole; A2c): correct reversible causes; 0.9% sodium chloride IV. Heading is neutral. */
 export function peaSnippet() {
-  return `<div class="rhythm-snippet"><h3>Fluids · guideline extract</h3><blockquote>Correct immediately reversible causes.<br>Administer 0.9% sodium chloride IV:</blockquote>` +
-      `<p>The IV volume reference is 1–2 L in adults, or 20–40 mL/kg in children. Assess and treat the reversible cause.</p></div>${cpgSource()}`;
+  return `<div class="rhythm-snippet"><h3>${R.guideText('fluidsExtractTitle')}</h3><blockquote>${R.guideText('fluidsExtractQuote')}</blockquote>` +
+      `${paras('fluidsExtract')}</div>${cpgSource()}`;
 }
 
 /* Pop-up for giving magnesium or fluids: guideline extract and calculated amount, then record it. */
@@ -440,17 +438,16 @@ export function supportAdministration(type) {
     sheet(
       'Fluids · administration',
       `${peaSnippet()}<p><b>${volume}</b> · ${formatGuidelineReference(ref.basis)}</p>` +
-      `<p>Record the actual volume given in mL. The card shows the recorded total; a rhythm change does not record fluid administration.</p>`,
+      paras('fluidsRecordNote'),
     );
     return;
   }
   const ref = R.magnesiumReference(st.s);
-  const dose = ref.dose === null ? 'Dose requires clinical review' : ref.dose + ' mmol IV';
+  const dose = ref.dose === null ? R.guideText('magnesiumNoDose') : ref.dose + ' mmol IV';
   sheet(
     'Magnesium · administration',
     `${torsadesSnippet()}<p><b>${dose}</b> · ${formatGuidelineReference(ref.basis)}</p>` +
-    `<p>For adult cardiac-arrest administration, dilute the 10 mmol dose with 0.9% sodium chloride to 10 mL and give over 1–2 minutes. The paediatric preparation in <em>EAS guideline 7.2</em> is 1 mmol/mL: dilute 5 mL from a 10 mmol/5 mL ampoule to 10 mL, then draw up the table dose.</p>` +
-    `<p>Avoid the IV line carrying a concurrent adrenaline infusion because precipitation can occur. Record magnesium in mmol.</p>` +
+    paras('magnesiumHow') +
     `<a href="${MAGNESIUM_CPG}" target="_blank" rel="noopener"><em>EAS guideline 14.27</em> ↗</a>` +
     `<p><a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a></p>`,
   );

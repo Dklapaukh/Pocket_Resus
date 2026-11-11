@@ -141,6 +141,62 @@ export function ageEstimateGaps() {
   };
 }
 
+/* Every number the wording can show, taken from part 1 of the rules file (stored once there). */
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+export function wordingGaps() {
+  const n = RULES.numbers, prep = n.preparation, rsi = n.rsi;
+  return {
+    ...ageEstimateGaps(),
+    cprCycleMinWord: NUMBER_WORDS[n.timing.cprCycleMs / 60000] ?? String(n.timing.cprCycleMs / 60000),
+    adrenalineEveryMin: n.timing.adrenalineIntervalMs / 60000,
+    amiodaroneFirstShocks: n.amiodarone.dueAtShocks[0],
+    amiodaroneSecondShocks: n.amiodarone.dueAtShocks[1],
+    amiodaroneMaxDoses: n.amiodarone.dueAtShocks.length,
+    magnesiumMaxDoses: n.magnesium.maxDoses,
+    bandList: n.childBands.map((band) => band.maxKg).join(' / '),
+    joulesPerKg: n.shock.joulesPerKg,
+    adultShockJ: n.adult.shockJ,
+    padsUpToJ: n.shock.paediatricPadsUpToJ,
+    adultAboveKg: n.weight.adultAboveKg,
+    adultRoundedToKg: n.weight.adultRoundedToKg,
+    fluid: n.products.fluid,
+    fluidShort: n.products.fluidShort,
+    adrDiluteMg: prep.adrenalineChild.drugMg,
+    adrDiluteMl: prep.adrenalineChild.totalMl,
+    adrDiluteMgPerMl: prep.adrenalineChild.drugMg / prep.adrenalineChild.totalMl,
+    adultMagnesiumMmol: n.adult.magnesiumMmol,
+    magAdultGrams: prep.magnesium.adultGrams,
+    magAdultDiluteToMl: prep.magnesium.adultDiluteToMl,
+    magOverMinMinutes: prep.magnesium.overMinMinutes,
+    magOverMaxMinutes: prep.magnesium.overMaxMinutes,
+    magChildMmolPerMl: prep.magnesium.ampouleMmol / prep.magnesium.childDiluteToMl,
+    magAmpouleMmol: prep.magnesium.ampouleMmol,
+    magAmpouleMl: prep.magnesium.ampouleMl,
+    magChildDiluteToMl: prep.magnesium.childDiluteToMl,
+    adultFluidsMinL: n.adult.fluidsMinMl / 1000,
+    adultFluidsMaxL: n.adult.fluidsMaxMl / 1000,
+    childFluidsMinPerKg: n.child.fluidsMinMlPerKg,
+    childFluidsMaxPerKg: n.child.fluidsMaxMlPerKg,
+    fentanylMcgPerKg: rsi.fentanyl.mcgPerKg,
+    fentanylMaxMcg: rsi.fentanyl.maxMcg,
+    ketamineMgPerKg: rsi.ketamine.mgPerKg,
+    ketamineMaxMg: rsi.ketamine.maxMg,
+    reducedKetamineMgPerKg: rsi.reducedKetamine.mgPerKg,
+    blockerMgPerKg: rsi.blocker.mgPerKg,
+    blockerMaxMg: rsi.blocker.maxMg,
+    blockerRoundMg: rsi.blocker.roundAdultToMg,
+  };
+}
+
+/* Wording with its gaps filled from part 1 (plus any values given, e.g. { age: 7 }). A list entry
+   gives back a list (one item per paragraph). */
+export function guideText(key, values = {}) {
+  const all = { ...wordingGaps(), ...values };
+  const fill = (text) => text.replace(/\{(\w+)\}/g, (gap, name) => String(all[name]));
+  const entry = RULES.wording[key];
+  return Array.isArray(entry) ? entry.map(fill) : fill(entry);
+}
+
 /* ---------- Guidance-tab references (RSI doses, tube formulae) ---------- */
 
 const roundTo = (value, decimals) => Math.round(value * 10 ** decimals) / 10 ** decimals;

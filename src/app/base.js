@@ -2,6 +2,9 @@
    unreadable-data backup. Shared session state lives in st (see state.js). */
 import { Resus } from '../engine/index.js';
 
+/* Wording from the rules file shown as paragraphs: <p>…</p> for each entry. */
+export const paras = (key, values) => [].concat(Resus.guideText(key, values)).map((text) => `<p>${text}</p>`).join('');
+
 export const R = Resus,
   $ = (id) => document.getElementById(id),
   KEY = 'resus-pocket-v1',
