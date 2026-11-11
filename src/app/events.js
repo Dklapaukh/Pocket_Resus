@@ -40,7 +40,6 @@ import {
 } from './session.js';
 import { checkStatus, openCycleLog, referenceSheet, render, tick } from './views.js';
 import { $, KEY, R } from './base.js';
-import { ARREST_EQUIPMENT } from './data.js';
 import { fitNote, fitNotes, formatGuidelineReference, local, toast } from './format.js';
 import { st, torsades } from './state.js';
 
@@ -465,7 +464,7 @@ document.addEventListener('input', (e) => {
   if (e.target.dataset.size) {
     const type = e.target.dataset.size,
       unit = document.querySelector('[name=sizeUnit]:checked')?.value || 'mm',
-      sizes = ARREST_EQUIPMENT[type].sizes.filter((v) => type !== 'npa' || v.endsWith(unit)),
+      sizes = R.RULES.equipment.devices[type].sizes.filter((v) => type !== 'npa' || v.endsWith(unit)),
       value = sizes[+e.target.value];
     document.querySelector('#equipmentForm [name=size]').value = value;
     $('sizeRead').textContent = value + (type === 'iv' ? 'G' : '');
@@ -513,7 +512,7 @@ document.addEventListener('change', (e) => {
     });
   }
   if (e.target.name === 'sizeUnit') {
-    const sizes = ARREST_EQUIPMENT.npa.sizes.filter((v) => v.endsWith(e.target.value)),
+    const sizes = R.RULES.equipment.devices.npa.sizes.filter((v) => v.endsWith(e.target.value)),
       range = document.querySelector('[data-size=npa]');
     range.max = sizes.length - 1;
     range.value = 0;
@@ -568,7 +567,7 @@ function submitEquipment(form, at, submitEvent) {
   if (
     type === 'intubation' &&
     data.size &&
-    (!Number.isFinite(+data.size) || +data.size <= 0 || +data.size > 12)
+    (!Number.isFinite(+data.size) || +data.size <= 0 || +data.size > R.RULES.equipment.maxTubeSizeMm)
   )
     return error('Enter a valid tube size in mm.');
   const parts = Object.entries(data)
@@ -581,7 +580,7 @@ function submitEquipment(form, at, submitEvent) {
     );
   commit(
     () =>
-      R.add(st.s, 'equipment', ARREST_EQUIPMENT[type].name, parts.join(' · '), at, {
+      R.add(st.s, 'equipment', R.RULES.equipment.devices[type].name, parts.join(' · '), at, {
         procedure: type,
         equipment: { ...data, confirmation: confirmed },
       }),
@@ -752,10 +751,7 @@ document.addEventListener('click', (e) => {
 /* Switching laryngoscopy between video and direct changes the blade size choices. */
 document.addEventListener('change', (e) => {
   if (e.target.name === 'method' && st.sheetContext?.type === 'laryngoscopy') {
-    const sizes =
-      e.target.value === 'Video'
-        ? ['1', '2', '3', '4', 'X blade']
-        : ['Mac 1', 'Mac 2', 'Mac 3', 'Mac 4', 'Miller 0', 'Miller 1', 'Miller 2'];
+    const sizes = R.RULES.equipment.blades[e.target.value === 'Video' ? 'Video' : 'Direct'];
     $('bladeChoices').innerHTML = toggleField('size', 'Blade', sizes);
     const row = $('bladeChoices').firstElementChild;
     row.classList.add('entry-row');

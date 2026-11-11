@@ -414,8 +414,59 @@ export const RULES = {
     ],
   },
 
-  /* ===== PART 4: EQUIPMENT (filled in step 3a, sub-step 6) ===== */
-  equipment: {},
+  /* ===== PART 4: EQUIPMENT ===== */
+  equipment: {
+    // Airway and access device types and their size choices (record forms).
+    devices: {
+      iv: { name: 'IV cannulation', sizes: ['24', '22', '20', '18', '16'] },
+      io: { name: 'IO access', sizes: ['Large', 'Medium', 'Small'] },
+      opa: { name: 'OPA', sizes: ['0', '1', '2', '3', '4', '5'] },
+      npa: { name: 'NPA', sizes: ['6', '7', '8'] },
+      igel: { name: 'iGel', sizes: ['1', '1.5', '2', '2.5', '3', '4', '5'] },
+      laryngoscopy: { name: 'Laryngoscopy', sizes: ['00', '0', '1', '2', '3', '4', '5'] },
+      intubation: { name: 'Intubation', sizes: ['3', '4', '5', '6', '7', '8', '9'] },
+    },
+
+    // Laryngoscope blade choices, by method.
+    blades: {
+      Video: ['1', '2', '3', '4', 'X blade'],
+      Direct: ['Mac 1', 'Mac 2', 'Mac 3', 'Mac 4', 'Miller 0', 'Miller 1', 'Miller 2'],
+    },
+
+    maxTubeSizeMm: 12, // a recorded intubation tube size must be above 0 and no more than this
+
+    // IV / IO access site choices.
+    sites: {
+      iv: ['ACF', 'Forearm', 'Hand', 'Foot', 'EJ'],
+      io: ['Proximal tibia', 'Proximal humerus', 'Distal Femur'],
+    },
+
+    // Colours shown beside cannula, IO and iGel sizes.
+    colours: {
+      iv: { 24: '#f4cc28', 22: '#439be0', 20: '#ef99ba', 18: '#68b88b', 16: '#aeb2b3' },
+      io: { Large: '#f4cc28', Medium: '#439be0', Small: '#ef99ba' },
+      igel: {
+        1: '#ef99ba',
+        1.5: '#88c9ee',
+        2: '#aeb2b3',
+        2.5: '#fff',
+        3: '#f4cc28',
+        4: '#68b88b',
+        5: '#ee9b43',
+      },
+    },
+
+    // iGel weight ranges in kg (Intersurgical product information); maxKg null = and above.
+    igelRanges: [
+      { size: '1', minKg: 2, maxKg: 5 },
+      { size: '1.5', minKg: 5, maxKg: 12 },
+      { size: '2', minKg: 10, maxKg: 25 },
+      { size: '2.5', minKg: 25, maxKg: 35 },
+      { size: '3', minKg: 30, maxKg: 60 },
+      { size: '4', minKg: 50, maxKg: 90 },
+      { size: '5', minKg: 90, maxKg: null },
+    ],
+  },
 
   /* ===== PART 5: SOURCES ===== */
   sources: {

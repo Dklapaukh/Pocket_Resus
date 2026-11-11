@@ -544,6 +544,8 @@ export function referenceSheet(type) {
     return;
   }
   const tube = R.tubeReference(age); // rule: engine tubeReference
+  const igelRanges = R.RULES.equipment.igelRanges
+    .map((r) => `${r.size}: ${r.maxKg === null ? r.minKg + '+' : r.minKg + '–' + r.maxKg} kg`).join(' · ');
   const tubeReference = tube
     ? `<p><b>Cuffed ETT:</b> ${tube.size}</p><p><b>Length at lips:</b> ${tube.length}</p>`
     : paras('tubeNoAge');
@@ -553,7 +555,7 @@ export function referenceSheet(type) {
     `<button data-save-age>Use age</button>${tubeReference}` +
     `<p class="caption">${R.guideText('tubeCaution')}</p>` +
     `<h3>Age-based weight estimate</h3><p>${R.wording('tubeSheetAgeEstimate', R.ageEstimateGaps())}</p>` +
-    `<h3>iGel weight ranges</h3><p>1: 2–5 kg · 1.5: 5–12 kg · 2: 10–25 kg · 2.5: 25–35 kg · 3: 30–60 kg · 4: 50–90 kg · 5: 90+ kg.</p>` +
+    `<h3>iGel weight ranges</h3><p>${igelRanges}.</p>` +
     `<a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a><p class="caption">iGel colours/ranges: Intersurgical product information.</p>`,
   );
 }

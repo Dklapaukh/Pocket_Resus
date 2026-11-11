@@ -11,7 +11,7 @@ import {
   time,
   toast,
 } from './format.js';
-import { ARREST_EQUIPMENT, ARREST_SITES, CARDIAC_CPG, COLOURS, EXPLAIN_ME_SLIDES, MAGNESIUM_CPG } from './data.js';
+import { CARDIAC_CPG, EXPLAIN_ME_SLIDES, MAGNESIUM_CPG } from './data.js';
 import { finished, logRows, st, torsades } from './state.js';
 
 /* Open the pop-up with a title and content. ctx records what the pop-up is for (st.sheetContext). */
@@ -235,7 +235,7 @@ export function openSelectDose() {
 export function openInterventions(group) {
   sheet(
     group === 'airway' ? 'Airway' : group === 'access' ? 'Access' : 'Airway / access',
-    `<div class="choice-grid">${Object.entries(ARREST_EQUIPMENT)
+    `<div class="choice-grid">${Object.entries(R.RULES.equipment.devices)
       .filter(
         ([k]) =>
           !group || (group === 'access' ? ['iv', 'io'].includes(k) : !['iv', 'io'].includes(k)),
@@ -251,7 +251,7 @@ export function colourSizes(type, values) {
   const legend = type === 'iv' ? 'Cannula size' : 'Size';
   const suffix = type === 'iv' ? 'G' : '';
   const options = values.map((v) => {
-    const colour = COLOURS[type]?.[v] || '#ccd9d3';
+    const colour = R.RULES.equipment.colours[type]?.[v] || '#ccd9d3';
     return `<label class="toggle"><input type="radio" name="size" aria-label="${v}${suffix}" value="${v}">` +
       `<span style="--size-colour:${colour}">${v}${suffix}</span></label>`;
   }).join('');
@@ -260,7 +260,7 @@ export function colourSizes(type, values) {
 
 /* Size options for a device type: tube-size grid for intubation, otherwise size buttons. */
 export function sizeFields(type) {
-  const sizes = ARREST_EQUIPMENT[type].sizes;
+  const sizes = R.RULES.equipment.devices[type].sizes;
   if (type === 'iv') return colourSizes(type, sizes);
   if (type === 'intubation') {
     const options = sizes.map((v) =>
@@ -277,7 +277,7 @@ export function sizeFields(type) {
 export function sitePicker(type) {
   return (
     toggleField('side', 'Side', ['Left', 'Right']) +
-    toggleField('site', 'Location', ARREST_SITES[type]).replace(
+    toggleField('site', 'Location', R.RULES.equipment.sites[type]).replace(
       'class="toggles"',
       'class="toggles ' + (type === 'iv' ? 'iv-sites' : 'io-sites') + '"',
     )
@@ -349,10 +349,10 @@ export function openEquipment(type) {
     ? '<button class="primary" type="submit" name="followUp" value="intubation">Record Laryngoscopy and add Intubation</button>'
     : '';
   sheet(
-    ARREST_EQUIPMENT[type].name,
+    R.RULES.equipment.devices[type].name,
     `<form id="equipmentForm">${deviceFields}${accessFields}${intubationFields}${outcomeFields}<label>Time<input name="at" type="time" step="60" required value="${local(now).slice(11)}"></label>` +
       `<label>Notes<textarea rows="1" name="notes" placeholder="Optional"></textarea></label>` +
-      `<div class="equipment-record-actions"><button class="primary" type="submit">Record ${ARREST_EQUIPMENT[type].name}</button>${followUp}</div></form>`,
+      `<div class="equipment-record-actions"><button class="primary" type="submit">Record ${R.RULES.equipment.devices[type].name}</button>${followUp}</div></form>`,
     { kind: 'equipment', type, at: now },
   );
   enhanceEquipment();

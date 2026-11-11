@@ -1,37 +1,5 @@
-/* Fixed lists: equipment, colours, guideline links and tutorial slides. Checklists and reversible
-   causes moved to the rules file (src/rules/nz-eas.js, part 3) on 12 Nov 2026. */
-
-/* Airway and access equipment types and their size choices. */
-export const ARREST_EQUIPMENT = {
-  iv: { name: 'IV cannulation', sizes: ['24', '22', '20', '18', '16'] },
-  io: { name: 'IO access', sizes: ['Large', 'Medium', 'Small'] },
-  opa: { name: 'OPA', sizes: ['0', '1', '2', '3', '4', '5'] },
-  npa: { name: 'NPA', sizes: ['6', '7', '8'] },
-  igel: { name: 'iGel', sizes: ['1', '1.5', '2', '2.5', '3', '4', '5'] },
-  laryngoscopy: { name: 'Laryngoscopy', sizes: ['00', '0', '1', '2', '3', '4', '5'] },
-  intubation: { name: 'Intubation', sizes: ['3', '4', '5', '6', '7', '8', '9'] },
-};
-
-/* IV / IO access site choices. */
-export const ARREST_SITES = {
-  iv: ['ACF', 'Forearm', 'Hand', 'Foot', 'EJ'],
-  io: ['Proximal tibia', 'Proximal humerus', 'Distal Femur'],
-};
-
-/* Colours shown beside cannula, IO and iGel sizes. */
-export const COLOURS = {
-  iv: { 24: '#f4cc28', 22: '#439be0', 20: '#ef99ba', 18: '#68b88b', 16: '#aeb2b3' },
-  io: { Large: '#f4cc28', Medium: '#439be0', Small: '#ef99ba' },
-  igel: {
-    1: '#ef99ba',
-    1.5: '#88c9ee',
-    2: '#aeb2b3',
-    2.5: '#fff',
-    3: '#f4cc28',
-    4: '#68b88b',
-    5: '#ee9b43',
-  },
-};
+/* Fixed lists: guideline links and tutorial slides. Checklists and reversible causes (part 3) and
+   equipment, sites and colours (part 4) moved to the rules file (src/rules/nz-eas.js) on 12 Nov 2026. */
 
 /* Links to the NZ EAS guideline pages. */
 export const CARDIAC_CPG =
