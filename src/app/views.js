@@ -20,7 +20,7 @@ import {
 /* True when an amiodarone dose is due: first at 3 shocks, second at 6 (earlier shocks and "+ Previous shock"
    count), no torsades at any point, session running. A2b (owner rule): the CURRENT rhythm does not matter for
    the gate itself; A2c: a non-shockable rhythm at the latest check shows fluids in the slot instead. Which card fills the lower slot (amiodarone, magnesium or
-   fluids) is decided separately by careMode() in state.js: any non-shockable rhythm (PEA or Asystole) at the latest check = fluids (A2c), torsades history = magnesium. */
+   fluids) is decided separately by careMode() in state.js: any non-shockable rhythm (PEA, Asystole or Other) at the latest check = fluids (A2c, A7), torsades history = magnesium. */
 export function amioDue() {
   const c = R.counts(st.s);
   return (
@@ -470,7 +470,7 @@ export function guidance() {
   );
 }
 
-/* Live-screen support card: magnesium for torsades or fluids for PEA / Asystole. */
+/* Live-screen support card: magnesium for torsades or fluids for PEA / Asystole / Other. */
 export function supportCard(type) {
   const mag = type === 'magnesium';
   const ref = mag ? R.magnesiumReference(st.s) : R.fluidReference(st.s);
@@ -516,7 +516,8 @@ export function tickSupport(type, enabled) {
   } else if (stats.total) {
     status = stats.total + ' mL recorded · review total';
   } else {
-    const rhythm = latestLowerRhythm(st.s) === 'Asystole' ? 'Asystole' : 'PEA';
+    const latest = latestLowerRhythm(st.s);
+    const rhythm = latest === 'Asystole' || latest === 'Other' ? latest : 'PEA';
     status = rhythm + ' · review fluid volume';
   }
   $('supportStatus').textContent = status;

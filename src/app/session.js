@@ -4,7 +4,7 @@
 import { $, KEY, R } from './base.js';
 import { render } from './views.js';
 import { closeSheet, error, openDrug, openSettings, peaSnippet, sheet, torsadesSnippet } from './sheets.js';
-import { careMode, finished, lockLeft, st } from './state.js';
+import { FLUID_RHYTHMS, careMode, finished, lockLeft, st } from './state.js';
 import { toast } from './format.js';
 
 /* Save the session to the phone. If storage is blocked or full, show the warning banner. */
@@ -76,7 +76,7 @@ export async function requestWakeSilently() {
 }
 
 /* Record the second-line support item for the current rhythm: magnesium (torsades; a repeat
-   needs confirming; maximum 2) or open the fluids sheet (PEA or Asystole). */
+   needs confirming; maximum 2) or open the fluids sheet (PEA, Asystole or Other). */
 export function recordSupport(type, confirmed = false) {
   if (
     !canRecord() ||
@@ -150,7 +150,7 @@ export function saveRhythm(
 }
 
 /* A rhythm button was tapped in the rhythm pop-up. Torsades after a shock asks for confirmation
-   first; PEA or asystole shows fluid guidance after saving (A2c). */
+   first; PEA, asystole or Other shows fluid guidance after saving (A2c, A7). */
 export function selectRhythm(rhythm) {
   const ctx = st.sheetContext;
   if (ctx?.kind !== 'rhythm') return;
@@ -177,7 +177,7 @@ export function selectRhythm(rhythm) {
     );
     return;
   }
-  if (saveRhythm(outcome, rhythm, energy) && (rhythm === 'PEA' || rhythm === 'Asystole'))
+  if (saveRhythm(outcome, rhythm, energy) && FLUID_RHYTHMS.includes(rhythm))
     sheet(
       'Non-shockable rhythm · fluid guidance',
       `${peaSnippet()}<button class="primary" data-close>Continue CPR</button>`,

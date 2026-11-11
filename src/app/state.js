@@ -77,14 +77,16 @@ export function torsades() {
 }
 
 /* A2c (owner ruling, 3 Nov 2026): which card fills the lower drug slot. Same as the engine's R.careMode except that
-   PEA or Asystole at the latest relevant check gives fluids. "Other" and "Not recorded" are still
-   ignored. VF/VT then bring amiodarone back (or magnesium if torsades was ever recorded). The engine file is untouched. */
+   a non-shockable rhythm (PEA or Asystole; and "Other" since A7, owner ruling 11 Nov 2026) at the latest relevant
+   check gives fluids. "Not recorded" is still ignored. VF/VT then bring amiodarone back (or magnesium if torsades
+   was ever recorded). The engine file is untouched. */
+export const FLUID_RHYTHMS = ['PEA', 'Asystole', 'Other'];
 export function latestLowerRhythm(s) {
   const latest = R.active(s)
     .filter(
       (event) =>
         ['shock', 'noshock', 'rhythm', 'rosc'].includes(event.type) &&
-        ['PEA', 'Asystole', 'VF', 'VT', 'Torsades'].includes(event.rhythm),
+        [...FLUID_RHYTHMS, 'VF', 'VT', 'Torsades'].includes(event.rhythm),
     )
     .sort((a, b) => a.at - b.at)
     .at(-1);
@@ -93,7 +95,7 @@ export function latestLowerRhythm(s) {
 
 export function careMode(s) {
   const rhythm = latestLowerRhythm(s);
-  if (rhythm === 'PEA' || rhythm === 'Asystole') return 'fluids';
+  if (FLUID_RHYTHMS.includes(rhythm)) return 'fluids';
   return R.hasTorsades(s) ? 'magnesium' : 'amiodarone';
 }
 

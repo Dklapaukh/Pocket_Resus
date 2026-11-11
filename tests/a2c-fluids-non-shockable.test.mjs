@@ -1,6 +1,6 @@
 // A2c (owner ruling, 3 Nov 2026): fluids are offered after ANY non-shockable rhythm (PEA or Asystole) at the latest
-// rhythm check. VF/VT bring amiodarone back (magnesium if torsades was ever recorded). "Other" and "Not recorded"
-// do not change the lower slot. The engine file src/engine/rhythm-care.js is untouched; the live rule is in state.js.
+// rhythm check. VF/VT bring amiodarone back (magnesium if torsades was ever recorded). "Not recorded"
+// does not change the lower slot. A7 (owner ruling 11 Nov 2026): "Other" now counts as non-shockable (fluids). The engine file src/engine/rhythm-care.js is untouched; the live rule is in state.js.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { openApp } from './helpers/dom-app.mjs';
@@ -38,9 +38,10 @@ test('A2c: PEA and asystole behave the same; either one then VF/VT gives the gre
   }
 });
 
-test('A2c: "Other" as the latest non-shockable rhythm does not trigger fluids (unchanged)', () => {
+// Updated on purpose by A7 (owner ruling 11 Nov 2026): "Other" now triggers fluids like PEA and Asystole.
+test('A2c/A7: "Other" as the latest non-shockable rhythm triggers fluids', () => {
   const a = openApp({ appDir: ROOT }); start(a);
-  noShock(a, 'Other'); assert.ok(has(a, 'amiodaronePending') && !has(a, 'fluidsCard'));
+  noShock(a, 'Other'); assert.ok(has(a, 'fluidsCard') && !has(a, 'amiodaronePending'));
 });
 
 test('A2c: the latest rhythm decides: asystole, VF (3 shocks), asystole again: fluids, amiodarone, fluids', () => {
@@ -88,7 +89,8 @@ test('A2c wording (owner Option 1): neutral headings; the pop-up appears after P
   }
 });
 
-test('A2c wording: no pop-up after "Other" (only PEA and Asystole)', () => {
+// Updated on purpose by A7 (owner ruling 11 Nov 2026).
+test('A2c/A7 wording: the fluid guidance pop-up also shows after "Other"', () => {
   const a = openApp({ appDir: ROOT }); start(a); noShock(a, 'Other');
-  assert.doesNotMatch(a.surfaces().sheet, /fluid guidance/);
+  assert.match(a.surfaces().sheet, /Non-shockable rhythm · fluid guidance/);
 });
