@@ -1,0 +1,43 @@
+// Step 3a sub-step 3 (doc 18): RSI doses and tube formulae moved from views.js into the rules file and
+// the engine. The v21 formulas are copied below exactly as they were; the engine must give the same
+// result for every weight and age tried.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { Resus as R } from '../src/engine/index.js';
+
+// ---- v21 code (src/app/views.js referenceSheet), unchanged ----
+const fmt = (n) => Math.round(n * 10) / 10;
+function v21Rsi(w) {
+  const usualDose = fmt(Math.min(w * 2, 200));
+  const reducedKetamine = fmt(Math.min(w, 200));
+  const blockerDose = fmt(w > 40 ? Math.min(Math.round((w * 2) / 50) * 50, 200) : Math.min(w * 2, 200));
+  return { fentanylMcg: usualDose, ketamineMg: usualDose, reducedKetamineMg: reducedKetamine, blockerMg: blockerDose };
+}
+function v21Tube(age) {
+  const tubeSize = age < 1 ? '3–4 mm' : fmt(age / 4 + 3.5) + ' mm (formula)';
+  const tubeLength = age < 1 ? 'ETT size × 3 cm' : fmt(age / 2 + 12) + ' cm (formula)';
+  return age !== null && age <= 14 ? { size: tubeSize, length: tubeLength } : null;
+}
+
+test('RSI doses: engine matches v21 for every weight 0.1 to 500 kg (0.1 kg steps) and edge values', () => {
+  const weights = [0, NaN, 12.25, 40.0001, 62.5, 87.5, 112.5];
+  for (let i = 1; i <= 5000; i++) weights.push(i / 10);
+  for (const w of weights) assert.deepEqual(R.rsiDoses(w), v21Rsi(w), `${w} kg`);
+});
+
+test('tube formulae: engine matches v21 for no age and ages 0 to 120 (0.01 year steps)', () => {
+  const ages = [null, -1, 0.001, 0.999, 13.999, 14.001];
+  for (let i = 0; i <= 12000; i++) ages.push(i / 100);
+  for (const a of ages) assert.deepEqual(R.tubeReference(a), v21Tube(a), `age ${a}`);
+});
+
+test('RSI and tube numbers are pinned (EAS 9.3; paediatric formulae)', () => {
+  assert.deepEqual(R.RULES.numbers.rsi, {
+    fentanyl: { mcgPerKg: 2, maxMcg: 200 }, ketamine: { mgPerKg: 2, maxMg: 200 }, reducedKetamine: { mgPerKg: 1, maxMg: 200 },
+    blocker: { mgPerKg: 2, maxMg: 200, roundAdultToMg: 50 }, displayDecimals: 1,
+  });
+  assert.deepEqual(R.RULES.numbers.tubes, {
+    showUpToAge: 14, underOneSizeMinMm: 3, underOneSizeMaxMm: 4, underOneLengthTimesSize: 3,
+    sizeAgeDivisor: 4, sizeAddMm: 3.5, lengthAgeDivisor: 2, lengthAddCm: 12, displayDecimals: 1,
+  });
+});

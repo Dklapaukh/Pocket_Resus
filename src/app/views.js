@@ -529,21 +529,16 @@ export function guidanceGrid() {
 /* Reference pop-up opened from Guidance (RSI doses, tube sizes), calculated from weight or age. */
 export function referenceSheet(type) {
   const w = Number(st.s.weight),
-    age = st.s.age === '' ? null : Number(st.s.age),
-    fmt = (n) => Math.round(n * 10) / 10;
+    age = st.s.age === '' ? null : Number(st.s.age);
   if (type === 'rsi') {
-    // These are reference values only; opening this sheet records no medicine.
-    const usualDose = fmt(Math.min(w * 2, 200));
-    const reducedKetamine = fmt(Math.min(w, 200));
-    const blockerDose = fmt(
-      w > 40 ? Math.min(Math.round((w * 2) / 50) * 50, 200) : Math.min(w * 2, 200),
-    );
+    // These are reference values only; opening this sheet records no medicine (rule: engine rsiDoses).
+    const d = R.rsiDoses(w);
     const doseList = w
       ? `<p><b>${w} kg</b> · calculated references, not recorded administrations</p><dl>` +
-        `<dt>Fentanyl · conditional</dt><dd>${usualDose} mcg IV</dd>` +
-        `<dt>Ketamine · usual</dt><dd>${usualDose} mg IV</dd>` +
-        `<dt>Ketamine · reduced</dt><dd>${reducedKetamine} mg IV</dd>` +
-        `<dt>Rocuronium OR suxamethonium</dt><dd>${blockerDose} mg IV</dd></dl>`
+        `<dt>Fentanyl · conditional</dt><dd>${d.fentanylMcg} mcg IV</dd>` +
+        `<dt>Ketamine · usual</dt><dd>${d.ketamineMg} mg IV</dd>` +
+        `<dt>Ketamine · reduced</dt><dd>${d.reducedKetamineMg} mg IV</dd>` +
+        `<dt>Rocuronium OR suxamethonium</dt><dd>${d.blockerMg} mg IV</dd></dl>`
       : '<button class="primary" data-action="weight">Enter patient weight</button>';
     sheet(
       'RSI dose references',
@@ -552,10 +547,9 @@ export function referenceSheet(type) {
     );
     return;
   }
-  const tubeSize = age < 1 ? '3–4 mm' : fmt(age / 4 + 3.5) + ' mm (formula)';
-  const tubeLength = age < 1 ? 'ETT size × 3 cm' : fmt(age / 2 + 12) + ' cm (formula)';
-  const tubeReference = age !== null && age <= 14
-    ? `<p><b>Cuffed ETT:</b> ${tubeSize}</p><p><b>Length at lips:</b> ${tubeLength}</p>`
+  const tube = R.tubeReference(age); // rule: engine tubeReference
+  const tubeReference = tube
+    ? `<p><b>Cuffed ETT:</b> ${tube.size}</p><p><b>Length at lips:</b> ${tube.length}</p>`
     : '<p>Enter age to show the paediatric ETT and length-at-lips formula results.</p>';
   sheet(
     'Tube sizes & age criteria',

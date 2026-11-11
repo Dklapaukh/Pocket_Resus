@@ -66,7 +66,8 @@ const AGE_GAPS = ['underOneYearKg', 'tenMaxAge', 'tenAddYears', 'tenMultiplyBy',
 test('reference wording is plain text, and every {gap} is one the app fills', () => {
   const gaps = { adultDoseBasis: ['adultAboveKg'], childDoseBasis: ['band'], childMagnesiumBasis: ['band'], noMagnesiumDoseBasis: ['band'],
     childFluidBasis: ['minPerKg', 'maxPerKg'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'],
-    weightSheetAgeEstimate: AGE_GAPS, tubeSheetAgeEstimate: AGE_GAPS };
+    weightSheetAgeEstimate: AGE_GAPS, tubeSheetAgeEstimate: AGE_GAPS,
+    tubeSizeUnderOne: ['minMm', 'maxMm'], tubeLengthUnderOne: ['timesSize'], tubeSizeFormula: ['mm'], tubeLengthFormula: ['cm'] };
   for (const [key, text] of Object.entries(RULES.wording)) {
     assert.equal(typeof text, 'string', key);
     assert.deepEqual([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]), gaps[key] || [], key);

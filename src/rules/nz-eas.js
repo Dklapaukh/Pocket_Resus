@@ -90,6 +90,32 @@ export const RULES = {
       dueAtShocks: [3, 6],
     },
 
+    /* RSI dose references (EAS 9.3), shown on the Guidance tab from the EXACT entered weight (not the
+       band). Each dose = weight x perKg, capped at max. Above the adult threshold (weight.adultAboveKg)
+       the blocker is first rounded to the nearest roundAdultToMg. Shown to displayDecimals places. */
+    rsi: {
+      fentanyl: { mcgPerKg: 2, maxMcg: 200 },
+      ketamine: { mgPerKg: 2, maxMg: 200 },
+      reducedKetamine: { mgPerKg: 1, maxMg: 200 },
+      blocker: { mgPerKg: 2, maxMg: 200, roundAdultToMg: 50 }, // rocuronium OR suxamethonium
+      displayDecimals: 1,
+    },
+
+    /* Paediatric tube formulae (shown on the Guidance tab from age in years, up to showUpToAge).
+       Under 1 year: a fixed size range, length = size x underOneLengthTimesSize.
+       Otherwise: size = age / sizeAgeDivisor + sizeAddMm; length = age / lengthAgeDivisor + lengthAddCm. */
+    tubes: {
+      showUpToAge: 14,
+      underOneSizeMinMm: 3,
+      underOneSizeMaxMm: 4,
+      underOneLengthTimesSize: 3,
+      sizeAgeDivisor: 4,
+      sizeAddMm: 3.5,
+      lengthAgeDivisor: 2,
+      lengthAddCm: 12,
+      displayDecimals: 1,
+    },
+
     /* A5 (owner ruling 4 Nov 2026): after a dose is recorded, the Live card cannot record again for
        this long. Adrenaline is also greyed out while locked; magnesium and fluids are not. */
     doubleTapLockMs: {
@@ -115,6 +141,11 @@ export const RULES = {
     amiodaroneSecondNotYetDue: 'Due after {second} shocks',
     childSecondAmiodarone: 'Seek clinical advice', // C6b: no EAS source for a child second dose
     invalidWeight: 'Enter weight above zero and no more than {maxKg} kg, with up to one decimal.',
+    // Tube sheet results; gaps come from numbers.tubes
+    tubeSizeUnderOne: '{minMm}–{maxMm} mm',
+    tubeLengthUnderOne: 'ETT size × {timesSize} cm',
+    tubeSizeFormula: '{mm} mm (formula)',
+    tubeLengthFormula: '{cm} cm (formula)',
     // Age-estimate captions (weight sheet, tube sheet); gaps come from numbers.ageEstimate
     weightSheetAgeEstimate: 'Under 1 year: {underOneYearKg} kg. 1–{tenMaxAge} years: (age + {tenAddYears}) × {tenMultiplyBy}. {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy}. CPG 7.2; estimates may underestimate. Excludes newborn resuscitation.',
     tubeSheetAgeEstimate: 'Under 1 year: {underOneYearKg} kg. Ages 1–{tenMaxAge}: (age + {tenAddYears}) × {tenMultiplyBy} kg. Ages {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy} kg. Estimates may underestimate actual weight.',

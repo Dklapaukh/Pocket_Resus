@@ -141,6 +141,42 @@ export function ageEstimateGaps() {
   };
 }
 
+/* ---------- Guidance-tab references (RSI doses, tube formulae) ---------- */
+
+const roundTo = (value, decimals) => Math.round(value * 10 ** decimals) / 10 ** decimals;
+
+/* RSI dose references from the exact weight in kg (not the band). Reference only; records nothing. */
+export function rsiDoses(weightKg) {
+  const { fentanyl, ketamine, reducedKetamine, blocker, displayDecimals } = RULES.numbers.rsi;
+  const capped = (perKg, max) => Math.min(weightKg * perKg, max);
+  const blockerMg = weightKg > RULES.numbers.weight.adultAboveKg
+    ? Math.min(Math.round((weightKg * blocker.mgPerKg) / blocker.roundAdultToMg) * blocker.roundAdultToMg, blocker.maxMg)
+    : capped(blocker.mgPerKg, blocker.maxMg);
+  return {
+    fentanylMcg: roundTo(capped(fentanyl.mcgPerKg, fentanyl.maxMcg), displayDecimals),
+    ketamineMg: roundTo(capped(ketamine.mgPerKg, ketamine.maxMg), displayDecimals),
+    reducedKetamineMg: roundTo(capped(reducedKetamine.mgPerKg, reducedKetamine.maxMg), displayDecimals),
+    blockerMg: roundTo(blockerMg, displayDecimals),
+  };
+}
+
+/* Tube size and length-at-lips wording for an age in years, or null when not shown (no age, or above
+   showUpToAge). */
+export function tubeReference(age) {
+  const t = RULES.numbers.tubes;
+  if (age === null || !(age <= t.showUpToAge)) return null;
+  if (age < 1) {
+    return {
+      size: wording('tubeSizeUnderOne', { minMm: t.underOneSizeMinMm, maxMm: t.underOneSizeMaxMm }),
+      length: wording('tubeLengthUnderOne', { timesSize: t.underOneLengthTimesSize }),
+    };
+  }
+  return {
+    size: wording('tubeSizeFormula', { mm: roundTo(age / t.sizeAgeDivisor + t.sizeAddMm, t.displayDecimals) }),
+    length: wording('tubeLengthFormula', { cm: roundTo(age / t.lengthAgeDivisor + t.lengthAddCm, t.displayDecimals) }),
+  };
+}
+
 /* ---------- Shock energy ---------- */
 
 /* Shock energy reference in joules (change A1): the child band's energy, or the adult energy above
