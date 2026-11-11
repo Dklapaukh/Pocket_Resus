@@ -42,7 +42,7 @@ import { checkStatus, openCycleLog, referenceSheet, render, tick } from './views
 import { $, KEY, R } from './base.js';
 import { ARREST_CHECKLISTS, ARREST_EQUIPMENT, CAUSES } from './data.js';
 import { fitNote, fitNotes, formatGuidelineReference, local, toast } from './format.js';
-import { childSecondAmio, drugDose, lockLeft, secondAmioEarly, st, torsades } from './state.js';
+import { st, torsades } from './state.js';
 
 /* Listeners are registered here, in original order. */
 /* Weight, start time and earlier-count forms validate before committing. */
@@ -58,7 +58,7 @@ function estimateWeight() {
 function saveWeight() {
   const w = $('weightInput').value.replace(',', '.');
   if (!R.validWeight(w))
-    return error('Enter weight above zero and no more than 500 kg, with up to one decimal.');
+    return error(R.wording('invalidWeight', { maxKg: R.RULES.weight.maxKg }));
   const source = st.sheetContext.source,
     age = $('ageInput').value;
   commit(() => {
@@ -290,13 +290,14 @@ function recordOutcome(b) {
 function recordQuickDrug(b) {
   if (!canRecord()) return;
   const type = b.dataset.drug,
-    value = drugDose(type);
+    value = R.doseFor(st.s, type);
   if (
     value === null ||
     st.s.special ||
-    (type === 'amiodarone' && (torsades() || R.counts(st.s).amio >= 2 || childSecondAmio() || secondAmioEarly())) ||
+    (type === 'amiodarone' &&
+      (torsades() || R.amiodaroneDosesComplete(st.s) || R.childSecondAmiodarone(st.s) || R.secondAmiodaroneEarly(st.s))) ||
     st.s.phase === 'ROSC' ||
-    lockLeft(type) > 0 // A5: adrenaline is locked for 3 min 30 s after a dose
+    R.lockLeft(st.s, type) > 0 // A5: adrenaline is locked for 3 min 30 s after a dose
   )
     return;
   commit(
@@ -673,9 +674,10 @@ window.addEventListener('beforeinstallprompt', (e) => {
 window.addEventListener('storage', (e) => {
   if (e.key !== KEY || !e.newValue) return;
   try {
-    const incoming = JSON.parse(e.newValue);
-    if (incoming.version === 1 && Array.isArray(incoming.events)) {
-      st.s = incoming;
+    // Same check as at start-up (missing parts filled, comma weight converted); unusable data is ignored.
+    const restored = R.restoreSaved(JSON.parse(e.newValue));
+    if (restored) {
+      st.s = restored.session;
       closeSheet();
       render();
       toast('Session updated from another tab');

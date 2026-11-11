@@ -14,7 +14,7 @@ export function makeActions(seed, n = 45) {
   }
   return { acts, T0 };
 }
-function apply(R, s, x) {
+export function apply(R, s, x) {
   const ev = s.events;
   switch (x.k) {
     case 'begin': if (s.phase === 'Ready') { R.begin(s, x.now); R.add(s, 'start', 'CPR cycle started', 'Cycle 1', x.now); } return s;

@@ -20,30 +20,27 @@ independent clinical review is deferred until the code and other key goals are r
 - **Token efficiency:** when a chat gets long or slow, give the owner a ready-to-paste prompt to
   start a new chat (objective, state, next steps). Keep docs tidy so new chats start cheaply.
 
-## Current state (11 Nov 2026)
-- **Live: v20** (cache `resus-pocket-v20-a7`) = A1-A7 plus the readability work. A7 phone
-  check outstanding (steps in doc 09, 11 Nov entry).
-- **Engine rewritten for readability (11 Nov 2026, owner-approved, local until pushed):**
-  `src/engine/` is now plain readable code and every clinical number lives in one data file,
-  `src/rules/nz-eas.js`. The old exact-line "fidelity" tests were retired (owner-approved) and
-  replaced by: 3000 random side-by-side runs against the original engine, the golden
-  recordings, and `tests/rules-file.test.mjs` (each value checked against the EAS tables).
-  Proven: changing one magnesium value fails all three. 137 tests pass.
+## Current state (12 Nov 2026)
+- **Live: v21** (cache `resus-pocket-v21-rules`) = A1-A7, readable engine, and step 2 below.
+  Phone checks outstanding: A7 (doc 09, 11 Nov entry) and v21 (doc 09, 12 Nov entry).
+- **Step 2 done (12 Nov 2026):** every drug-card rule is now in the engine
+  (`src/engine/drug-cards.js`) with its numbers and wording in `src/rules/nz-eas.js`; no value or
+  text changed (3000-session old-vs-new test). Saved-session fixes (doc 17, doc 11 comma weight)
+  done in `restoreSaved` (`core.js`). 151 tests pass.
 - Owner rulings 11 Nov 2026: "Other" triggers fluids (A7, built); fentanyl hypertension
   threshold and extra amiodarone contraindications are NOT to be added.
 
 ## Goal and next steps
 Goal: readable, auditable code with all clinical rules in a rules file, then a **rules editor**
 so rules can be updated, and new rule sets made for other services, without touching code.
-1. **Done:** readable engine + rules file for engine numbers.
-2. **Next:** move the clinical rules that still live in the app into the engine / rules file:
-   lower-card choice (`careMode`, `latestLowerRhythm` in `state.js`), amiodarone gate
-   (`amioDue` in `views.js`), child second-dose rule (C6b), A5 lock times, reference wording.
-   Retire the original PEA-only `careMode` in the engine once nothing compares against it.
-3. Then: design the rules editor (plain data in, checks that block impossible values, a "what
+1. **Done:** readable engine + rules file for engine numbers (11 Nov).
+2. **Done:** app-layer clinical rules moved into the engine / rules file; storage fixes (12 Nov).
+3. **Next:** design the rules editor (plain data in, checks that block impossible values, a "what
    changed" view, automatic tests per rule set, owner approval before a rule set goes live).
-4. Open software issues: incomplete saved session crashes Settings (doc 17); comma-weight
-   edge (doc 11). Fix during step 2 (storage/validation).
+   Open question for the design: whether the long guideline extracts (checklists, guidance
+   pop-ups, RSI and tube references, still text in `data.js`/`sheets.js`/`views.js`) belong in
+   the editable rule set.
+4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner
 1. Not rebuilt (historical): pause/resume, Reviewed/Suspected causes screen, "record rhythm

@@ -1,5 +1,14 @@
 # Storage recovery investigation
 
+**Fixed 12 Nov 2026 (doc 07 step 2).** Start-up and updates from another tab now use one check,
+`restoreSaved` in `src/engine/core.js`: a version 1 save with an event list and a start time is
+loaded; any missing part is filled with the new-session default (recorded events and audit
+history are never changed); a valid comma weight is converted; undo copies get the same
+treatment and an unusable undo copy is dropped. The raw save is kept under
+`resus-pocket-v1-repaired-backup` (separate from the A6 unreadable backup, so neither overwrites
+the other). No message is shown for a repair. A complete, normal save is loaded untouched.
+Test: `tests/step2-saved-session-repair.test.mjs`. Investigation as written before the fix:
+
 This is a software investigation, not clinical validation. No real session
 was inspected. The issue below was reproduced with deliberately constructed
 data in the test harness; its occurrence on a real device is unknown.

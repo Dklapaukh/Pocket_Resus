@@ -24,7 +24,8 @@ Changing one value (tested with a magnesium dose) fails all three.
 ## Known quirks kept on purpose
 - Magnesium and child fluid references read the weight without the decimal-comma conversion,
   so a saved weight like "15,5" gives no band / NaN (normal entry never saves this; doc 11).
-- The engine's own `careMode` is the original PEA-only rule. The live app uses `careMode` in
-  `src/app/state.js` (A2c, A7). Planned: move the live rule into the engine (doc 07).
-- Clinical rules still in the app layer (amiodarone gate, child second dose, A5 locks, wording)
-  are listed in doc 07 as the next step.
+- The engine's own `careMode` is the original PEA-only rule, kept only for the side-by-side test.
+  The live app uses `lowerCard` in `src/engine/drug-cards.js` (A2c, A7).
+- The drug-card rules (amiodarone gate, child second dose, A5 locks) are in `src/engine/drug-cards.js`
+  since 12 Nov 2026, with their numbers and reference wording in the rules file. Longer guideline
+  extracts (checklists, guidance pop-ups) are still text in `src/app/data.js` and `sheets.js`.

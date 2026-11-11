@@ -12,23 +12,11 @@ import {
 } from './format.js';
 import { ARREST_CHECKLISTS, CAUSES } from './data.js';
 import { sheet } from './sheets.js';
-import {
-  careMode, drugDose, finished, latestLowerRhythm, lockLeft, logRows,
-  secondAmioEarly, st, torsades,
-} from './state.js';
+import { finished, logRows, st, torsades } from './state.js';
 
-/* True when an amiodarone dose is due: first at 3 shocks, second at 6 (earlier shocks and "+ Previous shock"
-   count), no torsades at any point, session running. A2b (owner rule): the CURRENT rhythm does not matter for
-   the gate itself; A2c: a non-shockable rhythm at the latest check shows fluids in the slot instead. Which card fills the lower slot (amiodarone, magnesium or
-   fluids) is decided separately by careMode() in state.js: any non-shockable rhythm (PEA, Asystole or Other) at the latest check = fluids (A2c, A7), torsades history = magnesium. */
+/* True when an amiodarone dose is due (rule in src/engine/drug-cards.js: amiodaroneDue). */
 export function amioDue() {
-  const c = R.counts(st.s);
-  return (
-    st.s.phase === 'Active' &&
-    !st.s.special &&
-    !torsades() &&
-    ((c.shocks >= 3 && c.amio === 0) || (c.shocks >= 6 && c.amio === 1))
-  );
+  return R.amiodaroneDue(st.s);
 }
 
 /* A2 (owner-approved): the amiodarone card appears only when a dose is due. Once it has appeared it stays for
@@ -40,7 +28,8 @@ export function amioCardVisible() {
 
 /* A2: what sits in the lower drug slot before the amiodarone card is due (no dose, no button). */
 export function amioPendingCard() {
-  return `<section class="drug drug-pending" id="amiodaronePending"><h3>Amiodarone</h3><p class="pending-note">Not yet due. Review after 3 shocks in VF / pulseless VT (second dose after 6, counting earlier shocks).</p></section>`;
+  const [first, second] = R.RULES.amiodarone.dueAtShocks;
+  return `<section class="drug drug-pending" id="amiodaronePending"><h3>Amiodarone</h3><p class="pending-note">${R.wording('amiodaroneNotYetDue', { first, second })}</p></section>`;
 }
 
 /* One drug card (adrenaline or amiodarone) on the Live screen. */
@@ -49,10 +38,10 @@ export function drugCard(type) {
     name = isAdrenaline ? 'Adrenaline' : 'Amiodarone',
     doseReference = R.dose(st.s),
     counts = R.counts(st.s),
-    value = drugDose(type),
+    value = R.doseFor(st.s, type),
     blocked = !isAdrenaline && torsades(),
-    secondDoseEarly = !isAdrenaline && secondAmioEarly(), // C6b-2: second dose is not an option before the 6th shock
-    needsClinicalAdvice = !isAdrenaline && R.isPaediatric(st.s) && counts.amio === 1, // C6b: child second amiodarone dose has no source
+    secondDoseEarly = !isAdrenaline && R.secondAmiodaroneEarly(st.s), // C6b-2: second dose is not an option before the 6th shock
+    needsClinicalAdvice = !isAdrenaline && R.childAmiodaroneAdvice(st.s), // C6b: child second amiodarone dose has no source
     selectDose = needsClinicalAdvice && secondDoseEarly && !blocked && !st.s.special && !['ROSC', 'Ended'].includes(st.s.phase),
     canRecordSuggestedDose =
       doseReference &&
@@ -60,14 +49,14 @@ export function drugCard(type) {
       !secondDoseEarly &&
       !st.s.special &&
       !blocked &&
-      (isAdrenaline || counts.amio < 2) &&
+      (isAdrenaline || !R.amiodaroneDosesComplete(st.s)) &&
       !['ROSC', 'Ended'].includes(st.s.phase),
-    adrenalineLocked = isAdrenaline && lockLeft('adrenaline') > 0, // A5: greyed out for 3 min 30 s after a dose
+    adrenalineLocked = isAdrenaline && R.lockLeft(st.s, 'adrenaline') > 0, // A5: greyed out for 3 min 30 s after a dose
     lockAttribute = adrenalineLocked ? ` data-a5-free="${canRecordSuggestedDose ? 1 : 0}"` : ''; // remembers whether it is otherwise usable, to free it later
   // Keep this precedence: the same conditions can be true at the same time.
   let doseText;
-  if (needsClinicalAdvice) doseText = 'Seek clinical advice';
-  else if (secondDoseEarly) doseText = 'Due after 6 shocks';
+  if (needsClinicalAdvice) doseText = R.wording('childSecondAmiodarone');
+  else if (secondDoseEarly) doseText = R.wording('amiodaroneSecondNotYetDue', { second: R.RULES.amiodarone.dueAtShocks[1] });
   else if (doseReference) doseText = esc(value + ' mg IV');
   else doseText = 'Enter weight';
 
@@ -167,7 +156,7 @@ export function openCycleLog() {
 
 // Evaluate the lower slot after the adrenaline card, as in the original screen.
 function lowerDrugCard() {
-  const mode = careMode(st.s);
+  const mode = R.lowerCard(st.s);
   return mode === 'amiodarone'
     ? (amioCardVisible() ? drugCard('amiodarone') : amioPendingCard())
     : supportCard(mode);
@@ -415,17 +404,17 @@ function tickMedicines(t, c, on) {
   /* A5: while the lock runs the adrenaline button is greyed out (set when the card is drawn); when the
      3 min 30 s are up, free it again, but only if it was otherwise usable (weight entered, not ROSC, etc.). */
   const adrBtn = $('adrenalineCard').querySelector('button[data-a5-free]');
-  if (adrBtn && lockLeft('adrenaline') === 0) {
+  if (adrBtn && R.lockLeft(st.s, 'adrenaline') === 0) {
     adrBtn.disabled = adrBtn.dataset.a5Free !== '1';
     adrBtn.removeAttribute('data-a5-free');
   }
-  if (careMode(st.s) === 'amiodarone') {
+  if (R.lowerCard(st.s) === 'amiodarone') {
     if (!amioCardVisible()) return; // A2: placeholder tile has nothing to update
     const due = amioDue();
     $('amiodaroneClock').textContent = t.amio === null ? '—' : clock(t.amio);
     $('amiodaroneStatus').textContent = amiodaroneStatus(t.amio, c.amio, enabled, due);
     $('amiodaroneCard').classList.toggle('attention', due);
-  } else tickSupport(careMode(st.s), enabled);
+  } else tickSupport(R.lowerCard(st.s), enabled);
 }
 
 /* Runs four times a second: updates clocks, cycle countdown, ring, drug timers and prompts. */
@@ -516,7 +505,7 @@ export function tickSupport(type, enabled) {
   } else if (stats.total) {
     status = stats.total + ' mL recorded · review total';
   } else {
-    const latest = latestLowerRhythm(st.s);
+    const latest = R.latestLowerRhythm(st.s);
     const rhythm = latest === 'Asystole' || latest === 'Other' ? latest : 'PEA';
     status = rhythm + ' · review fluid volume';
   }

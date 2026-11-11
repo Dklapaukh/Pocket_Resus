@@ -47,3 +47,26 @@ test('weight bands round up and adult starts above 40 kg', () => {
 test('the rules file is plain data (no functions), so an editor can read and write it', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(RULES)), RULES);
 });
+
+// Doc 07 step 2 (12 Nov 2026): app rules moved into the rules file. These are owner rulings, not EAS
+// table values; each is pinned so a change needs the owner's approval and this test updated with it.
+test('lower drug card (A2c, A7): fluids after PEA, Asystole or Other; VF/VT/Torsades bring amiodarone back', () => {
+  assert.deepEqual(RULES.lowerCard, { fluidRhythms: ['PEA', 'Asystole', 'Other'], amiodaroneRhythms: ['VF', 'VT', 'Torsades'] });
+});
+
+test('amiodarone due at 3 shocks, second dose at 6, two doses at most (A2, A2b, C6b-2)', () => {
+  assert.deepEqual(RULES.amiodarone.dueAtShocks, [3, 6]);
+});
+
+test('double-tap locks (A5): adrenaline 3 min 30 s, magnesium and fluids 5 s', () => {
+  assert.deepEqual(RULES.doubleTapLockMs, { adrenaline: 210000, magnesium: 5000, fluids: 5000 });
+});
+
+test('reference wording is plain text, and every {gap} is one the app fills', () => {
+  const gaps = { adultDoseBasis: ['adultAboveKg'], childDoseBasis: ['band'], childMagnesiumBasis: ['band'], noMagnesiumDoseBasis: ['band'],
+    childFluidBasis: ['minPerKg', 'maxPerKg'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'] };
+  for (const [key, text] of Object.entries(RULES.wording)) {
+    assert.equal(typeof text, 'string', key);
+    assert.deepEqual([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]), gaps[key] || [], key);
+  }
+});

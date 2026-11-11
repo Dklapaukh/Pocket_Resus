@@ -23,6 +23,10 @@ test('ported engine matches the golden file except shock-energy / pads values (A
 });
 // The readable rewrite (11 Nov 2026) shares three small helpers between engine files; nothing else may be added or lost.
 const ADDED_BY_REWRITE = ['childBand', 'invalidEnergy', 'rhythmDetails'];
+// Doc 07 step 2 (12 Nov 2026, owner-approved): drug-card rules moved from the app into the engine,
+// plus the rule set, its wording helper and the saved-session check. Listed by name so nothing slips in.
+const ADDED_BY_STEP_2 = ['RULES', 'wording', 'restoreSaved', 'latestLowerRhythm', 'lowerCard', 'amiodaroneDue', 'amiodaroneDosesComplete',
+  'childAmiodaroneAdvice', 'childSecondAmiodarone', 'secondAmiodaroneEarly', 'doseFor', 'lockLeft'];
 test('ported engine exposes the same functions and constants as the original (plus the named helpers)', () => {
-  assert.deepEqual(Object.keys(ported).sort(), [...Object.keys(original), ...ADDED_BY_REWRITE].sort());
+  assert.deepEqual(Object.keys(ported).sort(), [...Object.keys(original), ...ADDED_BY_REWRITE, ...ADDED_BY_STEP_2].sort());
 });

@@ -1,6 +1,7 @@
 /* CLINICAL RULES FILE: NZ EAS clinical practice guidelines (packaged exports 24 September 2026).
 
-   Every clinical number the engine uses lives here, so the rules can be checked against the
+   Every clinical number and rule the app uses lives here (engine numbers since 11 Nov 2026; the
+   drug-card rules, A5 locks and reference wording since 12 Nov 2026), so they can be checked against the
    guideline in one place. This file is plain data (no program logic), so a future rules editor
    can read and write it, and other services can have their own copy.
 
@@ -66,5 +67,45 @@ export const RULES = {
     shock: ['VF', 'VT', 'Torsades'],
     noshock: ['PEA', 'Asystole', 'Other', 'Unknown'],
     rosc: ['Sinus rhythm', 'Organised rhythm', 'AF', 'Other', 'Unknown'],
+  },
+
+  /* Which card fills the lower drug slot on the Live screen (A2c 3 Nov 2026, A7 11 Nov 2026).
+     The latest rhythm (from either list) decides: a fluids rhythm shows the fluids card; an
+     amiodarone rhythm shows amiodarone, or magnesium if torsades was ever recorded.
+     Rhythms in neither list ("Unknown", ROSC rhythms) are ignored. */
+  lowerCard: {
+    fluidRhythms: ['PEA', 'Asystole', 'Other'],
+    amiodaroneRhythms: ['VF', 'VT', 'Torsades'],
+  },
+
+  /* Amiodarone doses become due at these shock counts (earlier shocks count): first dose at 3,
+     second at 6 (A2, A2b, C6b-2). The number of entries is the maximum number of doses. */
+  amiodarone: {
+    dueAtShocks: [3, 6],
+  },
+
+  /* A5 (owner ruling 4 Nov 2026): after a dose is recorded, the Live card cannot record again for
+     this long. Adrenaline is also greyed out while locked; magnesium and fluids are not. */
+  doubleTapLockMs: {
+    adrenaline: 210000, // 3 min 30 s
+    magnesium: 5000,
+    fluids: 5000,
+  },
+
+  /* Reference wording shown with the doses. {name} is filled in by the app, e.g. {band} = 20. */
+  wording: {
+    adultDoseBasis: 'Adult dose reference · CPG weight band above {adultAboveKg} kg',
+    childDoseBasis: 'Child · {band} kg CPG band (rounded up)',
+    adultMagnesiumBasis: 'Adult · EAS 3.14 / EAS 14.27',
+    childMagnesiumBasis: 'Child · {band} kg CPG band · EAS 7.2',
+    noMagnesiumDoseBasis: 'No magnesium dose listed for the {band} kg CPG band · seek clinical advice',
+    invalidWeightMagnesiumBasis: 'Enter a valid weight for a dose reference',
+    adultFluidBasis: 'Adult · EAS 3.14',
+    childFluidBasis: '{minPerKg}–{maxPerKg} mL/kg · EAS 3.14',
+    noWeightFluidBasis: 'Enter weight for a volume reference',
+    amiodaroneNotYetDue: 'Not yet due. Review after {first} shocks in VF / pulseless VT (second dose after {second}, counting earlier shocks).',
+    amiodaroneSecondNotYetDue: 'Due after {second} shocks',
+    childSecondAmiodarone: 'Seek clinical advice', // C6b: no EAS source for a child second dose
+    invalidWeight: 'Enter weight above zero and no more than {maxKg} kg, with up to one decimal.',
   },
 };

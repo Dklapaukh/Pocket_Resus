@@ -12,7 +12,7 @@ export function hasTorsades(session) {
 }
 
 /* ORIGINAL lower-card rule (fluids after PEA only). The live app no longer uses this: it uses
-   careMode() in src/app/state.js, which adds Asystole (A2c) and Other (A7). Kept so the
+   lowerCard() in drug-cards.js, which adds Asystole (A2c) and Other (A7). Kept only so the
    side-by-side test can still compare against the original engine. */
 export function careMode(session) {
   const relevant = R.active(session)
@@ -23,32 +23,31 @@ export function careMode(session) {
   return hasTorsades(session) ? 'magnesium' : 'amiodarone';
 }
 
-const ADULT_MAGNESIUM = { basis: 'Adult · EAS 3.14 / EAS 14.27' };
-
 /* Magnesium dose reference in mmol. No weight or above 40 kg = adult.
-   Known quirk, kept on purpose: the child band here is read WITHOUT the decimal-comma
-   conversion, so a saved weight like "15,5" finds no band (doc 11, comma-weight note). */
+   Known quirk, kept on purpose so results match the original engine: the child band here is read
+   WITHOUT the decimal-comma conversion, so a weight like "15,5" finds no band. Since 12 Nov 2026 a
+   saved comma weight is converted when it is loaded (restoreSaved in core.js), so it cannot reach here. */
 export function magnesiumReference(session) {
-  if (!String(session.weight).trim()) return { dose: RULES.adult.magnesiumMmol, ...ADULT_MAGNESIUM };
-  if (!R.validWeight(session.weight)) return { dose: null, basis: 'Enter a valid weight for a dose reference' };
-  if (!R.isPaediatric(session)) return { dose: RULES.adult.magnesiumMmol, ...ADULT_MAGNESIUM };
+  const adult = { dose: RULES.adult.magnesiumMmol, basis: R.wording('adultMagnesiumBasis') };
+  if (!String(session.weight).trim()) return adult;
+  if (!R.validWeight(session.weight)) return { dose: null, basis: R.wording('invalidWeightMagnesiumBasis') };
+  if (!R.isPaediatric(session)) return adult;
   const band = R.childBand(+session.weight);
-  const bandKg = band?.maxKg;
-  const basis = bandKg <= 10
-    ? 'No magnesium dose listed for the ' + bandKg + ' kg CPG band · seek clinical advice'
-    : 'Child · ' + bandKg + ' kg CPG band · EAS 7.2';
+  const noDoseListed = band?.magnesiumMmol === null;
+  const basis = R.wording(noDoseListed ? 'noMagnesiumDoseBasis' : 'childMagnesiumBasis', { band: band?.maxKg });
   return { dose: band?.magnesiumMmol ?? null, basis };
 }
 
 /* Fluid volume reference in mL: adult range, or 20-40 mL/kg of the ACTUAL child weight.
-   Same comma quirk as magnesium: "15,5" gives NaN (doc 11). */
+   Same comma quirk as magnesium (see above). */
 export function fluidReference(session) {
-  if (!R.validWeight(session.weight)) return { min: null, max: null, basis: 'Enter weight for a volume reference' };
+  if (!R.validWeight(session.weight)) return { min: null, max: null, basis: R.wording('noWeightFluidBasis') };
   if (R.isPaediatric(session)) {
     const kg = +session.weight;
-    return { min: RULES.child.fluidsMinMlPerKg * kg, max: RULES.child.fluidsMaxMlPerKg * kg, basis: '20–40 mL/kg · EAS 3.14' };
+    const perKg = { minPerKg: RULES.child.fluidsMinMlPerKg, maxPerKg: RULES.child.fluidsMaxMlPerKg };
+    return { min: perKg.minPerKg * kg, max: perKg.maxPerKg * kg, basis: R.wording('childFluidBasis', perKg) };
   }
-  return { min: RULES.adult.fluidsMinMl, max: RULES.adult.fluidsMaxMl, basis: 'Adult · EAS 3.14' };
+  return { min: RULES.adult.fluidsMinMl, max: RULES.adult.fluidsMaxMl, basis: R.wording('adultFluidBasis') };
 }
 
 /* For one medicine type: how many active doses, the latest one, and the total mL recorded. */

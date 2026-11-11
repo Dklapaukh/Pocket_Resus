@@ -26,7 +26,7 @@ and recording has persistence and redraw side effects.
 
 The main app module dependencies now run in one direction: event and session
 actions call views and sheets; views call sheets; views and sheets read state,
-formatting and fixed data. State-derived decisions live in `state.js` so views
+formatting and fixed data. Clinical decisions live in the engine (`src/engine/drug-cards.js`); state.js holds screen memory so views
 do not need to import session actions just to render. `events.js` connects the
 modules to browser events. Shared state and side effects still matter: this
 graph is a tracing aid, not a claim that every function is pure.
@@ -42,11 +42,11 @@ current readability work retains the existing module paths and cache list.
 | --- | --- | --- |
 | CPR cycle or adrenaline clock | `core.js`: `CYCLE`, `ADR`, `timing`, `begin`; `views.js`: `tick` | Deadlines derive from recorded times. Check background and reload behaviour on real devices. |
 | Weight, energy, medication references | `core.js`: `validWeight`, `dose`, `joules`; `views.js`: `weightHeader`, `drugCard` | Suggested values and actually recorded interventions are different. `joules` has the approved A1 change. |
-| Amiodarone visibility and second dose | `views.js`: `amioDue`, `amioCardVisible`, `drugCard`; `state.js`: `drugDose`, `childSecondAmio`, `secondAmioEarly` | See A2/A2b/C6b-2 and their tests and decisions. Do not infer a child second dose from the raw engine calculation. |
-| Lower medication/support card | `state.js`: `latestLowerRhythm`, `careMode`; `views.js`: `liveView` | The app's A2c `careMode` includes Asystole. The older engine helper is retained for fidelity and differs; follow the actual import. |
-| Double-tap guards | `state.js`: `A5_LOCK_MS`, `lockLeft`; `session.js`: `recordSupport`; `events.js`; `views.js` | UI disabling and recording guards both matter; manual entry follows a separate path. |
+| Amiodarone visibility and second dose | `engine/drug-cards.js`: `amiodaroneDue`, `doseFor`, `childAmiodaroneAdvice`, `childSecondAmiodarone`, `secondAmiodaroneEarly`; `views.js`: `amioCardVisible`, `drugCard` | See A2/A2b/C6b-2 and their tests and decisions. Do not infer a child second dose from the raw engine calculation. |
+| Lower medication/support card | `engine/drug-cards.js`: `latestLowerRhythm`, `lowerCard`; `views.js`: `liveView` | `lowerCard` (A2c, A7) is the live rule. The engine's older `careMode` (PEA only) is kept only for the side-by-side test. |
+| Double-tap guards | `engine/drug-cards.js`: `lockLeft` (times in `RULES.doubleTapLockMs`); `session.js`: `recordSupport`; `events.js`; `views.js` | UI disabling and recording guards both matter; manual entry follows a separate path. |
 | Rhythm and shock recording | `rhythm-care.js`: `startOutcome`, `completeOutcome`; `session.js`: `saveRhythm` | A previous shock can lack an actual time; do not invent one. Corrected and voided events affect derived state. |
-| Recovery and storage | `state.js`, `session.js`: `save`, `main.js` | Only one unreadable raw backup is kept. The warning does not provide an in-app restore tool. |
+| Recovery and storage | `core.js`: `restoreSaved`; `state.js`, `events.js` (other tab), `session.js`: `save`, `main.js` | Incomplete saves are filled in and comma weights converted (raw copy under the repaired-backup key). Only one unreadable raw backup is kept. The warning does not provide an in-app restore tool. |
 | Log and export | `src/engine/log-view.js`, `state.js`: `logRows`, `sheets.js`: `exportText`, `events.js`: `downloadCompleteRecord` | Text uses log filters; complete JSON retains events and audit but leaves out undo snapshots. A display filter is not a clinical event. |
 
 The source references above identify where to investigate; they are not an
@@ -65,8 +65,10 @@ attempts to save, redraws and may show a message. A failed storage write shows
 the storage warning; `commit` does not roll the in-memory change back.
 
 At startup, `state.js` accepts a parsed session if its version is 1, its
-`events` is an array and `appStart` is finite. These are shallow checks, not
-complete validation of every field. If saved text fails those checks, the app
+`events` is an array and `appStart` is finite (`R.restoreSaved`). Since 12 Nov 2026
+missing top-level fields are filled with new-session defaults, a valid comma weight is
+converted, and the same is done for undo copies; the raw text is kept under
+`resus-pocket-v1-repaired-backup`. Updates from another tab use the same check. If saved text fails those checks, the app
 tries to retain the raw text under `resus-pocket-v1-unreadable-backup`, starts
 a fresh session and reports whether the copy succeeded. Only the newest
 unreadable backup is kept. If nothing was saved, it starts fresh without that
@@ -83,7 +85,7 @@ data is read.
 ## Example traces
 
 - **Suggested versus recorded medicine:** `drugCard` in `views.js` gets a
-  reference from `drugDose` in `state.js` and decides what to show. A tap
+  reference from `R.doseFor` (`engine/drug-cards.js`) and decides what to show. A tap
   reaches `recordQuickDrug` in `events.js`, which rechecks the guard before
   `commit` adds an event. Manual entry instead uses `openDrug` and
   `submitDrug`; `medicineEntryName` chooses a form default and
@@ -93,7 +95,7 @@ data is read.
 - **Rhythm and the lower card:** `startOutcome` can record the selected
   outcome before rhythm details are completed: `recordOutcome` in `events.js`
   saves it and opens the rhythm dialog. `selectRhythm` and
-  `saveRhythm` complete it; `latestLowerRhythm` and `careMode` in `state.js`
+  `saveRhythm` complete it; `latestLowerRhythm` and `lowerCard` in `engine/drug-cards.js`
   then select what `lowerDrugCard` renders. The engine's older PEA-only
   `careMode` is a different function.
 - **Correction and audit:** `editEvent` builds the form, and

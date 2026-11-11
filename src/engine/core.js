@@ -7,8 +7,14 @@
    Clinical numbers come from the rules file (src/rules/nz-eas.js), not from this file.
    Times are epoch milliseconds. Nothing here records a clinical event just because time passed. */
 import { RULES } from '../rules/nz-eas.js';
+export { RULES }; // the active rule set, so the app reads limits and wording from the same place
 
 export const CYCLE = RULES.timing.cprCycleMs;
+
+/* Wording from the rules file with its {name} gaps filled, e.g. wording('childDoseBasis', { band: 20 }). */
+export function wording(key, values = {}) {
+  return RULES.wording[key].replace(/\{(\w+)\}/g, (gap, name) => String(values[name]));
+}
 export const ADR = RULES.timing.adrenalineIntervalMs;
 
 /* ---------- Session ---------- */
@@ -39,6 +45,47 @@ export function fresh(now = Date.now()) {
     undo: [],
     largeText: false,
   };
+}
+
+/* A saved session as read back from the phone, checked before use (fixes doc 17 and the doc 11
+   comma-weight note, 12 Nov 2026). Returns null when it cannot be used at all (wrong version, no
+   event list or no start time). Otherwise returns { session, repaired }:
+   - any part missing from an older or damaged save is filled with the new-session default
+     (events and their audit history are never touched);
+   - a valid weight saved with a decimal comma ("15,5") is stored as normal entry would ("15.5");
+   - the same is done for each undo copy; an undo copy that cannot be used is dropped.
+   repaired = true when anything was changed. */
+function usable(saved) {
+  return saved !== null && typeof saved === 'object' && saved.version === 1 && Array.isArray(saved.events) && Number.isFinite(saved.appStart);
+}
+
+function repairOne(saved) {
+  let repaired = false;
+  const defaults = fresh(saved.appStart);
+  for (const [key, value] of Object.entries(defaults)) {
+    if (key === 'undo' || saved[key] !== undefined) continue;
+    saved[key] = value;
+    repaired = true;
+  }
+  if (String(saved.weight).includes(',') && validWeight(saved.weight)) {
+    saved.weight = String(weightNumber(saved.weight));
+    repaired = true;
+  }
+  return repaired;
+}
+
+export function restoreSaved(saved) {
+  if (!usable(saved)) return null;
+  let repaired = repairOne(saved);
+  if (!Array.isArray(saved.undo)) {
+    saved.undo = [];
+    repaired = true;
+  }
+  const undoCopies = saved.undo.filter(usable);
+  if (undoCopies.length !== saved.undo.length) repaired = true;
+  for (const copy of undoCopies) if (repairOne(copy)) repaired = true;
+  saved.undo = undoCopies;
+  return { session: saved, repaired };
 }
 
 /* ---------- Weight ---------- */
@@ -107,7 +154,7 @@ export function dose(session) {
       adr: RULES.adult.adrenalineMg,
       amio1: RULES.adult.amiodaroneFirstMg,
       amio2: RULES.adult.amiodaroneSecondMg,
-      basis: 'Adult dose reference · CPG weight band above 40 kg',
+      basis: wording('adultDoseBasis', { adultAboveKg: RULES.weight.adultAboveKg }),
     };
   }
   if (!validWeight(session.weight)) return null;
@@ -116,7 +163,7 @@ export function dose(session) {
     adr: band.adrenalineMg,
     amio1: band.amiodaroneFirstMg,
     amio2: band.amiodaroneSecondMg,
-    basis: 'Child · ' + band.maxKg + ' kg CPG band (rounded up)',
+    basis: wording('childDoseBasis', { band: band.maxKg }),
   };
 }
 

@@ -4,7 +4,7 @@
 import { $, KEY, R } from './base.js';
 import { render } from './views.js';
 import { closeSheet, error, openDrug, openSettings, peaSnippet, sheet, torsadesSnippet } from './sheets.js';
-import { FLUID_RHYTHMS, careMode, finished, lockLeft, st } from './state.js';
+import { finished, st } from './state.js';
 import { toast } from './format.js';
 
 /* Save the session to the phone. If storage is blocked or full, show the warning banner. */
@@ -82,8 +82,8 @@ export function recordSupport(type, confirmed = false) {
     !canRecord() ||
     st.s.special ||
     ['ROSC', 'Ended'].includes(st.s.phase) ||
-    careMode(st.s) !== type ||
-    lockLeft(type) > 0 // A5: no repeat within 5 s
+    R.lowerCard(st.s) !== type ||
+    R.lockLeft(st.s, type) > 0 // A5: no repeat within 5 s
   )
     return;
   if (type === 'fluids') {
@@ -177,7 +177,7 @@ export function selectRhythm(rhythm) {
     );
     return;
   }
-  if (saveRhythm(outcome, rhythm, energy) && FLUID_RHYTHMS.includes(rhythm))
+  if (saveRhythm(outcome, rhythm, energy) && R.RULES.lowerCard.fluidRhythms.includes(rhythm))
     sheet(
       'Non-shockable rhythm · fluid guidance',
       `${peaSnippet()}<button class="primary" data-close>Continue CPR</button>`,
