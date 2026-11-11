@@ -28,7 +28,7 @@ export function careMode(session) {
    WITHOUT the decimal-comma conversion, so a weight like "15,5" finds no band. Since 12 Nov 2026 a
    saved comma weight is converted when it is loaded (restoreSaved in core.js), so it cannot reach here. */
 export function magnesiumReference(session) {
-  const adult = { dose: RULES.adult.magnesiumMmol, basis: R.wording('adultMagnesiumBasis') };
+  const adult = { dose: RULES.numbers.adult.magnesiumMmol, basis: R.wording('adultMagnesiumBasis') };
   if (!String(session.weight).trim()) return adult;
   if (!R.validWeight(session.weight)) return { dose: null, basis: R.wording('invalidWeightMagnesiumBasis') };
   if (!R.isPaediatric(session)) return adult;
@@ -44,10 +44,10 @@ export function fluidReference(session) {
   if (!R.validWeight(session.weight)) return { min: null, max: null, basis: R.wording('noWeightFluidBasis') };
   if (R.isPaediatric(session)) {
     const kg = +session.weight;
-    const perKg = { minPerKg: RULES.child.fluidsMinMlPerKg, maxPerKg: RULES.child.fluidsMaxMlPerKg };
+    const perKg = { minPerKg: RULES.numbers.child.fluidsMinMlPerKg, maxPerKg: RULES.numbers.child.fluidsMaxMlPerKg };
     return { min: perKg.minPerKg * kg, max: perKg.maxPerKg * kg, basis: R.wording('childFluidBasis', perKg) };
   }
-  return { min: RULES.adult.fluidsMinMl, max: RULES.adult.fluidsMaxMl, basis: R.wording('adultFluidBasis') };
+  return { min: RULES.numbers.adult.fluidsMinMl, max: RULES.numbers.adult.fluidsMaxMl, basis: R.wording('adultFluidBasis') };
 }
 
 /* For one medicine type: how many active doses, the latest one, and the total mL recorded. */
@@ -75,7 +75,7 @@ export function startOutcome(session, outcome, now = Date.now()) {
    not the pending event, a rhythm not allowed for its outcome, or an invalid energy. */
 export function completeOutcome(session, id, rhythm, energy = '') {
   const event = session.events.find((candidate) => candidate.id === id && !candidate.voided);
-  const allowed = event?.type === 'shock' ? RULES.rhythms.shock : RULES.rhythms.noshock;
+  const allowed = event?.type === 'shock' ? RULES.numbers.rhythms.shock : RULES.numbers.rhythms.noshock;
   const refused = !event
     || !['shock', 'noshock'].includes(event.type)
     || session.pendingRhythm?.id !== id
@@ -108,6 +108,6 @@ export function addPreAppShock(session, now = Date.now()) {
 export function checklistPrompt(session, now = Date.now()) {
   return session.phase === 'Active'
     && session.deadline !== null
-    && R.timing(session, now).left >= RULES.timing.checklistPromptMinLeftMs
+    && R.timing(session, now).left >= RULES.numbers.timing.checklistPromptMinLeftMs
     && R.active(session).some((event) => event.type === 'adrenaline');
 }

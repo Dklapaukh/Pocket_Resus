@@ -177,7 +177,7 @@ export function selectRhythm(rhythm) {
     );
     return;
   }
-  if (saveRhythm(outcome, rhythm, energy) && R.RULES.lowerCard.fluidRhythms.includes(rhythm))
+  if (saveRhythm(outcome, rhythm, energy) && R.RULES.numbers.lowerCard.fluidRhythms.includes(rhythm))
     sheet(
       'Non-shockable rhythm · fluid guidance',
       `${peaSnippet()}<button class="primary" data-close>Continue CPR</button>`,

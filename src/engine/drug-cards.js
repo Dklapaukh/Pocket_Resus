@@ -13,7 +13,7 @@ import { hasTorsades } from './rhythm-care.js';
 /* The rhythm that decides the lower card: the latest active rhythm check (or ROSC / rhythm entry)
    whose rhythm is in one of the lower-card lists; otherwise the session's current rhythm. */
 export function latestLowerRhythm(session) {
-  const { fluidRhythms, amiodaroneRhythms } = RULES.lowerCard;
+  const { fluidRhythms, amiodaroneRhythms } = RULES.numbers.lowerCard;
   const latest = R.active(session)
     .filter(
       (event) =>
@@ -28,7 +28,7 @@ export function latestLowerRhythm(session) {
 /* 'fluids' after a non-shockable rhythm; otherwise 'magnesium' if torsades was ever recorded,
    else 'amiodarone'. */
 export function lowerCard(session) {
-  if (RULES.lowerCard.fluidRhythms.includes(latestLowerRhythm(session))) return 'fluids';
+  if (RULES.numbers.lowerCard.fluidRhythms.includes(latestLowerRhythm(session))) return 'fluids';
   return hasTorsades(session) ? 'magnesium' : 'amiodarone';
 }
 
@@ -37,7 +37,7 @@ export function lowerCard(session) {
    The current rhythm does not matter here (A2b); lowerCard decides whether the card is shown. */
 export function amiodaroneDue(session) {
   const c = R.counts(session);
-  const dueAt = RULES.amiodarone.dueAtShocks;
+  const dueAt = RULES.numbers.amiodarone.dueAtShocks;
   return (
     session.phase === 'Active' &&
     !session.special &&
@@ -49,7 +49,7 @@ export function amiodaroneDue(session) {
 
 /* All amiodarone doses allowed have been recorded. */
 export function amiodaroneDosesComplete(session) {
-  return R.counts(session).amio >= RULES.amiodarone.dueAtShocks.length;
+  return R.counts(session).amio >= RULES.numbers.amiodarone.dueAtShocks.length;
 }
 
 /* C6b: a child who has had one amiodarone dose: the second dose has no EAS source, so the card
@@ -60,13 +60,13 @@ export function childAmiodaroneAdvice(session) {
 
 /* C6b: as above, once the shock count for the second dose has been reached. */
 export function childSecondAmiodarone(session) {
-  return childAmiodaroneAdvice(session) && R.counts(session).shocks >= RULES.amiodarone.dueAtShocks[1];
+  return childAmiodaroneAdvice(session) && R.counts(session).shocks >= RULES.numbers.amiodarone.dueAtShocks[1];
 }
 
 /* C6b-2: one dose recorded and the second dose's shock count not yet reached. */
 export function secondAmiodaroneEarly(session) {
   const c = R.counts(session);
-  return c.amio === 1 && c.shocks < RULES.amiodarone.dueAtShocks[1];
+  return c.amio === 1 && c.shocks < RULES.numbers.amiodarone.dueAtShocks[1];
 }
 
 /* The dose reference in mg for the adrenaline card, or the next amiodarone dose; null with no reference. */
@@ -79,7 +79,7 @@ export function doseFor(session, type) {
 
 /* A5: milliseconds until the card can record again (0 = free). An undone or voided dose frees it. */
 export function lockLeft(session, type, now = Date.now()) {
-  const lockMs = Object.hasOwn(RULES.doubleTapLockMs, type) ? RULES.doubleTapLockMs[type] : 0;
+  const lockMs = Object.hasOwn(RULES.numbers.doubleTapLockMs, type) ? RULES.numbers.doubleTapLockMs[type] : 0;
   const last = R.active(session)
     .filter((event) => event.type === type)
     .sort((a, b) => a.at - b.at)

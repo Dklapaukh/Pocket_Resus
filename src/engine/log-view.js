@@ -71,5 +71,5 @@ export function logEntries(session, lists, { scope = 'all', checklists = 'items'
 
 /* Default energy for the shock form: adult energy when no weight is entered. */
 export function shockEnergy(session) {
-  return String(session.weight).trim() === '' ? RULES.adult.shockJ : R.joules(session.weight);
+  return String(session.weight).trim() === '' ? RULES.numbers.adult.shockJ : R.joules(session.weight);
 }

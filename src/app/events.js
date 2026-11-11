@@ -58,7 +58,7 @@ function estimateWeight() {
 function saveWeight() {
   const w = $('weightInput').value.replace(',', '.');
   if (!R.validWeight(w))
-    return error(R.wording('invalidWeight', { maxKg: R.RULES.weight.maxKg }));
+    return error(R.wording('invalidWeight', { maxKg: R.RULES.numbers.weight.maxKg }));
   const source = st.sheetContext.source,
     age = $('ageInput').value;
   commit(() => {

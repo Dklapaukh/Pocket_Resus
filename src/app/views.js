@@ -28,7 +28,7 @@ export function amioCardVisible() {
 
 /* A2: what sits in the lower drug slot before the amiodarone card is due (no dose, no button). */
 export function amioPendingCard() {
-  const [first, second] = R.RULES.amiodarone.dueAtShocks;
+  const [first, second] = R.RULES.numbers.amiodarone.dueAtShocks;
   return `<section class="drug drug-pending" id="amiodaronePending"><h3>Amiodarone</h3><p class="pending-note">${R.wording('amiodaroneNotYetDue', { first, second })}</p></section>`;
 }
 
@@ -56,7 +56,7 @@ export function drugCard(type) {
   // Keep this precedence: the same conditions can be true at the same time.
   let doseText;
   if (needsClinicalAdvice) doseText = R.wording('childSecondAmiodarone');
-  else if (secondDoseEarly) doseText = R.wording('amiodaroneSecondNotYetDue', { second: R.RULES.amiodarone.dueAtShocks[1] });
+  else if (secondDoseEarly) doseText = R.wording('amiodaroneSecondNotYetDue', { second: R.RULES.numbers.amiodarone.dueAtShocks[1] });
   else if (doseReference) doseText = esc(value + ' mg IV');
   else doseText = 'Enter weight';
 

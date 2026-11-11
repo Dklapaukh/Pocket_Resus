@@ -9,13 +9,13 @@
 import { RULES } from '../rules/nz-eas.js';
 export { RULES }; // the active rule set, so the app reads limits and wording from the same place
 
-export const CYCLE = RULES.timing.cprCycleMs;
+export const CYCLE = RULES.numbers.timing.cprCycleMs;
 
 /* Wording from the rules file with its {name} gaps filled, e.g. wording('childDoseBasis', { band: 20 }). */
 export function wording(key, values = {}) {
   return RULES.wording[key].replace(/\{(\w+)\}/g, (gap, name) => String(values[name]));
 }
-export const ADR = RULES.timing.adrenalineIntervalMs;
+export const ADR = RULES.numbers.timing.adrenalineIntervalMs;
 
 /* ---------- Session ---------- */
 
@@ -102,24 +102,24 @@ function isBlank(weight) {
 /* Valid = digits with at most one decimal place, above 0 and up to the maximum weight. */
 export function validWeight(weight) {
   const looksLikeAWeight = /^\d+(\.\d)?$/.test(String(weight).trim().replace(',', '.'));
-  return looksLikeAWeight && weightNumber(weight) > 0 && weightNumber(weight) <= RULES.weight.maxKg;
+  return looksLikeAWeight && weightNumber(weight) > 0 && weightNumber(weight) <= RULES.numbers.weight.maxKg;
 }
 
 /* A child = a valid weight at or below the adult threshold (40 kg). */
 export function isPaediatric(session) {
-  return validWeight(session.weight) && weightNumber(session.weight) <= RULES.weight.adultAboveKg;
+  return validWeight(session.weight) && weightNumber(session.weight) <= RULES.numbers.weight.adultAboveKg;
 }
 
 /* The CPG weight band for a weight in kg: the smallest band at or above it (rounded UP).
    Returns undefined above 40 kg or for a weight that is not a number. */
 export function childBand(kg) {
-  return RULES.childBands.find((band) => kg <= band.maxKg);
+  return RULES.numbers.childBands.find((band) => kg <= band.maxKg);
 }
 
 /* Paediatric weight estimate from age in years, or null when no rule applies. */
 export function estimate(age) {
   const years = Number(age);
-  const rules = RULES.ageEstimate;
+  const rules = RULES.numbers.ageEstimate;
   if (String(age).trim() === '' || !Number.isFinite(years) || years <= 0 || years > rules.elevenToFourteenYears.maxAge) return null;
   if (years < 1) return rules.underOneYearKg;
   if (!Number.isInteger(years)) return null; // between 1 and 14, only whole years have a rule
@@ -134,13 +134,13 @@ export function estimate(age) {
 export function joules(weight) {
   if (!validWeight(weight)) return null;
   const band = childBand(weightNumber(weight));
-  return band ? band.shockJ : RULES.adult.shockJ;
+  return band ? band.shockJ : RULES.numbers.adult.shockJ;
 }
 
 /* True when the energy reference is low enough to prompt paediatric pads. */
 export function needsPaediatricPads(weight) {
   const energy = joules(weight);
-  return energy !== null && energy <= RULES.shock.paediatricPadsUpToJ;
+  return energy !== null && energy <= RULES.numbers.shock.paediatricPadsUpToJ;
 }
 
 /* ---------- Medicine references ---------- */
@@ -148,13 +148,13 @@ export function needsPaediatricPads(weight) {
 /* Adrenaline and amiodarone dose references in mg. No weight entered, or above 40 kg = adult.
    An invalid weight gives null (no reference shown). */
 export function dose(session) {
-  const adult = isBlank(session.weight) || (validWeight(session.weight) && weightNumber(session.weight) > RULES.weight.adultAboveKg);
+  const adult = isBlank(session.weight) || (validWeight(session.weight) && weightNumber(session.weight) > RULES.numbers.weight.adultAboveKg);
   if (adult) {
     return {
-      adr: RULES.adult.adrenalineMg,
-      amio1: RULES.adult.amiodaroneFirstMg,
-      amio2: RULES.adult.amiodaroneSecondMg,
-      basis: wording('adultDoseBasis', { adultAboveKg: RULES.weight.adultAboveKg }),
+      adr: RULES.numbers.adult.adrenalineMg,
+      amio1: RULES.numbers.adult.amiodaroneFirstMg,
+      amio2: RULES.numbers.adult.amiodaroneSecondMg,
+      basis: wording('adultDoseBasis', { adultAboveKg: RULES.numbers.weight.adultAboveKg }),
     };
   }
   if (!validWeight(session.weight)) return null;
@@ -271,7 +271,7 @@ export function undo(session) {
 
 /* A recorded energy is optional; if given it must be a number above 0 and no more than the maximum. */
 export function invalidEnergy(energy) {
-  return energy !== '' && (!Number.isFinite(+energy) || +energy <= 0 || +energy > RULES.shock.maxRecordableJ);
+  return energy !== '' && (!Number.isFinite(+energy) || +energy <= 0 || +energy > RULES.numbers.shock.maxRecordableJ);
 }
 
 /* Event text, e.g. "VF · 200 J" or "VF · energy not recorded"; no-shock events show the rhythm only. */
@@ -286,7 +286,7 @@ const CHECK_TITLES = { shock: 'Shock delivered', noshock: 'No shock · rhythm ch
    a rhythm not allowed for that outcome, after ROSC or the end, or an invalid energy.
    ROSC stops the cycle clock; any other outcome starts the next cycle. */
 export function check(session, outcome, rhythm, energy = '', now = Date.now()) {
-  const allowed = Object.hasOwn(RULES.rhythms, outcome) ? RULES.rhythms[outcome] : [];
+  const allowed = Object.hasOwn(RULES.numbers.rhythms, outcome) ? RULES.numbers.rhythms[outcome] : [];
   if (!allowed.includes(rhythm) || session.phase === 'ROSC' || session.phase === 'Ended' || invalidEnergy(energy)) return false;
   snapshot(session);
   session.rhythm = rhythm;

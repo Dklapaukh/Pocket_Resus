@@ -7,7 +7,7 @@ import { RULES } from '../src/rules/nz-eas.js';
 
 test('EAS 7.2 paediatric table: adrenaline, amiodarone, magnesium per weight band', () => {
   // cpg-paediatric-equipment.pdf, cardiac arrest tables by band (5 / 10 / 20 / 30 / 40 kg)
-  assert.deepEqual(RULES.childBands.map(b => [b.maxKg, b.adrenalineMg, b.amiodaroneFirstMg, b.magnesiumMmol]), [
+  assert.deepEqual(RULES.numbers.childBands.map(b => [b.maxKg, b.adrenalineMg, b.amiodaroneFirstMg, b.magnesiumMmol]), [
     [5, 0.05, 25, null], // no magnesium listed
     [10, 0.1, 50, null], // no magnesium listed
     [20, 0.2, 100, 4],
@@ -17,31 +17,31 @@ test('EAS 7.2 paediatric table: adrenaline, amiodarone, magnesium per weight ban
 });
 
 test('second amiodarone dose for children is half the first (app rule; no EAS source, see C6b)', () => {
-  for (const b of RULES.childBands) assert.equal(b.amiodaroneSecondMg, b.amiodaroneFirstMg / 2);
+  for (const b of RULES.numbers.childBands) assert.equal(b.amiodaroneSecondMg, b.amiodaroneFirstMg / 2);
 });
 
 test('shock energy: 4 J/kg of the band, the bottom of each EAS 7.2 range (change A1); adult 200 J', () => {
   // EAS 7.2 ranges: 20-25, 40-50, 80-100, 120-150, 160-200 J
-  assert.deepEqual(RULES.childBands.map(b => b.shockJ), [20, 40, 80, 120, 160]);
-  for (const b of RULES.childBands) assert.equal(b.shockJ, b.maxKg * 4);
-  assert.equal(RULES.adult.shockJ, 200);
-  assert.equal(RULES.shock.paediatricPadsUpToJ, 100);
+  assert.deepEqual(RULES.numbers.childBands.map(b => b.shockJ), [20, 40, 80, 120, 160]);
+  for (const b of RULES.numbers.childBands) assert.equal(b.shockJ, b.maxKg * 4);
+  assert.equal(RULES.numbers.adult.shockJ, 200);
+  assert.equal(RULES.numbers.shock.paediatricPadsUpToJ, 100);
 });
 
 test('EAS 3.14 adult references and timings', () => {
   // cpg-cardiac-arrest.pdf: adrenaline 1 mg; amiodarone 300 mg then 150 mg; magnesium 10 mmol; fluids 1-2 L
   assert.deepEqual(
-    [RULES.adult.adrenalineMg, RULES.adult.amiodaroneFirstMg, RULES.adult.amiodaroneSecondMg, RULES.adult.magnesiumMmol, RULES.adult.fluidsMinMl, RULES.adult.fluidsMaxMl],
+    [RULES.numbers.adult.adrenalineMg, RULES.numbers.adult.amiodaroneFirstMg, RULES.numbers.adult.amiodaroneSecondMg, RULES.numbers.adult.magnesiumMmol, RULES.numbers.adult.fluidsMinMl, RULES.numbers.adult.fluidsMaxMl],
     [1, 300, 150, 10, 1000, 2000],
   );
-  assert.equal(RULES.timing.cprCycleMs, 2 * 60 * 1000);
-  assert.equal(RULES.timing.adrenalineIntervalMs, 4 * 60 * 1000);
-  assert.deepEqual([RULES.child.fluidsMinMlPerKg, RULES.child.fluidsMaxMlPerKg], [20, 40]);
+  assert.equal(RULES.numbers.timing.cprCycleMs, 2 * 60 * 1000);
+  assert.equal(RULES.numbers.timing.adrenalineIntervalMs, 4 * 60 * 1000);
+  assert.deepEqual([RULES.numbers.child.fluidsMinMlPerKg, RULES.numbers.child.fluidsMaxMlPerKg], [20, 40]);
 });
 
 test('weight bands round up and adult starts above 40 kg', () => {
-  assert.deepEqual(RULES.childBands.map(b => b.maxKg), [5, 10, 20, 30, 40]);
-  assert.equal(RULES.weight.adultAboveKg, 40);
+  assert.deepEqual(RULES.numbers.childBands.map(b => b.maxKg), [5, 10, 20, 30, 40]);
+  assert.equal(RULES.numbers.weight.adultAboveKg, 40);
 });
 
 test('the rules file is plain data (no functions), so an editor can read and write it', () => {
@@ -51,15 +51,15 @@ test('the rules file is plain data (no functions), so an editor can read and wri
 // Doc 07 step 2 (12 Nov 2026): app rules moved into the rules file. These are owner rulings, not EAS
 // table values; each is pinned so a change needs the owner's approval and this test updated with it.
 test('lower drug card (A2c, A7): fluids after PEA, Asystole or Other; VF/VT/Torsades bring amiodarone back', () => {
-  assert.deepEqual(RULES.lowerCard, { fluidRhythms: ['PEA', 'Asystole', 'Other'], amiodaroneRhythms: ['VF', 'VT', 'Torsades'] });
+  assert.deepEqual(RULES.numbers.lowerCard, { fluidRhythms: ['PEA', 'Asystole', 'Other'], amiodaroneRhythms: ['VF', 'VT', 'Torsades'] });
 });
 
 test('amiodarone due at 3 shocks, second dose at 6, two doses at most (A2, A2b, C6b-2)', () => {
-  assert.deepEqual(RULES.amiodarone.dueAtShocks, [3, 6]);
+  assert.deepEqual(RULES.numbers.amiodarone.dueAtShocks, [3, 6]);
 });
 
 test('double-tap locks (A5): adrenaline 3 min 30 s, magnesium and fluids 5 s', () => {
-  assert.deepEqual(RULES.doubleTapLockMs, { adrenaline: 210000, magnesium: 5000, fluids: 5000 });
+  assert.deepEqual(RULES.numbers.doubleTapLockMs, { adrenaline: 210000, magnesium: 5000, fluids: 5000 });
 });
 
 test('reference wording is plain text, and every {gap} is one the app fills', () => {
@@ -69,4 +69,8 @@ test('reference wording is plain text, and every {gap} is one the app fills', ()
     assert.equal(typeof text, 'string', key);
     assert.deepEqual([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]), gaps[key] || [], key);
   }
+});
+
+test('the rule set has exactly the five parts, in order (owner decision 2, doc 18)', () => {
+  assert.deepEqual(Object.keys(RULES), ['numbers', 'wording', 'checklists', 'equipment', 'sources']);
 });
