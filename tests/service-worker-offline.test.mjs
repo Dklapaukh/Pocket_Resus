@@ -85,7 +85,7 @@ test('activation leaves unrelated caches alone and offline reads use the current
   await sw.seed('resus-pocket-v18-readable', 'src/app/state.js', 'old');
   await sw.install();
   await sw.activate();
-  assert.deepEqual(await sw.cacheNames(), ['another-app', 'resus-pocket-v19-readable']);
+  assert.deepEqual(await sw.cacheNames(), ['another-app', 'resus-pocket-v20-a7']);
   // An old worker can recreate its cache while it is finishing a request.
   await sw.seed('resus-pocket-v18-readable', 'src/app/state.js', 'stale');
   sw.goOffline();

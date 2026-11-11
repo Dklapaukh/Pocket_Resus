@@ -99,7 +99,7 @@ const server = http.createServer((request, response) => {
     await newPage.waitForFunction(async () => {
       const names = await caches.keys();
       const registration = await navigator.serviceWorker.getRegistration();
-      return names.includes('resus-pocket-v19-readable') && registration?.active?.state === 'activated' &&
+      return names.includes('resus-pocket-v20-a7') && registration?.active?.state === 'activated' &&
         !registration.waiting && !registration.installing;
     });
     const recovered = await newPage.evaluate(() => JSON.parse(localStorage.getItem('resus-pocket-v1')));
