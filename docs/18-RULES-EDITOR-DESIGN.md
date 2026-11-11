@@ -78,6 +78,11 @@ output must be identical to v21 (proved by test); one commit per sub-step on `ru
    `src/app` or `src/engine` outside the rules file; every `{gap}` is checked to be filled.
 9. **Owner check:** phone check of a preview, then owner approval to push to `main` as v22.
 
+## Step 3a progress (branch `rules-editor`)
+| Sub-step | Date | Result |
+|---|---|---|
+| 0 | 12 Nov 2026 | Safety net added: `tests/step3a-output-unchanged.test.mjs` records 192 screens and pop-ups from v21 (8 weights, 9 tube ages, 9 estimate ages, checklists, causes, equipment) and must match exactly. Found: the "Guidance & sources" pop-up (`views.js` `guidance`) is not opened by any button in v21 (the menu button opens the Guidance tab); it is covered through a test-only hook. 163 tests pass. |
+
 ## Editor decisions still to make (after 3a)
 - File format for a rule set (keep JavaScript data, or plain JSON that any tool can open).
 - Where the editor runs and who can use it.
