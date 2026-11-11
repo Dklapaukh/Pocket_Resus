@@ -21,8 +21,10 @@ independent clinical review is deferred until the code and other key goals are r
   start a new chat (objective, state, next steps). Keep docs tidy so new chats start cheaply.
 
 ## Current state (12 Nov 2026)
-- **Live: v21** (cache `resus-pocket-v21-rules`) = A1-A7, readable engine, and step 2 below.
-  **v21 phone check passed (owner, 12 Nov 2026).** The separate A7 check ("Other" triggers
+- **Live: v22** (cache `resus-pocket-v22-rules-file`, published 12 Nov 2026) = v21 plus step 3a
+  (all rules and guideline text in the rules file; screens identical). **v22 phone check pending
+  (owner; list in doc 09).** If anything looks wrong, Claude reverts to v21 with one commit.
+  v21 phone check passed (owner, 12 Nov 2026). The separate A7 check ("Other" triggers
   fluids, doc 09 11 Nov entry) has not been confirmed on its own.
 - **Step 2 done (12 Nov 2026):** every drug-card rule is now in the engine
   (`src/engine/drug-cards.js`) with its numbers and wording in `src/rules/nz-eas.js`; no value or
@@ -43,8 +45,9 @@ so rules can be updated, and new rule sets made for other services, without touc
    **Step 3a sub-steps 0–8 done (12 Nov 2026, branch `rules-editor`, not live):** every clinical
    number, guideline sentence, checklist, equipment list and source is in `src/rules/nz-eas.js`
    (five parts); screens proved identical to v21 (278 recorded screens); lock-in test stops them
-   creeping back. 182 tests pass. **Next action: sub-step 9** (owner phone check, then approval to
-   publish as v22; doc 18 progress table).
+   creeping back. 182 tests pass. **Sub-step 9:** owner chose to publish first, then phone-check
+   the live app (published as v22, 12 Nov 2026). **Next: owner's v22 phone check, and the
+   remaining editor decisions in doc 18, one at a time.**
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner

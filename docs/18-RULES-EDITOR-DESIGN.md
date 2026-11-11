@@ -90,6 +90,8 @@ output must be identical to v21 (proved by test); one commit per sub-step on `ru
 |---|---|---|
 | 0 | 12 Nov 2026 | Safety net added: `tests/step3a-output-unchanged.test.mjs` records 192 screens and pop-ups from v21 (8 weights, 9 tube ages, 9 estimate ages, checklists, causes, equipment) and must match exactly. Found: the "Guidance & sources" pop-up (`views.js` `guidance`) is not opened by any button in v21 (the menu button opens the Guidance tab); it is covered through a test-only hook. 163 tests pass. |
 | 1 | 12 Nov 2026 | `nz-eas.js` laid out in five parts: `numbers`, `wording`, `checklists`, `equipment`, `sources` (parts 3 and 4 empty until sub-steps 5 and 6). Engine, app and tests read `RULES.numbers.…`; no value changed. New test pins the five parts. 164 tests pass. |
+| 2–8 | 12 Nov 2026 | See decisions 2–8 above. |
+| 9 | 12 Nov 2026 | Owner chose: publish to `main` as v22 now (new cache `resus-pocket-v22-rules-file`), then phone-check the live app; if anything looks wrong, Claude puts v21 back with one commit. Published; cache-name pins updated in `modules` and `service-worker-offline` tests. 182 tests pass. Phone check pending. |
 
 **Noted during 3a, left as they are (not guideline content, or for a later decision):** the
 "Guidance & sources" pop-up is not opened by any button in v21; the edit sheet's rhythm lists;
