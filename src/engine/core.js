@@ -141,7 +141,8 @@ export function ageEstimateGaps() {
   };
 }
 
-/* Every number the wording can show, taken from part 1 of the rules file (stored once there). */
+/* Every number the wording can show, taken from part 1 of the rules file (stored once there), plus
+   the source names from part 5. */
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 export function wordingGaps() {
   const n = RULES.numbers, prep = n.preparation, rsi = n.rsi;
@@ -185,6 +186,10 @@ export function wordingGaps() {
     blockerMgPerKg: rsi.blocker.mgPerKg,
     blockerMaxMg: rsi.blocker.maxMg,
     blockerRoundMg: rsi.blocker.roundAdultToMg,
+    // part 5
+    exportDate: RULES.sources.exportDate,
+    reversibleCauses: RULES.sources.reversibleCauses,
+    igel: RULES.sources.igel,
   };
 }
 

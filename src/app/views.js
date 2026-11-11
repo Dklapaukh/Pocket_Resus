@@ -439,12 +439,9 @@ export function tick() {
 
 /* "Guidance & sources" pop-up: what the app is and is not, with links to the guideline PDFs. */
 export function guidance() {
-  const guidelineLinks = [
-    ['Cardiac arrest · <em>EAS guideline 3.14</em>', 'cpg-cardiac-arrest.pdf'],
-    ['Post ROSC · <em>EAS guideline 3.15</em>', 'cpg-post-rosc.pdf'],
-    ['Paediatric equipment & doses · <em>EAS guideline 7.2</em>', 'cpg-paediatric-equipment.pdf'],
-    ['RSI · <em>EAS guideline 9.3</em>', 'cpg-rsi.pdf'],
-  ].map(([label, path]) => `<a href="${path}" target="_blank" rel="noopener">${label} ↗</a>`).join('');
+  const guidelineLinks = R.RULES.sources.guidanceLinks
+    .map((id) => R.RULES.sources.guidelines[id])
+    .map((g) => `<a href="${g.pdf}" target="_blank" rel="noopener">${g.label} · <em>EAS guideline ${g.code}</em> ↗</a>`).join('');
   sheet(
     'Guidance & sources',
     paras('guidanceIntro') +
@@ -539,7 +536,7 @@ export function referenceSheet(type) {
     sheet(
       'RSI dose references',
       `${doseList}${paras('rsiConditions')}` +
-      `<a href="cpg-rsi.pdf" target="_blank"><em>EAS guideline 9.3</em> ↗</a>`,
+      `<a href="${R.RULES.sources.guidelines.rsi.pdf}" target="_blank"><em>EAS guideline ${R.RULES.sources.guidelines.rsi.code}</em> ↗</a>`,
     );
     return;
   }
@@ -556,6 +553,6 @@ export function referenceSheet(type) {
     `<p class="caption">${R.guideText('tubeCaution')}</p>` +
     `<h3>Age-based weight estimate</h3><p>${R.wording('tubeSheetAgeEstimate', R.ageEstimateGaps())}</p>` +
     `<h3>iGel weight ranges</h3><p>${igelRanges}.</p>` +
-    `<a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a><p class="caption">iGel colours/ranges: Intersurgical product information.</p>`,
+    `<a href="${R.RULES.sources.guidelines.paediatric.pdf}" target="_blank"><em>EAS guideline ${R.RULES.sources.guidelines.paediatric.code}</em> ↗</a><p class="caption">${R.guideText('igelSourceCaption')}</p>`,
   );
 }

@@ -79,6 +79,7 @@ test('reference wording is plain text, and every {gap} is one the app fills', ()
     fluidsExtract: ['adultFluidsMinL', 'adultFluidsMaxL', 'childFluidsMinPerKg', 'childFluidsMaxPerKg'],
     magnesiumHow: ['adultMagnesiumMmol', 'fluid', 'magAdultDiluteToMl', 'magOverMinMinutes', 'magOverMaxMinutes', 'magChildMmolPerMl', 'magAmpouleMl', 'magAmpouleMmol', 'magAmpouleMl', 'magChildDiluteToMl'],
     guidanceIntro: ['cprCycleMinWord', 'adrenalineEveryMin', 'amiodaroneFirstShocks', 'amiodaroneSecondShocks', 'bandList', 'joulesPerKg', 'adultShockJ'],
+    guidanceCaption: ['exportDate', 'reversibleCauses'], igelSourceCaption: ['igel'],
     guidanceRsi: ['fentanylMcgPerKg', 'fentanylMaxMcg', 'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg'] };
   for (const [key, entry] of Object.entries(RULES.wording)) {
     const texts = [].concat(entry); // a list = one paragraph per item

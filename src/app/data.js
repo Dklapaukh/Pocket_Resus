@@ -1,11 +1,5 @@
-/* Fixed lists: guideline links and tutorial slides. Checklists and reversible causes (part 3) and
-   equipment, sites and colours (part 4) moved to the rules file (src/rules/nz-eas.js) on 12 Nov 2026. */
-
-/* Links to the NZ EAS guideline pages. */
-export const CARDIAC_CPG =
-  'https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas';
-
-export const MAGNESIUM_CPG = 'https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas';
+/* Tutorial slides (not clinical). Checklists and causes (part 3), equipment (part 4) and guideline
+   links (part 5) moved to the rules file (src/rules/nz-eas.js) on 12 Nov 2026. */
 
 /* Slides of the Explain-me tutorial (screenshots in the tutorial folder). */
 export const EXPLAIN_ME_SLIDES = [

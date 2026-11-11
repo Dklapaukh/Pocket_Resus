@@ -237,13 +237,14 @@ export const RULES = {
       'Rocuronium <b>or</b> suxamethonium: {blockerMgPerKg} mg/kg IV, maximum {blockerMaxMg} mg. Adult dose usually rounded to nearest {blockerRoundMg} mg. Alternatives, not both.',
       'Use the full RSI CPG for patient context and administration.',
     ],
-    guidanceCaption: 'Packaged NZCPG exports: 24 September 2026. Reversible causes: ANZCOR 11.2. Local protocol takes precedence. This extracted app requires clinical validation before patient-care use.',
+    guidanceCaption: 'Packaged NZCPG exports: {exportDate}. Reversible causes: {reversibleCauses}. Local protocol takes precedence. This extracted app requires clinical validation before patient-care use.',
 
     // RSI and tube pop-ups (Guidance tab)
     rsiNotRecorded: 'calculated references, not recorded administrations',
     rsiConditions: 'Fentanyl only for TBI, suspected intracranial pathology or hypertension; withhold with shock. Consider reduced ketamine with shock / prior sedation; do not reduce for prolonged seizures. Neuromuscular blockers are alternatives, not both.',
     tubeNoAge: 'Enter age to show the paediatric ETT and length-at-lips formula results.',
     tubeCaution: 'Paediatric formulae are guides; confirm actual fit. Not a weight-only adult tube-size recommendation.',
+    igelSourceCaption: 'iGel colours/ranges: {igel}.',
 
     // Tube sheet results; gaps come from numbers.tubes
     tubeSizeUnderOne: '{minMm}–{maxMm} mm',
@@ -472,5 +473,28 @@ export const RULES = {
   sources: {
     name: 'NZ EAS clinical practice guidelines',
     summary: 'EAS 3.14 (cardiac arrest), EAS 7.2 (paediatric tables), EAS 14.27 (magnesium)',
+    exportDate: '24 September 2026', // date of the packaged guideline PDFs
+    reversibleCauses: 'ANZCOR 11.2',
+    igel: 'Intersurgical product information',
+
+    // Guidelines the app links to: EAS code, label, PDF packaged with the app (offline) and web page.
+    guidelines: {
+      cardiacArrest: {
+        code: '3.14',
+        label: 'Cardiac arrest',
+        pdf: 'cpg-cardiac-arrest.pdf',
+        offlinePage: 2, // the flowchart page
+        web: 'https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas',
+      },
+      postRosc: { code: '3.15', label: 'Post ROSC', pdf: 'cpg-post-rosc.pdf' },
+      paediatric: { code: '7.2', label: 'Paediatric equipment & doses', pdf: 'cpg-paediatric-equipment.pdf' },
+      rsi: { code: '9.3', label: 'RSI', pdf: 'cpg-rsi.pdf' },
+      adrenaline: { code: '14.3', pdf: 'cpg-drugs/eas-14-3.pdf' },
+      amiodarone: { code: '14.4', pdf: 'cpg-drugs/eas-14-4.pdf' },
+      magnesium: { code: '14.27', web: 'https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas' },
+    },
+
+    // Links listed in the Guidance & sources pop-up, in this order.
+    guidanceLinks: ['cardiacArrest', 'postRosc', 'paediatric', 'rsi'],
   },
 };

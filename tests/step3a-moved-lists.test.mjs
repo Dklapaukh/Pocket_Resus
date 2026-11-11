@@ -60,3 +60,27 @@ test('part 4 checks: valid colours, iGel sizes match the iGel device, ranges ord
     if (i) assert.ok(x.minKg >= r[i - 1].minKg && x.minKg <= r[i - 1].maxKg, `${x.size}: no gap after ${r[i - 1].size}`);
   });
 });
+
+test('part 5: guideline links are exactly the v21 web links and PDFs', () => {
+  const g = RULES.sources.guidelines;
+  assert.equal(g.cardiacArrest.web, V21.CARDIAC_CPG);
+  assert.equal(g.magnesium.web, V21.MAGNESIUM_CPG);
+  assert.equal(RULES.sources.exportDate, '24 September 2026');
+  assert.deepEqual(Object.values(g).map((x) => [x.code, x.pdf ?? null]), [
+    ['3.14', 'cpg-cardiac-arrest.pdf'], ['3.15', 'cpg-post-rosc.pdf'], ['7.2', 'cpg-paediatric-equipment.pdf'], ['9.3', 'cpg-rsi.pdf'],
+    ['14.3', 'cpg-drugs/eas-14-3.pdf'], ['14.4', 'cpg-drugs/eas-14-4.pdf'], ['14.27', null]]);
+});
+
+test('part 5 checks: every PDF exists in the app and is kept for offline use; links well-formed', () => {
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  const pdfs = [...Object.values(RULES.sources.guidelines).map((x) => x.pdf), ...RULES.checklists.lists.map((l) => l.pdf.split('#')[0])].filter(Boolean);
+  for (const pdf of new Set(pdfs)) {
+    assert.doesNotThrow(() => readFileSync(new URL('../' + pdf, import.meta.url)), pdf + ' exists');
+    assert.ok(sw.includes(`'${pdf}'`), pdf + ' is in the offline file list (sw.js)');
+  }
+  for (const g of Object.values(RULES.sources.guidelines)) {
+    assert.match(g.code, /^\d+\.\d+$/);
+    if (g.web) assert.doesNotThrow(() => new URL(g.web)), assert.match(g.web, /^https:\/\//);
+  }
+  for (const id of RULES.sources.guidanceLinks) assert.ok(RULES.sources.guidelines[id]?.pdf, id);
+});

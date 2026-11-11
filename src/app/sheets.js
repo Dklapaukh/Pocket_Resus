@@ -11,7 +11,7 @@ import {
   time,
   toast,
 } from './format.js';
-import { CARDIAC_CPG, EXPLAIN_ME_SLIDES, MAGNESIUM_CPG } from './data.js';
+import { EXPLAIN_ME_SLIDES } from './data.js';
 import { finished, logRows, st, torsades } from './state.js';
 
 /* Open the pop-up with a title and content. ctx records what the pop-up is for (st.sheetContext). */
@@ -168,13 +168,13 @@ export function administration(type) {
     doseText = esc(doseText);
   }
   const instructions = paras(adrenaline ? 'adrenalineHow' : 'amiodaroneHow');
-  const guideline = adrenaline ? '14.3' : '14.4';
-  const pdf = adrenaline ? 'eas-14-3' : 'eas-14-4';
+  const source = R.RULES.sources.guidelines[adrenaline ? 'adrenaline' : 'amiodarone'];
+  const guideline = source.code;
   sheet(
     adrenaline ? 'Adrenaline · reference' : 'Amiodarone · reference',
     `<p><b>${doseText}</b></p>` +
       `<p class="caption">${d ? formatGuidelineReference(d.basis) : R.guideText('referenceOnly')}</p>` +
-      `${instructions}<a href="cpg-drugs/${pdf}.pdf" target="_blank" rel="noopener"><em>EAS guideline ${guideline}</em> ↗</a>` +
+      `${instructions}<a href="${source.pdf}" target="_blank" rel="noopener"><em>EAS guideline ${guideline}</em> ↗</a>` +
       `<p class="caption">${R.guideText('drugPopupFooter', { guideline })}</p>`,
   );
 }
@@ -415,7 +415,8 @@ export function editEvent(id) {
 
 /* Source line linking the current EAS cardiac arrest guideline. */
 export function cpgSource() {
-  return `<p class="caption">NZCPG <em>EAS guideline 3.14</em><br><a href="${CARDIAC_CPG}" target="_blank" rel="noopener">Current <em>EAS guideline 3.14</em> ↗</a> · <a href="cpg-cardiac-arrest.pdf#page=2" target="_blank">Offline <em>EAS guideline 3.14</em> ↗</a></p>`;
+  const g = R.RULES.sources.guidelines.cardiacArrest;
+  return `<p class="caption">NZCPG <em>EAS guideline ${g.code}</em><br><a href="${g.web}" target="_blank" rel="noopener">Current <em>EAS guideline ${g.code}</em> ↗</a> · <a href="${g.pdf}#page=${g.offlinePage}" target="_blank">Offline <em>EAS guideline ${g.code}</em> ↗</a></p>`;
 }
 
 /* Torsades guideline extract (withhold amiodarone; magnesium IV), reused in several pop-ups. */
@@ -443,13 +444,14 @@ export function supportAdministration(type) {
     return;
   }
   const ref = R.magnesiumReference(st.s);
+  const G = R.RULES.sources.guidelines;
   const dose = ref.dose === null ? R.guideText('magnesiumNoDose') : ref.dose + ' mmol IV';
   sheet(
     'Magnesium · administration',
     `${torsadesSnippet()}<p><b>${dose}</b> · ${formatGuidelineReference(ref.basis)}</p>` +
     paras('magnesiumHow') +
-    `<a href="${MAGNESIUM_CPG}" target="_blank" rel="noopener"><em>EAS guideline 14.27</em> ↗</a>` +
-    `<p><a href="cpg-paediatric-equipment.pdf" target="_blank"><em>EAS guideline 7.2</em> ↗</a></p>`,
+    `<a href="${G.magnesium.web}" target="_blank" rel="noopener"><em>EAS guideline ${G.magnesium.code}</em> ↗</a>` +
+    `<p><a href="${G.paediatric.pdf}" target="_blank"><em>EAS guideline ${G.paediatric.code}</em> ↗</a></p>`,
   );
 }
 
