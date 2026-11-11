@@ -22,7 +22,8 @@ independent clinical review is deferred until the code and other key goals are r
 
 ## Current state (12 Nov 2026)
 - **Live: v21** (cache `resus-pocket-v21-rules`) = A1-A7, readable engine, and step 2 below.
-  Phone checks outstanding: A7 (doc 09, 11 Nov entry) and v21 (doc 09, 12 Nov entry).
+  **v21 phone check passed (owner, 12 Nov 2026).** The separate A7 check ("Other" triggers
+  fluids, doc 09 11 Nov entry) has not been confirmed on its own.
 - **Step 2 done (12 Nov 2026):** every drug-card rule is now in the engine
   (`src/engine/drug-cards.js`) with its numbers and wording in `src/rules/nz-eas.js`; no value or
   text changed (3000-session old-vs-new test). Saved-session fixes (doc 17, doc 11 comma weight)
@@ -35,7 +36,7 @@ Goal: readable, auditable code with all clinical rules in a rules file, then a *
 so rules can be updated, and new rule sets made for other services, without touching code.
 1. **Done:** readable engine + rules file for engine numbers (11 Nov).
 2. **Done:** app-layer clinical rules moved into the engine / rules file; storage fixes (12 Nov).
-3. **Next:** design the rules editor (plain data in, checks that block impossible values, a "what
+3. **Next (started 12 Nov 2026, new chat):** design the rules editor (plain data in, checks that block impossible values, a "what
    changed" view, automatic tests per rule set, owner approval before a rule set goes live).
    Open question for the design: whether the long guideline extracts (checklists, guidance
    pop-ups, RSI and tube references, still text in `data.js`/`sheets.js`/`views.js`) belong in
