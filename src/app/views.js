@@ -63,7 +63,7 @@ export function drugCard(type) {
   if (!selectDose) {
     if (canRecordSuggestedDose) buttonText = 'Record ' + value + ' mg IV';
     else if (blocked) buttonText = R.guideText('withholdTorsades');
-    else if (needsClinicalAdvice) buttonText = 'Seek clinical advice';
+    else if (needsClinicalAdvice) buttonText = R.wording('childSecondAmiodarone');
     else if (secondDoseEarly) buttonText = 'Not yet due';
     else if (st.s.special) buttonText = 'Manual review';
     else if (!isAdrenaline && counts.amio >= R.RULES.numbers.amiodarone.dueAtShocks.length) buttonText = R.guideText('maxDosesRecorded', { maxDoses: R.RULES.numbers.amiodarone.dueAtShocks.length });

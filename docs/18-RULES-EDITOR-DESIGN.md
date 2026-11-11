@@ -18,6 +18,7 @@ goes live.
 | 5 | 12 Nov 2026 | Checklists (`checklists.lists`) and 4 Hs / 4 Ts (`checklists.causes`) moved from `data.js` into part 3. New test: both equal v21 exactly (fixture from v21 `data.js`) and the checklists still equal the original app; first part 3 checks (no empty items, unique ids). Screens identical. 172 tests pass. |
 | 6 | 12 Nov 2026 | Part 4 filled: `equipment.devices`, `sites`, `colours` (from `data.js`), plus `blades` (laryngoscope choices, from `events.js`), `maxTubeSizeMm` (12) and `igelRanges` (data; the tube sheet builds the same line from it). Tests: equal to v21; colours valid and for listed sizes; iGel ranges ordered with no gaps. Screens identical. 175 tests pass. |
 | 7 | 12 Nov 2026 | Part 5 filled: guideline name, export date, ANZCOR and iGel source names, and each linked guideline's EAS code, label, PDF and web page (`sources.guidelines`), plus the Guidance pop-up link order. `data.js` now holds only the tutorial slides. Tests: links equal v21; every PDF exists and is in the offline list. Screens identical. 177 tests pass. Checklists keep their own `code`/`pdf` in part 3 (also checked). |
+| 8 | 12 Nov 2026 | Lock-in test `tests/step3a-lock-in.test.mjs`: fails if a clinical number with its unit, a guideline link/PDF/EAS number, or any rules-file sentence (wording, checklist item, cause prompt) is typed into `src/app` or `src/engine` (comments ignored); every `{gap}` must be filled from parts 1/5 or by the app where listed; spot checks that the filled wording reads exactly as v21. Shown to catch a planted "2 mg/kg". 182 tests pass. **Step 3a done; next is sub-step 9 (owner phone check, then approval to publish as v22).** |
 | 2 | 12 Nov 2026 | **Five parts, divided by kind, each with its own checks** (Option A): 1 clinical numbers and rules; 2 clinical wording; 3 checklists and reversible causes; 4 equipment; 5 sources. Each number is stored once; text gets numbers only through `{gaps}`. |
 
 ## Step 3a: gather and partition (before the editor)
@@ -89,6 +90,12 @@ output must be identical to v21 (proved by test); one commit per sub-step on `ru
 |---|---|---|
 | 0 | 12 Nov 2026 | Safety net added: `tests/step3a-output-unchanged.test.mjs` records 192 screens and pop-ups from v21 (8 weights, 9 tube ages, 9 estimate ages, checklists, causes, equipment) and must match exactly. Found: the "Guidance & sources" pop-up (`views.js` `guidance`) is not opened by any button in v21 (the menu button opens the Guidance tab); it is covered through a test-only hook. 163 tests pass. |
 | 1 | 12 Nov 2026 | `nz-eas.js` laid out in five parts: `numbers`, `wording`, `checklists`, `equipment`, `sources` (parts 3 and 4 empty until sub-steps 5 and 6). Engine, app and tests read `RULES.numbers.…`; no value changed. New test pins the five parts. 164 tests pass. |
+
+**Noted during 3a, left as they are (not guideline content, or for a later decision):** the
+"Guidance & sources" pop-up is not opened by any button in v21; the edit sheet's rhythm lists;
+input checks that are not guideline values (age 0–120, earlier counts 0–100); timer display
+thresholds (yellow at 15 s, adrenaline highlight 30 s before review); checklist `code`/`pdf` stay
+with each checklist in part 3; the tutorial slides (`data.js`).
 
 ## Editor decisions still to make (after 3a)
 - File format for a rule set (keep JavaScript data, or plain JSON that any tool can open).

@@ -40,7 +40,11 @@ so rules can be updated, and new rule sets made for other services, without touc
    one rule set per service holds numbers AND guideline text, approved together. First (3a) move
    every remaining rule and guideline extract out of the app code into the rule set, clearly
    partitioned into five parts (owner, decision 2); then design and build the editor.
-   **Next action: step 3a, sub-step 0** (plan in doc 18).
+   **Step 3a sub-steps 0–8 done (12 Nov 2026, branch `rules-editor`, not live):** every clinical
+   number, guideline sentence, checklist, equipment list and source is in `src/rules/nz-eas.js`
+   (five parts); screens proved identical to v21 (278 recorded screens); lock-in test stops them
+   creeping back. 182 tests pass. **Next action: sub-step 9** (owner phone check, then approval to
+   publish as v22; doc 18 progress table).
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner

@@ -18,7 +18,8 @@ verify sources and applicability before changing any clinical rule.
    calculations. `src/engine/rhythm-care.js` adds rhythm and support helpers;
    `log-view.js` derives log entries. `src/engine/index.js` assembles exports.
 5. `views.js` renders screens and updates clocks. `format.js` provides display
-   formatting; `data.js` provides app reference and checklist content.
+   formatting; `data.js` holds the tutorial slides. Checklists, equipment, guideline wording and
+   links are in the rules file `src/rules/nz-eas.js` (five parts, doc 18).
 
 The app uses shared state. Read the call sites
 before moving a function: a display function can also update screen-only state,
