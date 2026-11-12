@@ -53,9 +53,15 @@ so rules can be updated, and new rule sets made for other services, without touc
    two ways into the editor (tap a card in an app view; technical rules view) and, long term, a
    no-code flowchart-to-app platform. **EAS 3.14 checked 12 Nov 2026 (doc 18).** Decisions 13–25 made
    12 Nov 2026 (doc 18 table). Guideline candidates kept: G1, G2, G3, G10, G11 (added later through
-   the editor, each approved separately). **Next: (1) owner's answer on A8's one failing comparison
-   test (below); (2) start the orchestrated build from `docs/19-ORCHESTRATION-BRIEF.md` in a new chat.**
+   the editor, each approved separately). **A8 merged into `rules-editor` 12 Nov 2026 (not live); v22 + A8 is the reference for the build.**
+   **Orchestrated build (doc 19) started 12 Nov 2026; progress table below.**
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
+
+## Rules editor build progress (doc 19; detail in doc 09)
+| Stage | State |
+|---|---|
+| Before 0: A8 merged | Done 12 Nov 2026 |
+| 0 Wider safety net | In progress |
 
 ## Decisions made by owner
 1. Not rebuilt (historical): pause/resume, Reviewed/Suspected causes screen, "record rhythm
@@ -73,7 +79,7 @@ so rules can be updated, and new rule sets made for other services, without touc
 | A2 | **Amiodarone card must not show from the start.** Proposed rule: appears when due (3 shocks in VF/VT including previous shocks; second dose at 6), stays once shown. Uses existing `amioDue` logic. Needs a decision on what fills the space before then | **Applied 3 Nov 2026** (grey tile confirmed on phone). Gate corrected by **A2b** (3 Nov 2026, needs upload + phone check) |
 | A2c | **Fluids after any non-shockable rhythm** (PEA or Asystole at the latest check); VF/VT bring amiodarone/magnesium back; neutral fluids wording and pop-up for both rhythms (owner Option 1) | **Applied 3 Nov 2026; lost in the C6b-2 upload and restored 4 Nov 2026**, needs upload + phone check |
 | A7 | **"Other" triggers fluids** like PEA and Asystole (fluids card, pop-up, caption names the rhythm) | **Applied 11 Nov 2026** (owner ruling), needs upload + phone check |
-| A8 | **A rhythm recorded with ROSC never triggers fluids.** Before: ROSC recorded as "Other" opened the "Non-shockable rhythm · fluid guidance" pop-up ("Continue CPR") and showed the fluids card after a re-arrest (side effect of A7). "Other" at a no-shock check is unchanged | **Approved 12 Nov 2026 (doc 18 decision 15). Built on branch `a8-rosc-other`, NOT merged:** its 6 new tests pass, but the step 2 comparison test (engine vs the pre-A8 rule, 3000 random cases) fails as expected (332 cases differ, every one is ROSC "Other" → fluids). Waiting for the owner's decision on updating that test. Then: merge, phone check, owner's yes, publish as v23 (new cache name) |
+| A8 | **A rhythm recorded with ROSC never triggers fluids.** Before: ROSC recorded as "Other" opened the "Non-shockable rhythm · fluid guidance" pop-up ("Continue CPR") and showed the fluids card after a re-arrest (side effect of A7). "Other" at a no-shock check is unchanged. After PEA or Asystole → ROSC "Other" → re-arrest the fluids line names the earlier rhythm ("PEA · review fluid volume"), as it already did after ROSC "Sinus rhythm" | **Approved 12 Nov 2026 (doc 18 decision 15). Merged into `rules-editor` 12 Nov 2026, NOT live.** Owner agreed to update the step 2 comparison test: old code kept word for word; engine must equal "old code + A8" on 3000 cases; new test proves A8 is the only difference. Independent review: no blocking findings. 189 tests pass. Still needs: owner's yes to publish as v23 (new cache name), then phone check |
 | A3 | Portrait lock: add `"orientation":"portrait"` to `manifest.webmanifest` (works for the installed app, not for a normal browser tab) | **Applied; confirmed working on phone 3 Nov 2026** |
 | A4 | Countdown digits look too small in v16 (really: on shorter screens and in a Chrome tab); enlarge without re-creating the "+ Previous shock" overlap | **Applied 4 Nov 2026** as a short-screen layout change (shock block beside the digits), because the size number alone could not do it (see State). Owner phone check passed 4 Nov 2026 with tweaks (A4b); A4b passed with one more tweak, applied as **A4c** (needs upload + phone check) |
 | A5 | Guard against double-tap recording a drug twice: adrenaline greyed out 3 min 30 s; magnesium and fluids 5 s, not greyed | **Applied 4 Nov 2026** (owner ruling), needs upload + phone check |
