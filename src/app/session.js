@@ -150,7 +150,7 @@ export function saveRhythm(
 }
 
 /* A rhythm button was tapped in the rhythm pop-up. Torsades after a shock asks for confirmation
-   first; PEA, asystole or Other shows fluid guidance after saving (A2c, A7). */
+   first; PEA, asystole or Other at a no-shock check shows fluid guidance after saving (A2c, A7, A8). */
 export function selectRhythm(rhythm) {
   const ctx = st.sheetContext;
   if (ctx?.kind !== 'rhythm') return;
@@ -177,7 +177,8 @@ export function selectRhythm(rhythm) {
     );
     return;
   }
-  if (saveRhythm(outcome, rhythm, energy) && R.RULES.numbers.lowerCard.fluidRhythms.includes(rhythm))
+  // A8: never after ROSC (the ROSC rhythm "Other" is not a non-shockable arrest rhythm).
+  if (saveRhythm(outcome, rhythm, energy) && outcome !== 'rosc' && R.RULES.numbers.lowerCard.fluidRhythms.includes(rhythm))
     sheet(
       'Non-shockable rhythm · fluid guidance',
       `${peaSnippet()}<button class="primary" data-close>Continue CPR</button>`,
