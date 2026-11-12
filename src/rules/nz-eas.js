@@ -80,7 +80,8 @@ export const RULES = {
     /* Which card fills the lower drug slot on the Live screen (A2c 3 Nov 2026, A7 11 Nov 2026).
        The latest rhythm (from either list) decides: a fluids rhythm shows the fluids card; an
        amiodarone rhythm shows amiodarone, or magnesium if torsades was ever recorded.
-       Rhythms in neither list ("Unknown", ROSC rhythms) are ignored. */
+       Rhythms in neither list ("Unknown") are ignored, and so is any rhythm recorded with ROSC
+       (A8, 12 Nov 2026: ROSC "Other" is not a non-shockable arrest rhythm). */
     lowerCard: {
       fluidRhythms: ['PEA', 'Asystole', 'Other'],
       amiodaroneRhythms: ['VF', 'VT', 'Torsades'],

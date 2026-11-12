@@ -1,7 +1,7 @@
 /* DRUG CARDS: the rules behind the Live screen's drug cards, moved here from the app layer on
    12 Nov 2026 (doc 07 step 2) with identical results. Numbers and wording come from the rules file.
 
-   lowerCard           which card fills the lower slot: fluids, amiodarone or magnesium (A2c, A7)
+   lowerCard           which card fills the lower slot: fluids, amiodarone or magnesium (A2c, A7, A8)
    amiodaroneDue       a first or second amiodarone dose is due now (A2, A2b)
    childAmiodaroneAdvice / childSecondAmiodarone / secondAmiodaroneEarly   (C6b, C6b-2)
    doseFor             the adrenaline or next amiodarone dose reference in mg
@@ -10,19 +10,24 @@ import { RULES } from '../rules/nz-eas.js';
 import * as R from './core.js';
 import { hasTorsades } from './rhythm-care.js';
 
-/* The rhythm that decides the lower card: the latest active rhythm check (or ROSC / rhythm entry)
-   whose rhythm is in one of the lower-card lists; otherwise the session's current rhythm. */
+/* The rhythm that decides the lower card: the latest active rhythm check (or rhythm entry) whose
+   rhythm is in one of the lower-card lists; otherwise the session's current rhythm.
+   A8 (owner-approved 12 Nov 2026): a rhythm recorded with ROSC never decides the card. It describes
+   a patient with a pulse (e.g. "Other"), so after a re-arrest it must not bring up the fluids card. */
 export function latestLowerRhythm(session) {
   const { fluidRhythms, amiodaroneRhythms } = RULES.numbers.lowerCard;
+  const byTime = (a, b) => a.at - b.at;
   const latest = R.active(session)
     .filter(
       (event) =>
-        ['shock', 'noshock', 'rhythm', 'rosc'].includes(event.type) &&
+        ['shock', 'noshock', 'rhythm'].includes(event.type) &&
         [...fluidRhythms, ...amiodaroneRhythms].includes(event.rhythm),
     )
-    .sort((a, b) => a.at - b.at)
+    .sort(byTime)
     .at(-1);
-  return latest?.rhythm || session.rhythm;
+  if (latest) return latest.rhythm;
+  const lastRecorded = R.active(session).filter((event) => event.rhythm).sort(byTime).at(-1);
+  return lastRecorded?.type === 'rosc' ? 'Not recorded' : session.rhythm;
 }
 
 /* 'fluids' after a non-shockable rhythm; otherwise 'magnesium' if torsades was ever recorded,
