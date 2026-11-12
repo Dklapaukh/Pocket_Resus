@@ -49,8 +49,12 @@ so rules can be updated, and new rule sets made for other services, without touc
    remaining editor decisions in doc 18, one at a time.** Owner 12 Nov 2026: format JSON (doc 18
    decision 9); editor must cover any clinically relevant function plus visual settings
    (decision 10). **Re-plan drafted 12 Nov 2026 in doc 18** (inventory of behaviour still in
-   code, revised plan, stages); nothing built. **Next: owner decisions 11–19 in doc 18, one at a
-   time, then an orchestrated build.**
+   code, revised plan, stages); nothing built. Decision 11 made (menus and rule tables). Owner goals added (decision 12):
+   two ways into the editor (tap a card in an app view; technical rules view) and, long term, a
+   no-code flowchart-to-app platform. **EAS 3.14 checked 12 Nov 2026 (doc 18): one mistake found,
+   not yet fixed: ROSC recorded as "Other" opens the fluid pop-up and fluids card;** guideline
+   actions the app lacks are listed as G1–G12. **Next: owner decisions 13–25 in doc 18 (shown
+   together), then an orchestrated build.**
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner

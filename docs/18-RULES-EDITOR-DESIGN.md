@@ -21,6 +21,8 @@ goes live.
 | 8 | 12 Nov 2026 | Lock-in test `tests/step3a-lock-in.test.mjs`: fails if a clinical number with its unit, a guideline link/PDF/EAS number, or any rules-file sentence (wording, checklist item, cause prompt) is typed into `src/app` or `src/engine` (comments ignored); every `{gap}` must be filled from parts 1/5 or by the app where listed; spot checks that the filled wording reads exactly as v21. Shown to catch a planted "2 mg/kg". 182 tests pass. **Step 3a done; next is sub-step 9 (owner phone check, then approval to publish as v22).** |
 | 9 | 12 Nov 2026 | **Rule set file format: plain JSON** (Option B). `nz-eas.js` becomes `nz-eas.json` with no value or wording change, proved by the existing tests. Not started: waits for the revised plan (decision 10). |
 | 10 | 12 Nov 2026 | **Owner's editor scope:** one interface with separate tabs (or similar) for clinical rules and for visual settings, including pop-ups. The owner must be able to edit **any clinically relevant function** without touching code; build new functions where needed. Claude's review: the current plan only makes numbers, wording and lists editable; the logic (which card shows when, amiodarone gate, torsades → magnesium, child advice, pop-up triggers) and visual settings are still fixed in code. **The plan needs re-drafting in a new chat before building** (prompt in doc 07). |
+| 11 | 12 Nov 2026 | **Logic becomes editable through menus and rule tables** (Option A): "when" picked from a list of facts, "then" from a list of results, first match wins, last row "otherwise"; no typed formulas. Owner asked how new options get added: see "Adding options" below (decision 13 pending). |
+| 12 | 12 Nov 2026 | **Owner goals added.** (a) Long term, these building blocks should become a no-code program / website that turns flowcharts into apps. (b) **Two ways into the editor:** a technical "rules" view for people who like that, and editing from the front end: in an editing view, tap a card (e.g. adrenaline) and see every rule attached to it. (c) Guideline gaps should be added natively through the editor where possible, not typed into code. |
 | 2 | 12 Nov 2026 | **Five parts, divided by kind, each with its own checks** (Option A): 1 clinical numbers and rules; 2 clinical wording; 3 checklists and reversible causes; 4 equipment; 5 sources. Each number is stored once; text gets numbers only through `{gaps}`. |
 
 ## Step 3a: gather and partition (before the editor)
@@ -280,13 +282,101 @@ without the owner's yes. Model and effort are suggestions for an orchestrated bu
 | 9 | Approve / publish / rollback; trial with a second, deliberately different rule set | Opus · high |
 | Review | After every stage: re-run tests, read the changes, report in plain English | Opus · high |
 
-## Decisions still to make (one at a time)
-11. How logic becomes editable (menus and rule tables / switches only / typed formulas).
-12. Whether new drugs and cards can be added without code.
-13. How strict the limits are.
-14. How scenario tests are written.
-15. Where the editor runs and who can use it.
-16. How an approved rule set goes live and how the app chooses a service's rule set.
-17. Scope of appearance settings.
-18. Tab layout.
-19. Stage order, models and the orchestration brief.
+## Guideline check: EAS 3.14 cardiac arrest (12 Nov 2026)
+Read the live page (cpg.stjohn.org.nz, version 1.1.0.1 of 16 June 2026) and the packaged PDF
+(export 24 Sep 2026): **same text.** Compared with v22.
+
+**Matches:** 2-minute cycles; adrenaline every 4 minutes; adult doses; amiodarone after 3 and 6
+shocks including earlier shocks; torsades "present or has occurred" → withhold amiodarone,
+magnesium, one repeat; PEA fluid volumes; paediatric rows in EAS 7.2 (adrenaline, one amiodarone
+dose only, no magnesium at 5 and 10 kg, energy = bottom of each range); the 12 checklist items.
+
+**Mistake found (confirmed by running the app):** recording **ROSC with the rhythm "Other"** opens
+the "Non-shockable rhythm · fluid guidance" pop-up with a "Continue CPR" button, and after a
+re-arrest the fluids card shows "Other · review fluid volume". Cause: A7 put "Other" in the fluids
+list, and the code does not check that the rhythm came from a no-shock check. Not yet fixed
+(needs owner approval; decision 15).
+
+**Differences that are owner rulings, not mistakes:** fluids card and pop-up for Asystole (A2c) and
+Other (A7); the guideline lists fluids under PEA only.
+
+**Flow point:** the guideline's first action is "defibrillate immediately if VF or VT". The app
+offers a rhythm check only when the 2-minute countdown reaches zero, so a shock on arrival can only
+be entered as "+ Previous shock" (no time, no rhythm).
+
+**Actions in the guideline that the app does not have, and the block that adds each natively**
+| # | Guideline action | Block the editor uses |
+|---|---|---|
+| G1 | After 3 shocks in VF / VT: consider anterior/posterior pads or double sequential defibrillation | Prompt: trigger "shock count reaches 3 and latest rhythm VF / VT" |
+| G2 | Seek clinical advice if VF / VT persists (after the second amiodarone dose) | Status-line rule row on the amiodarone card |
+| G3 | Patient movement: ketamine 1 mg/kg (max 150 mg), may repeat once; then rocuronium 2 mg/kg (max 200 mg) only if an ETT is placed and confirmed with ETCO2 | Two new on-demand drug definitions (per kg with cap; max doses; rocuronium needs the fact "ETT recorded") |
+| G4 | Flush every dose (running line or at least 20 mL) | Paragraph block in each Administration pop-up |
+| G5 | Request ICP / CCP backup | Checklist item or start prompt |
+| G6 | Intubation may occur if no ROSC within 10 minutes | Timed prompt: "resus time reaches 10 min and no ETT recorded" |
+| G7 | Review stopping at 20 minutes (poor prognosis) / 40 minutes (good prognosis) | Timed prompt on the resus clock (a reminder to review, never an instruction) |
+| G8 | PEA persisting: stop compressions and watch ETCO2 for one minute (below 10 mmHg = arrest) | Paragraph block in the PEA pop-up, or a prompt after repeated PEA checks |
+| G9 | Asystole: check cables, leads, lead selected, amplitude; exclude bradycardia | Rhythm-specific pop-up content (today asystole shows the fluids text) |
+| G10 | Defibrillator failure action list (10 steps) | New checklist (checklists become addable, with "where it appears") |
+| G11 | Special situations that change treatment: anaphylaxis (adrenaline 1 → 3 → 5 → 1 mg in PEA; fluids 2–3 L or 40–60 mL/kg); cyclic antidepressant poisoning (8.4% sodium bicarbonate 100 mL or 2 mL/kg; fluids; **no amiodarone**); asthma (ventilate 6/min; adrenaline high priority); drowning / hanging / infant in sleep (15:2; IV medicines very low priority); pregnancy over 20 weeks (displace uterus left; consider transport if hospital under 10 min); opiate (no naloxone); implanted device (pads 8 cm away) | **Situations** as data: each named situation can change a dose (including a dose sequence), a fluid range, withhold a drug, add a drug card or show a prompt. Replaces the single "special situation" switch |
+| G12 | Allow a rhythm check / shock on arrival, before the first cycle ends | Flow setting: "rhythm check allowed when…" rule table |
+
+Left out on purpose (general information, not actions): start / stop reasoning, prognosis lists, CPR
+quality and ventilation rates, transport, helicopter, mechanical CPR.
+
+**Blocks this adds to the plan:** timed and triggered **prompts**; **situations**; **on-demand
+drugs**; a **dose sequence** dose method; addable checklists; a rule table for when a rhythm check
+is allowed.
+
+## Adding options (owner question on decision 11)
+Three levels, cheapest first:
+1. **Automatic.** Anything recordable is data, so adding it creates its facts: add a drug "ketamine"
+   and the menus gain "ketamine doses given" and "time since last ketamine"; add a rhythm, a
+   situation or a checklist and it appears in every menu that lists them.
+2. **Build it in the editor.** A "new fact" form combines existing ones: count of an event, time
+   since an event, "ever recorded", a number compared with a limit, or several facts joined by
+   and / or. Saved with a plain name and reused. No code.
+3. **New kind of block** (e.g. a new way to work out a dose, a new kind of card). The editor writes
+   a short request in plain English; a programmer (or Claude) adds the block once, with its own
+   tests and checker rules; it then appears in the menus for every rule set.
+
+## Two ways in, and the long-term platform (owner goals, decision 12)
+**Same rule set, two views; neither can do anything the other cannot.**
+- **App view (front end):** a phone-sized working preview. Switch on "Edit", tap the adrenaline
+  card, and a panel lists everything attached to it in plain sentences: when it shows, its dose,
+  button, status line, lock, pop-ups. Tap a line to change it. Best for people who would be lost in
+  a big flowchart.
+- **Rules view (technical):** every table, drug, prompt and situation as lists and tables, with
+  search, "where is this used", and the raw JSON for those who want it.
+
+**First sketch of the platform ("flowchart to app")** (to brainstorm properly once stages 3 to 5 exist):
+- An app = **record** (what can be logged) + **facts** + **rule tables** + **screens made of cards**
+  + **prompts** + **checklists** + **timers** + **reference calculators** + **appearance**.
+- A flowchart maps onto these: a decision diamond is a rule table; an action box is a card, prompt or
+  checklist item; an arrow is a fact changing; a loop is a timer.
+- Ways to start: a template (e.g. timed protocol with rhythm checks), drawing the flowchart, or the
+  rules view. Later: import a guideline and have a draft proposed for the owner to check.
+- The same safety line applies to every app: checker, scenario tests, difference report, approval,
+  versions, rollback.
+- Kept generic from now on: block names avoid cardiac-arrest words (e.g. "counted event", not
+  "shock") wherever that costs nothing.
+
+## Stage changes after this review
+- Stage 5 becomes **pop-ups, prompts (timed and triggered) and situations**.
+- Stage 8 builds the **Rules view first, then the App view** (tap a card to see its rules).
+- New last stage: **first native additions** (G1 to G12, as approved, one at a time) made through
+  the editor, as the proof that nothing needs typing into code.
+
+## Decisions still to make (owner asked to see them all at once, 12 Nov 2026)
+13. How new kinds of block get added.
+14. Extra drug cards.
+15. The ROSC "Other" mistake.
+16. Special situations.
+17. The guideline gaps G1 to G12.
+18. How strict the limits are.
+19. How scenario tests are written.
+20. Where the editor runs and who can use it.
+21. How an approved rule set goes live.
+22. Scope of appearance settings.
+23. Editor layout (tabs).
+24. How far to go toward the platform now.
+25. Owner checkpoints during the orchestrated build.
