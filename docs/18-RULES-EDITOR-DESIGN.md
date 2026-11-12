@@ -101,9 +101,192 @@ input checks that are not guideline values (age 0–120, earlier counts 0–100)
 thresholds (yellow at 15 s, adrenaline highlight 30 s before review); checklist `code`/`pdf` stay
 with each checklist in part 3; the tutorial slides (`data.js`).
 
-## Editor decisions still to make (after 3a)
-- File format for a rule set (keep JavaScript data, or plain JSON that any tool can open).
-- Where the editor runs and who can use it.
-- How the "what changed" view is shown and how owner approval is recorded.
-- How a rule set goes live and how the app chooses a service's rule set.
-- How the automatic tests apply to a new service's rule set (which tests are NZ-EAS-specific).
+## Inventory: clinically relevant behaviour still fixed in code (12 Nov 2026, v22)
+Read from `src/engine` and `src/app`. Numbers, sentences, checklists, equipment lists and sources
+are already data. What is listed here is **behaviour**: it can only be changed by a programmer.
+
+**A. Which drug card shows, and when (Live screen)**
+1. Two card slots only: adrenaline always on top; the lower slot is fluids, amiodarone or magnesium.
+   Only these four medicines can have a card; a new one (or a third slot) needs code.
+2. Lower slot choice: the latest recorded rhythm that is in either rhythm list decides (shock,
+   no-shock, rhythm entry or ROSC events count; rhythms in neither list are ignored). The two lists
+   are data; the method is code.
+3. Torsades rule: once torsades is the current rhythm or on any non-voided event, magnesium replaces
+   amiodarone for the rest of the case and amiodarone is withheld. "Torsades" is named in code.
+4. Amiodarone due: shock counts (3, 6) are data. Fixed in code: earlier and "previous" shocks count;
+   the case must be running; not in special-situation mode; torsades never recorded; the current
+   rhythm is ignored.
+5. Amiodarone card visibility (A2): grey "not yet due" tile until a dose is first due; once shown it
+   stays for that patient, and always shows once a dose is recorded. The "has appeared" memory is
+   not saved, so it is forgotten if the app reloads.
+6. Second amiodarone dose: adult before the 6th shock shows "Due after 6 shocks" and a disabled
+   button. Child with one dose shows "Seek clinical advice" and no number (C6b); before the 6th
+   shock a "Select dose" button opens a type-in form (C6b-2); from the 6th shock the button is disabled.
+7. Order of precedence when several of these are true at once (which dose text and which button
+   label wins) is a fixed list in code.
+8. Adrenaline card: always shown, no maximum number of doses, not linked to rhythm or cycle count.
+   Record button works when a dose reference exists, not special situation, not ROSC/ended, not locked.
+9. Magnesium card: one tap records the first dose; a second dose needs the "Repeat magnesium?"
+   confirmation; no dose listed for the band (5 and 10 kg) gives "Dose: clinical review" and a
+   disabled button.
+10. Fluids card: never records a suggested volume; the button opens a type-in form. Status names the
+    rhythm (PEA, Asystole or Other; anything else is shown as "PEA") or the total mL recorded
+    (only entries in mL are added up).
+11. Special situation switch: turns off every routine dose prompt and one-tap record button
+    ("Manual review"); "Other…" manual entry still works. What it turns off, and its caption
+    (trauma, hypothermia, pregnancy, toxins), are in code.
+12. After ROSC or session end: cards are disabled ("ROSC recorded" / "Session ended"); the Post ROSC
+    checklist opens by itself on ROSC and a Post ROSC button appears on the Live screen.
+13. Double-tap locks: times are data. Fixed in code: only adrenaline is greyed out while locked;
+    amiodarone has no lock.
+
+**B. Pop-ups and prompts: which appear, when, and what is in them**
+14. "Confirm Torsades" appears only when torsades is chosen after a shock.
+15. "Fluid guidance" appears after saving a rhythm from the fluids list (list is data; the pop-up,
+    its title and "Continue CPR" button are code).
+16. "Repeat magnesium?" before a second dose; amiodarone-after-torsades warning in the manual form.
+17. Paediatric pads prompt: the 100 J threshold is data; where it shows (header and weight pop-up)
+    and that it uses two different wordings are code.
+18. Arrest checklist reminder (button highlight): cycle running, at least 1 min 30 s left (data),
+    and adrenaline already given (code).
+19. Administration pop-ups: which paragraphs, dose line, links and footer each one contains, and
+    that a child's amiodarone pop-up says "second dose: seek clinical advice", are code.
+20. The "Guidance & sources" pop-up cannot be opened by any button.
+
+**C. How doses and energies are worked out** (numbers are data; the method is code)
+21. No weight entered = adult; 40 kg or less = child; child weight rounded up to the next band.
+22. Shock energy = the band's energy, else adult; no weight pre-fills the adult energy; "est." tag
+    (this depends on the estimate wording starting with the word "Estimated").
+23. Child fluids use the actual weight (not the band), with no upper cap.
+24. Age-to-weight estimate: shape of the three formulas; whole years only between 1 and 14.
+25. RSI: weight × dose per kg, capped; adult blocker rounded to the nearest 50 mg; uses exact
+    weight. The four rows and their labels ("Fentanyl · conditional", "Ketamine · usual"…) are code.
+26. Tube size and length: shape of the formulas; under-1 rule; hidden above 14 years.
+27. A valid weight: above 0, up to the maximum, at most one decimal.
+28. Units and routes: adrenaline and amiodarone always "mg IV", magnesium "mmol IV", fluids "mL";
+    manual form unit list (mg, mcg, mmol, mL, g) and route list (IV, IO, IM, Other).
+
+**D. Cycle, rhythm check and case flow**
+29. A rhythm check is offered only when the countdown reaches zero; ROSC can be recorded any time.
+30. Three outcomes (Shock, No shock, ROSC). Shock / no shock is recorded first and the next cycle
+    starts at once; the rhythm is asked second. ROSC stops the clocks; re-arrest restarts CPR.
+31. Timer messages and their times: "30 seconds remaining" (30 s), "Prepare for rhythm check" and
+    yellow panel (15 s), "Rhythm check due" with overdue time; adrenaline card highlight from 30 s
+    before review.
+32. Nothing is ever recorded just because time passed.
+33. Counting: earlier counts (0–100), "+ Previous shock", consecutive no-shock streak, earlier
+    amiodarone doses.
+34. Rhythm names on buttons ("Pulseless VT", "Torsades de pointes") and the rhythm lists on the
+    correction form (different order from the data lists) are code.
+35. A medicine typed by hand joins the counts and clocks only if its name exactly matches
+    adrenaline, amiodarone, magnesium or the fluid name; manual entries are not blocked by the gates.
+36. Corrections and voids: state events (start, ROSC, end…) cannot be voided; corrections re-count.
+37. "When did resus start?" quick choices (5, 10, 15, 20 min).
+
+**E. Checklists, equipment forms and log**
+38. Where each checklist appears (arrest in the bottom bar, post-ROSC on ROSC, all four on Guidance).
+39. Equipment forms: the questions for each device (laryngoscopy method, blade, Magill forceps, view
+    grades; intubation introducer, length at lips 1–50 cm, confirmation methods; outcome; side) and
+    the airway / access grouping.
+40. Log: which event types count as "interventions"; checklist start / finish summary; export contents.
+
+**F. Wording still in code**
+Card status lines ("Review inactive", "No dose recorded", "Review first dose", "Since last dose",
+"Enter weight", "Weight needed", "Manual review", "Dose: clinical review"), drug names, pop-up titles,
+button labels, error messages, toasts, disclaimers ("A tick records checklist review…"), settings text.
+
+**G. Visual settings fixed in code / style files**
+Colours (five style files, only six named colours), text sizes (countdown, cards), child-dose purple
+highlight, amber / yellow attention states, card order and two-column layout, the four bottom tabs
+and their names, icons, pop-up style (slides up from the bottom), toast position and time, larger-text
+mode, portrait lock, tutorial slides.
+
+## Revised plan (draft 12 Nov 2026; nothing built; each choice awaits an owner decision)
+**Aim (decision 10):** the owner edits values, wording, decision logic and appearance in one
+interface with tabs, with no code, and nothing goes live unchecked.
+
+### 1. How logic becomes editable data (proposed)
+- **Facts:** a fixed list the engine works out from the record, each with a plain name, e.g.
+  "latest rhythm", "shock count", "doses given of a drug", "time since last dose", "patient group",
+  "weight entered", "case phase", "special situation on", and **flags** defined as data
+  ("torsades recorded at any time").
+- **Rule tables:** each decision is a short ordered table: *when* (facts chosen from menus) → *then*
+  (result chosen from a menu). First matching row wins; the last row is always "otherwise".
+  Example: lower slot = fluids when latest rhythm is PEA / Asystole / Other; magnesium when the
+  torsades flag is set; otherwise amiodarone.
+- **Drugs as data:** each drug has a definition: name, unit, route, how its dose is worked out
+  (chosen from a menu: fixed / band table / per kg with cap / per kg with rounding), maximum doses,
+  review interval, lock time, and rule tables for: card shown, dose text, button label and
+  whether it records, status line, highlight.
+- **Pop-ups and prompts as data:** content built from blocks (title, paragraphs, quote, dose line,
+  links, buttons) plus a trigger chosen from a menu (rhythm recorded, card button tapped, before
+  recording a dose, threshold reached).
+- **No typed formulas or code** in a rule set: everything is picked from menus, so every rule set
+  can be checked by machine.
+
+**New functions needed:** (1) rule-table reader in the engine; (2) facts and flags list; (3) drug
+definitions with one general card builder (replaces the separate adrenaline / amiodarone / support
+card code; makes new drug cards possible); (4) dose-method menu; (5) pop-up builder and trigger
+handler; (6) rule-set checker; (7) scenario test runner; (8) behaviour-difference report (old vs new
+rule set over thousands of generated cases); (9) appearance settings (named colours and sizes read
+from the rule set); (10) rule-set loader with version stamp, approval record and one-step rollback;
+(11) save the "card has appeared" memory in the session; (12) phone-sized preview in the editor.
+
+### 2. Limits on what the editor may change (proposed)
+- Never editable: the record and audit trail, undo, saving, clocks, "nothing is recorded because
+  time passed", and the checker itself.
+- Every number has a type, unit and allowed range; bands in order; a child dose never above the
+  adult dose; energy never above the maximum. A large change (more than double or less than half)
+  needs a typed confirmation.
+- Rules may only use listed facts and results; each table must end in "otherwise"; no rule may be
+  unreachable; every case must give exactly one answer.
+- Wording: numbers only through `{gaps}`; only bold, italic and line break allowed.
+- Every clinical change needs a reason and a source reference.
+- Appearance: minimum text size and button size, colour-contrast check; a clinical card or
+  disclaimer cannot be hidden from the Appearance tab.
+
+### 3. Checking and testing before a rule set goes live (proposed)
+1. **Checker** runs as you type (limits above) and blocks saving an invalid rule set.
+2. **Built-in tests:** the general tests (record, undo, clocks, storage) run for every rule set;
+   NZ-EAS-specific tests stay tied to the NZ EAS rule set.
+3. **Scenario tests the owner writes**, in plain steps, stored with the rule set, e.g.
+   "25 kg child · shock VF ×3 → amiodarone card shows 150 mg, button on". All must pass.
+4. **Behaviour-difference report:** thousands of generated cases run through the live and the
+   edited rule set; every screen that differs is listed for the owner to accept.
+5. **Preview**, then **owner approval** (name, date, reason), then publish; the previous approved
+   rule set is kept for one-step rollback. The app shows the rule set name and version.
+
+### 4. Editor tabs (proposed)
+Overview · Numbers & doses · Drugs & cards · Rhythms & flow · Pop-ups & prompts · Wording ·
+Checklists & causes · Equipment & forms · Sources · Appearance · Test & preview · Approve & publish.
+
+### 5. Build stages (each proved identical to v22 before the next starts)
+Proof for every stage: all tests pass before and after; the 278 recorded screens and the random
+case comparison match v22 exactly; one commit per step on `rules-editor`; nothing goes to `main`
+without the owner's yes. Model and effort are suggestions for an orchestrated build
+(orchestrator: Fable, high effort; after each stage a fresh reviewer that did not do the work).
+
+| Stage | What | Model · effort |
+|---|---|---|
+| 0 | Wider safety net: record v22 Live screens and pop-ups step by step across thousands of generated cases | Opus · high |
+| 1 | Rule set becomes JSON (decision 9); loader; checker for the five existing parts | Sonnet · medium |
+| 2 | Remaining wording, labels, lists, timer thresholds and form questions (inventory F, 31, 34, 37, 39) move to data | Sonnet · medium |
+| 3 | Facts, flags and rule tables; lower slot, amiodarone, torsades, child advice, special situation become tables (A, D) | Fable · high |
+| 4 | Drug definitions, dose-method menu, one general card builder (A, C) | Fable · high |
+| 5 | Pop-ups and prompts as blocks plus triggers (B) | Opus · high |
+| 6 | Appearance settings: named colours, sizes, layout, pop-up style (G) | Opus · medium |
+| 7 | Full checker, scenario runner, behaviour-difference report | Fable · high |
+| 8 | Editor screens (tabs), preview | Opus · high |
+| 9 | Approve / publish / rollback; trial with a second, deliberately different rule set | Opus · high |
+| Review | After every stage: re-run tests, read the changes, report in plain English | Opus · high |
+
+## Decisions still to make (one at a time)
+11. How logic becomes editable (menus and rule tables / switches only / typed formulas).
+12. Whether new drugs and cards can be added without code.
+13. How strict the limits are.
+14. How scenario tests are written.
+15. Where the editor runs and who can use it.
+16. How an approved rule set goes live and how the app chooses a service's rule set.
+17. Scope of appearance settings.
+18. Tab layout.
+19. Stage order, models and the orchestration brief.

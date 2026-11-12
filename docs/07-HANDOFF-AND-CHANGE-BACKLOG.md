@@ -22,8 +22,7 @@ independent clinical review is deferred until the code and other key goals are r
 
 ## Current state (12 Nov 2026)
 - **Live: v22** (cache `resus-pocket-v22-rules-file`, published 12 Nov 2026) = v21 plus step 3a
-  (all rules and guideline text in the rules file; screens identical). **v22 phone check pending
-  (owner; list in doc 09).** If anything looks wrong, Claude reverts to v21 with one commit.
+  (all rules and guideline text in the rules file; screens identical). **v22 phone check passed (owner, 12 Nov 2026).**
   v21 phone check passed (owner, 12 Nov 2026). The separate A7 check ("Other" triggers
   fluids, doc 09 11 Nov entry) has not been confirmed on its own.
 - **Step 2 done (12 Nov 2026):** every drug-card rule is now in the engine
@@ -49,7 +48,9 @@ so rules can be updated, and new rule sets made for other services, without touc
    the live app (published as v22, 12 Nov 2026). **Next: owner's v22 phone check, and the
    remaining editor decisions in doc 18, one at a time.** Owner 12 Nov 2026: format JSON (doc 18
    decision 9); editor must cover any clinically relevant function plus visual settings
-   (decision 10), which the current plan does not, so **re-plan in a new chat first**.
+   (decision 10). **Re-plan drafted 12 Nov 2026 in doc 18** (inventory of behaviour still in
+   code, revised plan, stages); nothing built. **Next: owner decisions 11–19 in doc 18, one at a
+   time, then an orchestrated build.**
 4. Later: retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
 
 ## Decisions made by owner
