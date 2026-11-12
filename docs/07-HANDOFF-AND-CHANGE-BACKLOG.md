@@ -61,7 +61,12 @@ so rules can be updated, and new rule sets made for other services, without touc
 | Stage | State |
 |---|---|
 | Before 0: A8 merged | Done 12 Nov 2026 |
-| 0 Wider safety net | In progress |
+| 0 Wider safety net | Done 13 Nov 2026. `tests/reference/` (read its README): 3,609 recorded cases from 91843ae; first 249 replayed by `npm test`, all by `npm run test:deep`; 51 planted faults caught; two independent reviews, no blocking findings. 246 tests pass |
+| 1 Rule set becomes JSON | In progress |
+
+**Waiting for the owner (none blocks the build):**
+- A8: confirm "Option A" meant updating the step 2 comparison test (doc 09); say yes to publish v23; phone check.
+- Three existing app behaviours found while recording (unchanged, recorded as they are; each a possible A-table row, one decision at a time): (1) a manual entry timed later than now is saved as the previous day; (2) closing the rhythm pop-up with × leaves "Rhythm not recorded"; (3) Tube sizes "Use age" with an empty or non-number box saves age 0 and shows infant sizes.
 
 ## Decisions made by owner
 1. Not rebuilt (historical): pause/resume, Reviewed/Suspected causes screen, "record rhythm

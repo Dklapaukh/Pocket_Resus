@@ -32,6 +32,11 @@ replace clinical review or real-device checks of layout, offline operation,
 installation, clipboard, wake lock and background timing. Do not update a
 golden file or weaken a test merely to make a change pass.
 
+`tests/reference/` holds the wider safety net (recorded screens and saved
+sessions for thousands of generated cases; read `tests/reference/README.md`).
+`npm test` replays the first part; `npm run test:deep` replays all of it
+(about 8 minutes). Never edit a recording or re-record to make a test pass.
+
 For an additional local desktop-browser check, run
 `node tools/check-offline-browser.cjs` with Playwright available to Node and
 Chrome installed. It starts a temporary localhost server, uses test data and
