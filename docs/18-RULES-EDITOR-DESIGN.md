@@ -23,6 +23,19 @@ goes live.
 | 10 | 12 Nov 2026 | **Owner's editor scope:** one interface with separate tabs (or similar) for clinical rules and for visual settings, including pop-ups. The owner must be able to edit **any clinically relevant function** without touching code; build new functions where needed. Claude's review: the current plan only makes numbers, wording and lists editable; the logic (which card shows when, amiodarone gate, torsades → magnesium, child advice, pop-up triggers) and visual settings are still fixed in code. **The plan needs re-drafting in a new chat before building** (prompt in doc 07). |
 | 11 | 12 Nov 2026 | **Logic becomes editable through menus and rule tables** (Option A): "when" picked from a list of facts, "then" from a list of results, first match wins, last row "otherwise"; no typed formulas. Owner asked how new options get added: see "Adding options" below (decision 13 pending). |
 | 12 | 12 Nov 2026 | **Owner goals added.** (a) Long term, these building blocks should become a no-code program / website that turns flowcharts into apps. (b) **Two ways into the editor:** a technical "rules" view for people who like that, and editing from the front end: in an editing view, tap a card (e.g. adrenaline) and see every rule attached to it. (c) Guideline gaps should be added natively through the editor where possible, not typed into code. |
+| 13 | 12 Nov 2026 | **New blocks: three levels plus an advanced formula box** (Option B). Safeguards (Claude, not asked): the box is in the Rules view only; it accepts listed facts, numbers, comparisons, and / or / not and simple arithmetic, never code; the checker reads it like any table; it is marked "advanced" in the what-changed view; a rule set cannot be approved unless each formula is covered by at least one scenario test. |
+| 14 | 12 Nov 2026 | **Any number of drug cards on the Live screen, layout set by rules** (Option A): a change to the guidelines could easily need more cards. Safeguards: with the two v22 cards the screen must be identical to v22; the checker warns when the cards no longer fit a small phone; owner phone check the first time a third card is used. |
+| 15 | 12 Nov 2026 | **Fix the ROSC "Other" mistake now as A8** (Option A), own test, on a branch; live only on the owner's yes. Built on branch `a8-rosc-other`; see doc 07. |
+| 16 | 12 Nov 2026 | **Named situations as data** (Option A), replacing the single switch; built empty first (identical to v22), then filled one approved item at a time. |
+| 17 | 12 Nov 2026 | **Guideline gaps become candidates added through the editor** (Option A), each approved and tested separately. Owner removed G4, G5, G6, G7, G8, G9 and G12, and from G11 any situation that is only a 15:2 ratio. |
+| 18 | 12 Nov 2026 | **Strict limits** (Option A): impossible values blocked; a large change needs a typed confirmation; every clinical change needs a reason and a source. Owner: changes can be made by **any approved person, who is by definition an "editor"**; the future program will not be clinically focused, so the role is named generally. Until there are accounts (decision 20), the approval record holds the editor's typed name and going live still passes through GitHub. |
+| 19 | 12 Nov 2026 | **Scenario tests are recorded by tapping through the preview** (Option B), saved as form steps that can be edited later. |
+| 20 | 12 Nov 2026 | **Editor is a separate page of the same site** (Option A): works offline in the browser, no logins, saves a rule-set file that goes live through GitHub after the checks. |
+| 21 | 12 Nov 2026 | **One rule set built into each published version** (Option A); version name on screen; nothing changes silently. |
+| 22 | 12 Nov 2026 | **Appearance: Option A now** (colours, text sizes, card order, pop-up style, labels, icons, with contrast and size checks). Free layout (Option B) is wanted for the future program, so appearance settings must be built so B can be added later. |
+| 23 | 12 Nov 2026 | **Five tabs:** App view, Rules, Appearance, Tests, Publish (Option A). |
+| 24 | 12 Nov 2026 | **Build the Pocket Resus editor with general blocks** that can become the platform later (Option A). |
+| 25 | 12 Nov 2026 | **Few owner checkpoints** (Option A): the owner is not technical; stop only when the owner's input really helps (phone checks after screen-changing stages, clinical approvals, anything going to `main`). |
 | 2 | 12 Nov 2026 | **Five parts, divided by kind, each with its own checks** (Option A): 1 clinical numbers and rules; 2 clinical wording; 3 checklists and reversible causes; 4 equipment; 5 sources. Each number is stored once; text gets numbers only through `{gaps}`. |
 
 ## Step 3a: gather and partition (before the editor)
@@ -309,23 +322,26 @@ be entered as "+ Previous shock" (no time, no rhythm).
 |---|---|---|
 | G1 | After 3 shocks in VF / VT: consider anterior/posterior pads or double sequential defibrillation | Prompt: trigger "shock count reaches 3 and latest rhythm VF / VT" |
 | G2 | Seek clinical advice if VF / VT persists (after the second amiodarone dose) | Status-line rule row on the amiodarone card |
-| G3 | Patient movement: ketamine 1 mg/kg (max 150 mg), may repeat once; then rocuronium 2 mg/kg (max 200 mg) only if an ETT is placed and confirmed with ETCO2 | Two new on-demand drug definitions (per kg with cap; max doses; rocuronium needs the fact "ETT recorded") |
-| G4 | Flush every dose (running line or at least 20 mL) | Paragraph block in each Administration pop-up |
-| G5 | Request ICP / CCP backup | Checklist item or start prompt |
-| G6 | Intubation may occur if no ROSC within 10 minutes | Timed prompt: "resus time reaches 10 min and no ETT recorded" |
-| G7 | Review stopping at 20 minutes (poor prognosis) / 40 minutes (good prognosis) | Timed prompt on the resus clock (a reminder to review, never an instruction) |
-| G8 | PEA persisting: stop compressions and watch ETCO2 for one minute (below 10 mmHg = arrest) | Paragraph block in the PEA pop-up, or a prompt after repeated PEA checks |
-| G9 | Asystole: check cables, leads, lead selected, amplitude; exclude bradycardia | Rhythm-specific pop-up content (today asystole shows the fluids text) |
+| G3 | Patient movement: ketamine 1 mg/kg (max 150 mg), may repeat once; then rocuronium 2 mg/kg (max 200 mg) only if an ETT is placed and confirmed with ETCO2 | Two new on-demand drug cards (per kg with cap; max doses; rocuronium needs the fact "ETT recorded") |
 | G10 | Defibrillator failure action list (10 steps) | New checklist (checklists become addable, with "where it appears") |
-| G11 | Special situations that change treatment: anaphylaxis (adrenaline 1 → 3 → 5 → 1 mg in PEA; fluids 2–3 L or 40–60 mL/kg); cyclic antidepressant poisoning (8.4% sodium bicarbonate 100 mL or 2 mL/kg; fluids; **no amiodarone**); asthma (ventilate 6/min; adrenaline high priority); drowning / hanging / infant in sleep (15:2; IV medicines very low priority); pregnancy over 20 weeks (displace uterus left; consider transport if hospital under 10 min); opiate (no naloxone); implanted device (pads 8 cm away) | **Situations** as data: each named situation can change a dose (including a dose sequence), a fluid range, withhold a drug, add a drug card or show a prompt. Replaces the single "special situation" switch |
-| G12 | Allow a rhythm check / shock on arrival, before the first cycle ends | Flow setting: "rhythm check allowed when…" rule table |
+| G11 | Special situations that change treatment: anaphylaxis (adrenaline 1 → 3 → 5 → 1 mg in PEA; fluids 2–3 L or 40–60 mL/kg); cyclic antidepressant poisoning (8.4% sodium bicarbonate 100 mL or 2 mL/kg; fluids; **no amiodarone**); asthma (ventilate 6/min; adrenaline high priority); drowning (place an ETT if no ROSC in the first few minutes); pregnancy over 20 weeks (displace uterus left; consider transport if hospital under 10 min); opiate (no naloxone); implanted device (pads 8 cm away) | **Situations** as data: each named situation can change a dose (including a dose sequence), a fluid range, withhold a drug, add a drug card or show a prompt. Replaces the single "special situation" switch |
+
+**Removed by the owner (12 Nov 2026), not needed:** G4 flush, G5 backup, G6 intubation at 10 minutes,
+G7 stopping times, G8 ETCO2 test in PEA, G9 asystole checks, G12 rhythm check on arrival; from G11,
+hanging and infant-in-sleep (15:2 ratio only). Drowning is kept because the guideline adds one action
+(early ETT); the owner can strike it.
+
+**On-demand drug card:** a card the app cannot bring up by itself, because the reason is something
+only the clinician can see. Amiodarone appears because the app counts shocks; ketamine for a moving
+patient cannot. The clinician taps a button (e.g. "Patient moving"), the card appears on the Live
+screen with its dose, limit and record button, and it can be put away again.
 
 Left out on purpose (general information, not actions): start / stop reasoning, prognosis lists, CPR
 quality and ventilation rates, transport, helicopter, mechanical CPR.
 
-**Blocks this adds to the plan:** timed and triggered **prompts**; **situations**; **on-demand
-drugs**; a **dose sequence** dose method; addable checklists; a rule table for when a rhythm check
-is allowed.
+**Blocks this adds to the plan:** triggered **prompts**; **situations**; **on-demand drug cards**;
+a **dose sequence** dose method; addable checklists. (Timed prompts are not needed now that G6 and
+G7 are removed; "time since" facts still exist for other rules.)
 
 ## Adding options (owner question on decision 11)
 Three levels, cheapest first:
@@ -361,22 +377,10 @@ Three levels, cheapest first:
   "shock") wherever that costs nothing.
 
 ## Stage changes after this review
-- Stage 5 becomes **pop-ups, prompts (timed and triggered) and situations**.
+- Stage 5 becomes **pop-ups, triggered prompts, situations and on-demand cards**.
 - Stage 8 builds the **Rules view first, then the App view** (tap a card to see its rules).
-- New last stage: **first native additions** (G1 to G12, as approved, one at a time) made through
+- New last stage: **first native additions** (G1, G2, G3, G10, G11, as approved, one at a time) made through
   the editor, as the proof that nothing needs typing into code.
 
-## Decisions still to make (owner asked to see them all at once, 12 Nov 2026)
-13. How new kinds of block get added.
-14. Extra drug cards.
-15. The ROSC "Other" mistake.
-16. Special situations.
-17. The guideline gaps G1 to G12.
-18. How strict the limits are.
-19. How scenario tests are written.
-20. Where the editor runs and who can use it.
-21. How an approved rule set goes live.
-22. Scope of appearance settings.
-23. Editor layout (tabs).
-24. How far to go toward the platform now.
-25. Owner checkpoints during the orchestrated build.
+## Decisions
+All of 11 to 25 are made (table at the top). The build brief is `docs/19-ORCHESTRATION-BRIEF.md`.
