@@ -5,11 +5,8 @@
 import { RULES } from '../rules/load.js';
 import * as R from './core.js';
 
-/* Event types shown under the "Interventions only" filter. */
-const INTERVENTIONS = new Set([
-  'start', 'rearrest', 'shock', 'noshock', 'rosc', 'end',
-  'adrenaline', 'amiodarone', 'magnesium', 'fluids', 'medicine', 'equipment', 'note',
-]);
+/* Event types shown under the "Interventions only" filter (the list is in the rules file). */
+const interventionTypes = () => new Set(RULES.numbers.log.interventionEventTypes);
 
 /* Summary rows for the "times" checklist display: when each checklist was started, reopened
    and finished. Checklist events have a key like "<list id>:<item number>". */
@@ -26,23 +23,23 @@ export function checklistTimes(events, lists) {
       const addRow = (kind, details) => rows.push({
         id: event.id + ':' + kind,
         type: 'checklist-summary',
-        title: list.label + ' · ' + kind,
+        title: R.wording('checklistSummary.title', { label: list.label, kind: R.wording('checklistSummary.' + kind) }),
         details,
         at: event.at,
         synthetic: true,
         checklistId: list.id,
       });
       if (!started && event.checked) {
-        addRow('started', 'First item checked');
+        addRow('started', R.wording('checklistSummary.firstItemChecked'));
         started = true;
       }
       if (complete && !event.checked) {
-        addRow('started', 'Reopened for review');
+        addRow('started', R.wording('checklistSummary.reopened'));
         complete = false;
       }
       checkedItems.set(index, !!event.checked);
       if (started && !complete && list.items.every((_, i) => checkedItems.get(i))) {
-        addRow('finished', 'All ' + list.items.length + ' items checked');
+        addRow('finished', R.wording('checklistSummary.allItemsChecked', { count: list.items.length }));
         complete = true;
       }
     }
@@ -58,8 +55,9 @@ export function logEntries(session, lists, { scope = 'all', checklists = 'items'
   const activeEvents = R.active(session).slice().sort((a, b) => a.at - b.at);
   const events = includeVoided ? session.events : activeEvents;
   if (scope === 'interventions') {
+    const interventions = interventionTypes();
     return events
-      .filter((event) => INTERVENTIONS.has(event.type) || (event.type === 'cause' && event.status === 'treated'))
+      .filter((event) => interventions.has(event.type) || (event.type === 'cause' && event.status === 'treated'))
       .slice()
       .sort((a, b) => a.at - b.at);
   }

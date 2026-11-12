@@ -11,9 +11,15 @@ export { RULES }; // the active rule set, so the app reads limits and wording fr
 
 export const CYCLE = RULES.numbers.timing.cprCycleMs;
 
+/* One entry of the wording part of the rules file. A plain name such as 'childDoseBasis' is read
+   directly; a name with dots such as 'liveCards.reviewInactive' is read from inside a group. */
+function wordingEntry(key) {
+  return key.split('.').reduce((node, part) => node[part], RULES.wording);
+}
+
 /* Wording from the rules file with its {name} gaps filled, e.g. wording('childDoseBasis', { band: 20 }). */
 export function wording(key, values = {}) {
-  return RULES.wording[key].replace(/\{(\w+)\}/g, (gap, name) => String(values[name]));
+  return wordingEntry(key).replace(/\{(\w+)\}/g, (gap, name) => String(values[name]));
 }
 export const ADR = RULES.numbers.timing.adrenalineIntervalMs;
 
@@ -39,7 +45,7 @@ export function fresh(now = Date.now()) {
     special: false,
     weight: '',
     group: 'Adult',
-    weightSource: 'Entered',
+    weightSource: wording('weightSources.entered'),
     age: '',
     events: [],
     undo: [],
@@ -196,9 +202,10 @@ export function wordingGaps() {
 /* Wording with its gaps filled from part 1 (plus any values given, e.g. { age: 7 }). A list entry
    gives back a list (one item per paragraph). */
 export function guideText(key, values = {}) {
-  const all = { ...wordingGaps(), ...values };
-  const fill = (text) => text.replace(/\{(\w+)\}/g, (gap, name) => String(all[name]));
-  const entry = RULES.wording[key];
+  const entry = wordingEntry(key);
+  const hasGap = (text) => text.includes('{');
+  const all = [].concat(entry).some(hasGap) ? { ...wordingGaps(), ...values } : values;
+  const fill = (text) => (hasGap(text) ? text.replace(/\{(\w+)\}/g, (gap, name) => String(all[name])) : text);
   return Array.isArray(entry) ? entry.map(fill) : fill(entry);
 }
 
@@ -388,10 +395,8 @@ export function invalidEnergy(energy) {
 /* Event text, e.g. "VF · 200 J" or "VF · energy not recorded"; no-shock events show the rhythm only. */
 export function rhythmDetails(type, rhythm, energy) {
   if (type !== 'shock') return rhythm;
-  return rhythm + ' · ' + (energy ? energy + ' J' : 'energy not recorded');
+  return energy ? wording('eventDetails.shockWithEnergy', { rhythm, energy }) : wording('eventDetails.shockNoEnergy', { rhythm });
 }
-
-const CHECK_TITLES = { shock: 'Shock delivered', noshock: 'No shock · rhythm check', rosc: 'ROSC' };
 
 /* Record a complete rhythm check (outcome and rhythm together). Returns false if refused:
    a rhythm not allowed for that outcome, after ROSC or the end, or an invalid energy.
@@ -401,7 +406,7 @@ export function check(session, outcome, rhythm, energy = '', now = Date.now()) {
   if (!allowed.includes(rhythm) || session.phase === 'ROSC' || session.phase === 'Ended' || invalidEnergy(energy)) return false;
   snapshot(session);
   session.rhythm = rhythm;
-  add(session, outcome, CHECK_TITLES[outcome], rhythmDetails(outcome, rhythm, energy), now, { rhythm, energy });
+  add(session, outcome, wording('rhythmCheckTitles.' + outcome), rhythmDetails(outcome, rhythm, energy), now, { rhythm, energy });
   if (outcome === 'rosc') {
     session.remaining = timing(session, now).left;
     session.deadline = null;
