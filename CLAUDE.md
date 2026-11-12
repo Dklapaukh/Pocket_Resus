@@ -5,7 +5,7 @@
 3. NZ EAS CPGs (PDFs in repo) are the clinical authority. Never change a dose, energy, timing or wording unless the owner has approved that exact change in the A-table of doc 07.
 4. Rebuild order: reproduce the old behaviour exactly FIRST (tests must match), then apply approved changes ONE at a time, each with its own test.
 5. Run the tests (README) before AND after every change. If anything fails, stop and explain in plain English. Never edit golden files (`tests/golden/`) or loosen a test to make it pass. Clinical numbers live in `src/rules/nz-eas.json` only.
-6. Ask before: committing to `main`, deleting files, installing packages, or changing anything outside the current stage.
-7. Continue approved work without routine checkpoints. Update doc 07 (keep it short; history goes in doc 09). Commit freely to a branch; push to `main` only after the owner says yes.
+6. Ask before: deleting files, installing packages, or changing anything outside the current stage. `main` is the live app: complete releases only (doc 19 "Publishing to `main`"; owner's standing permission 13 Nov 2026).
+7. Continue approved work without routine checkpoints. Update doc 07 (keep it short; history goes in doc 09). Commit freely to a branch. Every chat first runs `sh tools/build-progress.sh check` (doc 19 "Running unattended").
 8. Token efficiency: do not re-print large files; read files only when needed.
 9. When a chat gets long or inefficient, give the owner a ready-to-paste prompt for a new chat. Tell the owner if a task would be better in Claude Code (owner is not a developer).

@@ -15,7 +15,14 @@ independent clinical review is deferred until the code and other key goals are r
   commits and pushes. No zip uploads. Claude Code is not needed; tell the owner if a task
   would genuinely be better there.
 - Continue approved work without routine checkpoints; stop only for a clinical decision,
-  approval, a push to `main` that changes the live app, or an owner action (e.g. a phone check).
+  approval, or an owner action (e.g. a phone check).
+- **`main` (owner 13 Nov 2026):** standing permission to publish without asking each time, used for
+  complete releases only (doc 19 "Publishing to `main`"). Git history is the rollback.
+- **Unattended running (13 Nov 2026):** a scheduled task restarts the build every few hours; every chat
+  first runs `sh tools/build-progress.sh check` (doc 19 "Running unattended"). The owner can pause it
+  in the Claude app under scheduled tasks.
+- **Owner goal (13 Nov 2026):** secure Android and iPhone apps with the editor in place, by December.
+  Owner is away 18 Nov to 2 Dec 2026 with a phone only (can answer questions and do phone checks).
 - Explain simply, recommend one option, show the full text of any options, one decision at a time.
 - **Token efficiency:** when a chat gets long or slow, give the owner a ready-to-paste prompt to
   start a new chat (objective, state, next steps). Keep docs tidy so new chats start cheaply.
@@ -63,12 +70,27 @@ so rules can be updated, and new rule sets made for other services, without touc
 | Before 0: A8 merged | Done 12 Nov 2026 |
 | 0 Wider safety net | Done 13 Nov 2026. `tests/reference/` (read its README): 3,609 recorded cases from 91843ae; first 249 replayed by `npm test`, all by `npm run test:deep`; 51 planted faults caught; two independent reviews, no blocking findings. 246 tests pass |
 | 1 Rule set becomes JSON | Done 13 Nov 2026. `src/rules/nz-eas.json` (five parts + `about` + `notes`), `load.js`, `parse.js`, `check.js` (first checker, tests only); old file kept as `tests/baseline/nz-eas-v22-a8.js`. 425 values identical incl. order; real-browser start, offline, slow network and failure cases checked; review: no blocking findings. 318 tests pass |
-| 2 Remaining text and settings into data | Next |
+| 2 Remaining text and settings into data | Next (started 13 Nov 2026) |
+| 2b Safer update (`sw.js`), then publish v23 | After 2 (doc 19) |
+| Then | Waiting for the owner's answer on "editor first" (below). Do not start stage 3 before it |
 
 **Go-live must do (found in stage 1 review, not yet built):** new cache name AND a safer `sw.js`: today a phone with a working offline copy can lose offline use if the rules file fails to download during the update visit (it fails safe: message, no app). Fix `sw.js` so new-version files are never saved into the old version's store and the old complete set is served until the new set is fully installed; add a test for "rules file fails during update, then offline".
 
-**Waiting for the owner (none blocks the build):**
-- A8: confirm "Option A" meant updating the step 2 comparison test (doc 09); say yes to publish v23; phone check.
+**Waiting for the owner:**
+- **Order of work (asked 13 Nov 2026; blocks stage 3 only).** Option A (recommended), "editor first":
+  after stages 2 and 2b build a first editor for everything that is already data (every dose, energy,
+  timing, sentence, checklist, equipment list, source and label), with the checker, a what-changed
+  report, approval record, publish and rollback; publish it; then do stages 3 to 6, each widening what
+  the editor can change (which card shows when, new medicines and cards, pop-ups, appearance). Cost:
+  some editor screens are revisited at stage 4. Option B, "current order": stages 3 to 9 in sequence;
+  no rework, but the editor probably arrives in January rather than December.
+- **Store apps (told 13 Nov 2026).** Apple's review rule 1.4.2: dose calculators must come from a
+  hospital, university, manufacturer or similar approved body, or have regulator approval. Google: a
+  new personal developer account must run a closed test with 12 testers for 14 days before public
+  release; organisation accounts are exempt. Both need a paid developer account in the owner's or a
+  service's name. Owner to decide whose name the apps go under (asked next, one decision at a time).
+  The app already installs from the web link on both kinds of phone.
+- A8: confirm "Option A" meant updating the step 2 comparison test (doc 09); phone check after v23 is published (stage 2b).
 - New start-up message if the rule set cannot be read (stage 1; wording in `src/rules/parse.js`): owner may reword.
 - Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit): confirm at stage 7.
 - Three existing app behaviours found while recording (unchanged, recorded as they are; each a possible A-table row, one decision at a time): (1) a manual entry timed later than now is saved as the previous day; (2) closing the rhythm pop-up with × leaves "Rhythm not recorded"; (3) Tube sizes "Use age" with an empty or non-number box saves age 0 and shows infant sizes.
