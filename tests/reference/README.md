@@ -12,7 +12,7 @@ separately, what the app saved on the phone. Later stages must leave all of it i
 |---|---|
 | `screens.json` | what the person sees, step by step (one line per case) |
 | `saved-sessions.json` | what the app saved, and any complete JSON record downloaded, step by step |
-| `lib/cases.mjs` | the case generator: 7 fixed sweeps (cases 0-6) then 12 themes in turn, seeded, fixed clock (read this to see what is exercised) |
+| `lib/cases.mjs` | the case generator: 9 fixed sweeps (cases 0-8) then 12 themes in turn, seeded, fixed clock (read this to see what is exercised) |
 | `lib/driver.mjs` | the "person" tapping the real app in the fake browser |
 | `record.mjs` | makes the recordings (run on purpose only) |
 | `show.mjs` | readable before/after for one case |
@@ -28,7 +28,9 @@ themselves may play differently, because the "person" paces the case by reading 
 generator read the new name (raise `GENERATOR_VERSION`, re-record from the SAME reference commit and
 check the screens are unchanged), and only then re-record for the saved-session change.
 
-**How it was made.** `node tests/reference/record.mjs --commit <reference commit>`. The app is taken
+**How it was made.** `node tests/reference/record.mjs --commit 91843ae` (the commit named in the file
+headers; how many cases, and how many are in the fast set, come from `RECORDED_CASES` and `FAST_CASES`
+in `lib/cases.mjs`, so this plain command reproduces the committed files). The app is taken
 from that commit with `git archive` (not from the working copy). Each case is fixed by its number: the
 seed, the theme and the clock (start 14 Nov 2023 22:13:20 UTC, time zone UTC; the midnight case and every
 40th regular case start just before midnight instead) never change, so the same
@@ -57,28 +59,38 @@ that contains that change, and the commit message says so. If the case generator
 raise `GENERATOR_VERSION` in `lib/cases.mjs` and re-record from the SAME reference commit as before
 (the header says which), so the recording still describes the reference. If only the saved session
 changes on purpose, re-record and check that `screens.json` is byte-for-byte unchanged.
+To check that a re-record is byte-identical to what is committed: run the plain command above on a clean
+working copy, then `git status --short tests/reference` must show nothing (or
+`git diff --exit-code -- tests/reference/screens.json tests/reference/saved-sessions.json` exits with 0).
 
 **Planted changes.** `tests/reference-planted-changes.test.mjs` copies the app to a temporary folder,
 makes one realistic small edit (a dose, an energy, a lock time, a status line, a pop-up trigger, the A8
 rule, one age in the weight estimate, one tube size, midnight times, …) and requires the recordings to
 find a difference. Each edit names a hint (a fast-set case that catches it), replayed first to keep
 `npm test` quick; if the hint no longer catches it, the whole fast set is replayed and the output says
-so and gives the new hint. `PLANTED_FULL_SCAN=1` ignores all hints. It also fails if an edit's search
+so and gives the new hint. `PLANTED_FULL_SCAN=1` ignores all hints. The
+unchanged app is first replayed on every hint case and must match exactly; a change only counts as
+caught on a case where the unchanged app matches (so a change that does nothing can never pass). It also fails if an edit's search
 text is no longer in the source exactly once, so the proof cannot quietly stop working; if code moves,
 update the search text to the new code with the same kind of change.
 
-**Sweeps (cases 0-6, always in the fast set).** Per-value formulas and tables are tried value by value,
+**Sweeps (cases 0-8, always in the fast set).** Per-value formulas and tables are tried value by value,
 not by chance: weight from age and tube sizes for every whole year 0-15 plus 0.01, 0.5, 0.99, 10.5, 14.5,
 16, 120, 121 and bad entries; just below, on and just above every weight-band edge (5, 10, 20, 30, 40
 kg), RSI cap and rounding edges, maximum and refused weights, each in the adrenaline, amiodarone,
 magnesium, fluids and RSI pop-ups and cards; every equipment size, both laryngoscopy blade lists, every
-access site, every checklist item and reversible cause; a case running across midnight.
+access site, every checklist item and reversible cause; a case running across midnight; every time
+threshold just below, on and just above it (cycle captions at 30 s and 15 s, yellow panel, due at 0,
+overdue "+" after 1 s, checklist reminder at 90 s left, adrenaline lock 3 min 30 s and highlight 30 s
+before review, adrenaline overdue after 4 min, magnesium and fluids 5 s locks, the one-hour clock style);
+and the characters ' " < > & typed into every free-text box that is shown again (event notes, medicine
+names, dose notes, equipment notes, corrected details, unit and route), then the Log and every export.
 
-**Size (recorded from commit 91843ae, generator version 2).** 3,607 cases (7 sweeps + 3,600 themed),
-255,620 steps, 6 screen surfaces and 2 saved surfaces per step; `screens.json` 2.2 MB,
-`saved-sessions.json` 0.85 MB. The fast set is the first 247 cases (the 7 sweeps and about 20 per
-theme, under a minute); it still shows every behaviour on the stage 0 list (`census.mjs --to 246`).
-The deep set is all 3,607 (about 8-10 minutes).
+**Size (recorded from commit 91843ae, generator version 3).** 3,609 cases (9 sweeps + 3,600 themed),
+258,234 steps, 6 screen surfaces and 2 saved surfaces per step; `screens.json` 2.2 MB,
+`saved-sessions.json` 0.85 MB. The fast set is the first 249 cases (the 9 sweeps and 20 per theme,
+under a minute); it still shows every behaviour on the stage 0 list (`census.mjs --to 248`).
+The deep set is all 3,609 (about 8-10 minutes).
 
 **What the cases reach** (`coverage.mjs`, fast set): 2,381 of 2,485 code lines in `src/app` and
 `src/engine` (95.8%); the full set reaches the same lines. `census.mjs` shows every behaviour on the

@@ -15,7 +15,7 @@
 //
 // IMPORTANT: changing anything in this file changes the cases. Then GENERATOR_VERSION must go up
 // and the recordings must be made again FROM THE REFERENCE COMMIT (see tests/reference/README.md).
-export const GENERATOR_VERSION = 2;
+export const GENERATOR_VERSION = 3;
 export const SEED_BASE = 20261112;
 
 export const THEMES = [
@@ -23,10 +23,14 @@ export const THEMES = [
   'special', 'timers', 'references', 'reload', 'records', 'mixed',
 ];
 
-/* Cases 0-6 are fixed SWEEPS: every value of a per-value formula or table is tried in turn (all
+/* The first cases (0-8) are fixed SWEEPS: every value of a per-value formula or table is tried in turn (all
    ages, every weight-band edge, every equipment size, ...), so the fast set always covers them.
-   From case 7 on, the themes above take turns. */
-export const SWEEPS = ['ages', 'bandsAdrenaline', 'bandsAmiodarone', 'bandsMagnesium', 'bandsFluids', 'lists', 'midnight'];
+   After them, the themes above take turns. */
+export const SWEEPS = ['ages', 'bandsAdrenaline', 'bandsAmiodarone', 'bandsMagnesium', 'bandsFluids', 'lists', 'midnight', 'timers', 'characters'];
+/* How many cases are recorded, and how many of them `npm test` replays (the fast set: every sweep and
+   20 cases of each theme). record.mjs uses these, so the plain command reproduces the files exactly. */
+export const RECORDED_CASES = SWEEPS.length + 3600;
+export const FAST_CASES = SWEEPS.length + 240;
 const MIDNIGHT = 5800000; // the fixed start is 22:13:20 UTC; this many ms later is 23:50:00
 
 export function caseInfo(id) {
@@ -807,6 +811,65 @@ const SWEEP_STORIES = {
     await S.toTab('guidance');
     for (const c of CAUSES) { await S.D.tap(`[data-cause-guide="${c}"]`); await S.closeSheet(); }
     await S.toTab('log'); await S.D.fill('#checklistDisplay', 'times');
+  },
+  /* Every time threshold just below, on and just above it: the cycle clock captions and yellow panel,
+     due and overdue, the arrest-checklist reminder, the adrenaline highlight, review and lock, the
+     magnesium and fluids double-tap locks, and the one-hour clock style. */
+  async timers(S) {
+    const since = (type) => S.lastDose(type).at;
+    const at = async (base, ms, why, tap) => { const gap = base + ms - S.D.now; if (gap > 0) await S.D.wait(gap, why); if (tap) await S.D.tap(tap); };
+    await S.start();
+    await S.adrenaline(); // the checklist reminder needs adrenaline given
+    const dose = since('adrenaline');
+    for (const left of [90001, 90000, 89999, 30001, 30000, 29999, 15001, 15000, 14999, 1001, 1000, 999, 1, 0]) await S.waitLeft(left);
+    for (let k = 0; k < 3; k++) await S.D.wait(k === 0 ? 999 : 1, 'rhythm check overdue (+1 s edge)');
+    await S.check('shock', 'VF', { energy: null, late: 0 });
+    for (const ms of [209999, 210000, 210001]) await at(dose, ms, `${ms} ms after adrenaline (lock and highlight edge)`, ms === 209999 ? '[data-drug=adrenaline]' : null);
+    await S.D.tap('#main [data-custom-drug=adrenaline]'); await S.closeSheet(); // looked at "Other…" instead
+    for (const ms of [239999, 240000, 240001, 241000]) await at(dose, ms, `${ms} ms after adrenaline (review edge)`);
+    await S.adrenaline(); // free again: records the next dose
+    await S.check('noshock', 'PEA', { late: 0, fluidClose: 'button' });
+    await S.D.tap('[data-support=fluids]');
+    await S.fillDrugForm({ dose: '250' });
+    const fluid = since('fluids');
+    for (const ms of [4999, 5000, 5001]) { await at(fluid, ms, `${ms} ms after fluids (double-tap lock edge)`, '[data-support=fluids]'); if (S.D.sheetOpen()) await S.closeSheet(); }
+    await S.check('shock', 'Torsades', { energy: null, late: 0, torsades: 'confirm' });
+    await S.D.tap('[data-support=magnesium]');
+    const mag = since('magnesium');
+    for (const ms of [4999, 5000, 5001]) { await at(mag, ms, `${ms} ms after magnesium (double-tap lock edge)`, '[data-support=magnesium]'); if (S.D.sheetOpen()) await S.closeSheet('button'); }
+    const start = S.session().appStart;
+    for (const ms of [3599999, 3600000, 3600001]) await at(start, ms, `${ms} ms after the app opened (one-hour clock edge)`);
+    await S.live();
+  },
+  /* Characters that need care on screen and in exports (' " < > &) typed into every free-text box that
+     is shown again: event notes, medicine names, dose notes, equipment notes, corrected details, unit
+     and route; then the Log, cycle log and every export. */
+  async characters(S) {
+    const text = `O'Neil said "stop" <b>bold</b> & <script>x</script> &amp;`;
+    await S.start();
+    await S.D.tap('#main [data-action=note]'); await S.D.fill('#noteForm [name=text]', text); await S.D.tap('#noteForm button[type=submit]');
+    await S.D.tap('#main [data-action=note]'); await S.D.tap('#sheet [data-custom-drug=other]');
+    await S.fillDrugForm({ name: `Mg "2 g" <IV> & O'Brien`, dose: '2', unit: 'g', route: 'Other', notes: text });
+    await S.D.tap('#main [data-custom-drug=adrenaline]');
+    await S.fillDrugForm({ dose: '1', route: 'IO', notes: `<i>'given' & "flushed"</i>` });
+    await S.D.tap('#main [data-action=interventions]'); await S.D.tap('#sheet [data-equipment=igel]');
+    await S.D.tap(S.D.$$('#equipmentForm input[name=size]')[2]); await S.D.fill('#equipmentForm [name=notes]', text);
+    await S.D.tap('#equipmentForm button[type=submit]');
+    await S.toTab('log');
+    for (const label of [/^Edit Event/, /^Edit Mg/]) {
+      const b = S.D.$$('#main button[data-edit]').find((x) => label.test(x.getAttribute('aria-label') || ''));
+      if (!b) continue;
+      await S.D.tap(b);
+      await S.D.fill('#editForm [name=details]', `fixed: ${text}`);
+      if (S.has('#editForm [name=unit]')) { await S.D.fill('#editForm [name=unit]', `g<&"'`); await S.D.fill('#editForm [name=route]', `IV & "IO" <'x'>`); }
+      await S.D.tap('#editForm button[type=submit]');
+      await S.D.tap(S.D.$$('#main button[data-edit]').find((x) => label.test(x.getAttribute('aria-label') || '') || x.getAttribute('aria-label')?.includes('fixed')) || '#main button[data-edit]');
+      await S.closeSheet();
+    }
+    await S.D.fill('#logScope', 'interventions'); await S.D.fill('#logScope', 'all');
+    await S.live(); await S.D.tap('[data-action=cycle-log]'); await S.closeSheet();
+    await S.menu(); await S.D.tap('[data-action=export]'); await S.D.tap('#sheet [data-action=download-text]'); await S.D.tap('#sheet [data-action=copy]'); await S.D.tap('#sheet [data-action=download-json]');
+    await S.closeSheet();
   },
   /* A case that runs across midnight: events between 00:00 and 00:59, entries typed with times either
      side of midnight, then the Log, cycle log and export. */

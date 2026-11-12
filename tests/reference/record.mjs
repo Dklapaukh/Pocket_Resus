@@ -1,6 +1,7 @@
 // Reference recordings (stage 0): MAKE the recordings. Run on purpose only, never by `npm test`.
 //
-//   node tests/reference/record.mjs --commit <reference commit> [--cases 3600] [--fast 360]
+//   node tests/reference/record.mjs --commit <reference commit>
+// (--cases and --fast exist for experiments only; the defaults in lib/cases.mjs make the committed files)
 //
 // The app is taken from the named commit (git archive into a temporary folder), not from the working
 // copy, so the files always describe that commit. Same commit + same generator = identical files.
@@ -9,7 +10,7 @@
 import { writeFileSync, readFileSync } from 'node:fs';
 import { playMany } from './lib/run.mjs';
 import { writeRecording } from './lib/format.mjs';
-import { GENERATOR_VERSION, SEED_BASE, THEMES } from './lib/cases.mjs';
+import { GENERATOR_VERSION, SEED_BASE, THEMES, RECORDED_CASES, FAST_CASES } from './lib/cases.mjs';
 import { SCREEN_SURFACES, SAVED_SURFACES } from './lib/driver.mjs';
 import { appAtCommit, ROOT, SCREENS_FILE, SAVED_FILE } from './lib/reference-app.mjs';
 
@@ -17,7 +18,7 @@ process.env.TZ = 'UTC';
 const arg = (name, dflt) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : dflt; };
 const ref = arg('--commit', null);
 if (!ref) { console.error('Say which commit is the reference: --commit <hash>'); process.exit(2); }
-const total = +arg('--cases', 3600), fast = +arg('--fast', 360);
+const total = +arg('--cases', RECORDED_CASES), fast = +arg('--fast', FAST_CASES); // defaults = the committed files
 const { commit, dir, cleanup } = appAtCommit(ref);
 console.log(`Recording ${total} cases from commit ${commit} (app copied to ${dir})`);
 
