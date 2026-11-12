@@ -66,3 +66,13 @@ Reviewer after every stage: Opus · high, fresh agent. Orchestrator: Fable · hi
 Nothing reaches `main` during stages 0 to 9 unless the owner asks. When the owner says yes: new cache
 name, update the cache-name pins in the tests, publish, owner phone check of the live app, and be
 ready to put the previous version back with one commit.
+
+## Orchestrator notes (learned in stages 0 and 1; keep short)
+- The reference is commit 91843ae (v22 + A8). The safety net is `tests/reference/` (read its README). `npm test` takes about 3 min on 2 cores, `npm run test:deep` about 8 min; run both yourself after each stage, and check `git diff --exit-code -- tests/golden tests/reference/screens.json tests/reference/saved-sessions.json`.
+- The Agent tool sets the model but not the effort level: write the required thoroughness into each brief.
+- A stop hook asks for uncommitted work to be committed and pushed. Commit to `rules-editor` once your own test run passes, labelled "awaiting independent review"; fixes follow as further commits. Never commit a half-edited or untested tree.
+- If an agent stops on a usage limit, resume the same agent with a message after the reset; do not start a new one.
+- Reviewer briefs that worked: re-run tests; diff scope; plant new faults in a scratch copy (never in the repo); from stage 1 on, a real-browser check with the pre-installed Playwright Chromium (start, a short case compared with the reference, offline, slow and failing rules file). `tools/check-offline-browser.cjs` exists. The fake-browser tests bypass `src/rules/load.js`, so only a real browser proves the loader.
+- When a stage moves text or values into the JSON: planted-change search texts must be re-pointed (same change, found once); new wording keys go into the checker's table; the lock-in test scans `src/app`, `src/engine` and `src/rules/*.js`.
+- Carried-forward items and what is waiting for the owner are listed in doc 07 under the progress table.
+- Start a new chat at a stage boundary, never mid-review (agents cannot be resumed from another chat). The owner has a standard prompt that reads doc 07 and this page; update both first.
