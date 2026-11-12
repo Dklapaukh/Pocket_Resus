@@ -1,7 +1,7 @@
 /* Builds the screens (live, causes, checklists, log, guidance) and the 250 ms tick.
    The rebuild preserved the original behaviour first; later approved changes are marked below.
    Shared screen and session state lives in st (see state.js). */
-import { $, R, paras } from './base.js';
+import { $, R, T, paras } from './base.js';
 import {
   clock,
   countdown,
@@ -28,13 +28,13 @@ export function amioCardVisible() {
 /* A2: what sits in the lower drug slot before the amiodarone card is due (no dose, no button). */
 export function amioPendingCard() {
   const [first, second] = R.RULES.numbers.amiodarone.dueAtShocks;
-  return `<section class="drug drug-pending" id="amiodaronePending"><h3>Amiodarone</h3><p class="pending-note">${R.wording('amiodaroneNotYetDue', { first, second })}</p></section>`;
+  return `<section class="drug drug-pending" id="amiodaronePending"><h3>${T('drugNames.amiodarone')}</h3><p class="pending-note">${R.wording('amiodaroneNotYetDue', { first, second })}</p></section>`;
 }
 
 /* One drug card (adrenaline or amiodarone) on the Live screen. */
 export function drugCard(type) {
   const isAdrenaline = type === 'adrenaline',
-    name = isAdrenaline ? 'Adrenaline' : 'Amiodarone',
+    name = T(isAdrenaline ? 'drugNames.adrenaline' : 'drugNames.amiodarone'),
     doseReference = R.dose(st.s),
     counts = R.counts(st.s),
     value = R.doseFor(st.s, type),
@@ -56,24 +56,24 @@ export function drugCard(type) {
   let doseText;
   if (needsClinicalAdvice) doseText = R.wording('childSecondAmiodarone');
   else if (secondDoseEarly) doseText = R.wording('amiodaroneSecondNotYetDue', { second: R.RULES.numbers.amiodarone.dueAtShocks[1] });
-  else if (doseReference) doseText = esc(value + ' mg IV');
-  else doseText = 'Enter weight';
+  else if (doseReference) doseText = esc(T('liveCards.doseMgIv', { dose: value }));
+  else doseText = T('liveCards.enterWeight');
 
   let buttonText = '';
   if (!selectDose) {
-    if (canRecordSuggestedDose) buttonText = 'Record ' + value + ' mg IV';
+    if (canRecordSuggestedDose) buttonText = T('liveCards.recordDoseMgIv', { dose: value });
     else if (blocked) buttonText = R.guideText('withholdTorsades');
     else if (needsClinicalAdvice) buttonText = R.wording('childSecondAmiodarone');
-    else if (secondDoseEarly) buttonText = 'Not yet due';
-    else if (st.s.special) buttonText = 'Manual review';
+    else if (secondDoseEarly) buttonText = T('liveCards.notYetDue');
+    else if (st.s.special) buttonText = T('liveCards.manualReview');
     else if (!isAdrenaline && counts.amio >= R.RULES.numbers.amiodarone.dueAtShocks.length) buttonText = R.guideText('maxDosesRecorded', { maxDoses: R.RULES.numbers.amiodarone.dueAtShocks.length });
-    else if (st.s.phase === 'ROSC') buttonText = 'ROSC recorded';
-    else if (st.s.phase === 'Ended') buttonText = 'Session ended';
-    else buttonText = 'Weight needed';
+    else if (st.s.phase === 'ROSC') buttonText = T('liveCards.roscRecorded');
+    else if (st.s.phase === 'Ended') buttonText = T('liveCards.sessionEnded');
+    else buttonText = T('liveCards.weightNeeded');
   }
   const doseClass = R.isPaediatric(st.s) && doseReference ? 'child' : '';
   const recordButton = selectDose
-    ? '<button class="record" data-select-dose="amiodarone">Select dose</button>'
+    ? '<button class="record" data-select-dose="amiodarone">' + T('liveCards.selectDose') + '</button>'
     : `<button class="record" data-drug="${type}"${lockAttribute} ${
         canRecordSuggestedDose && !adrenalineLocked ? '' : 'disabled'
       }>${buttonText}</button>`;
@@ -82,12 +82,12 @@ export function drugCard(type) {
   return [
     `<section class="drug" id="${type}Card"><h3>${name}</h3>`,
     `<div class="drug-dose ${doseClass}">${doseText}</div>`,
-    `<strong class="drug-clock" id="${type}Clock">—</strong>`,
+    `<strong class="drug-clock" id="${type}Clock">${T('liveCards.emptyClock')}</strong>`,
     `<p class="caption" id="${type}Status"></p>`,
     recordButton,
     '<div class="drug-links">',
-    `<button class="administration-link" data-drug-info="${type}" aria-label="${name} administration guidance">Administration ⓘ</button>`,
-    `<button class="alternate" data-custom-drug="${type}" aria-label="Other ${name.toLowerCase()} dose, route or time">Other…</button>`,
+    `<button class="administration-link" data-drug-info="${type}" aria-label="${T('liveCards.administrationAria', { name })}">${T('liveCards.administrationLink')}</button>`,
+    `<button class="alternate" data-custom-drug="${type}" aria-label="${T('liveCards.otherAria', { name: name.toLowerCase() })}">${T('liveCards.otherLink')}</button>`,
     '</div></section>',
   ].join('');
 }
@@ -96,22 +96,22 @@ export function drugCard(type) {
 export function weightHeader() {
   const weight = st.s.weight;
   const energy = R.joules(weight);
-  const weightLabel = weight ? ' ' + esc(weight) + ' kg' : '';
-  const displayedWeight = weight ? esc(weight) + ' kg' : 'Enter kg';
+  const weightLabel = weight ? T('weightHeader.buttonAriaWithValue', { weight: esc(weight) }) : T('weightHeader.buttonAria');
+  const displayedWeight = weight ? T('weightHeader.weightKg', { weight: esc(weight) }) : T('weightHeader.enterKg');
   const energyReference = weight
-    ? `<small class="header-energy" title="${R.guideText('headerEnergyTitle')}">${energy} J${st.s.weightSource.startsWith('Estimated') ? ' · est.' : ''}</small>`
+    ? `<small class="header-energy" title="${R.guideText('headerEnergyTitle')}">${T(st.s.weightSource.startsWith('Estimated') ? 'weightHeader.energyEstimated' : 'weightHeader.energy', { energy })}</small>`
     : '';
   const padsPrompt = R.needsPaediatricPads(weight)
     ? `<div class="pads-prompt"><span aria-hidden="true">▰ ▰</span> ${R.guideText('padsPrompt')}</div>`
     : '';
   const specialFlag = st.s.special
-    ? '<span class="special-flag">Special situation · manual review</span>'
+    ? '<span class="special-flag">' + T('weightHeader.specialFlag') + '</span>'
     : '';
 
   return [
     '<div class="weight-row">',
-    `<button data-action="weight" class="weight-button" aria-label="Patient weight${weightLabel}">`,
-    `<span>Pt weight (kg)</span><strong>${displayedWeight}</strong>`,
+    `<button data-action="weight" class="weight-button" aria-label="${weightLabel}">`,
+    `<span>${T('weightHeader.buttonLabel')}</span><strong>${displayedWeight}</strong>`,
     energyReference,
     '</button>', padsPrompt, specialFlag, '</div>',
   ].join('');
@@ -129,26 +129,26 @@ export function openCycleLog() {
   const rows = cycleRecords();
   const prior = st.s.priorShocks + st.s.priorNoShock;
   const priorNote = prior
-    ? `<p class="caption">${prior} earlier cycles recorded as counts only; individual timestamps unavailable.</p>`
+    ? `<p class="caption">${T('cycleLog.earlierCounts', { count: prior })}</p>`
     : '';
   const cycleRows = rows.length
     ? rows.map((event, index) => {
         const label = event.preApp
-          ? 'Before app'
-          : 'Cycle ' + (prior + rows.slice(0, index + 1).filter((row) => !row.preApp).length);
-        const eventTime = event.timeUnknown ? 'Time not set' : time(event.at);
+          ? T('cycleLog.beforeApp')
+          : T('cycleLog.cycleNumber', { number: prior + rows.slice(0, index + 1).filter((row) => !row.preApp).length });
+        const eventTime = event.timeUnknown ? T('cycleLog.timeNotSet') : time(event.at);
         let action;
         if (event.type === 'shock') {
-          action = '<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg> Shock delivered';
-        } else if (event.type === 'noshock') action = 'No shock · next cycle started';
-        else if (event.type === 'rearrest') action = 'Re-arrest · CPR restarted';
-        else action = 'CPR cycle started';
+          action = '<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg> ' + T('cycleLog.shockDelivered');
+        } else if (event.type === 'noshock') action = T('cycleLog.noShock');
+        else if (event.type === 'rearrest') action = T('cycleLog.rearrest');
+        else action = T('cycleLog.cycleStarted');
         const details = event.details ? ' · ' + esc(event.details) : '';
         return `<article class="cycle-log-row"><b>${label}</b><time>${eventTime}</time><p>${action}${details}</p></article>`;
       }).join('')
-    : '<p>No cycles recorded yet.</p>';
+    : '<p>' + T('cycleLog.none') + '</p>';
   sheet(
-    'Cycle log',
+    T('cycleLog.title'),
     priorNote + cycleRows,
   );
 }
@@ -166,7 +166,7 @@ export function liveView() {
   const c = R.counts(st.s);
   const stopped = ['ROSC', 'Ended'].includes(st.s.phase);
   const startAction = stopped ? (st.s.phase === 'ROSC' ? 'rearrest' : 'export') : 'start';
-  const startLabel = stopped ? (st.s.phase === 'ROSC' ? 'Re-arrest · restart CPR' : 'Export record') : '▶ Start CPR';
+  const startLabel = T(stopped ? (st.s.phase === 'ROSC' ? 'liveScreen.rearrestButton' : 'liveScreen.exportButton') : 'liveScreen.startButton');
   const timer = `<div class="live-dashboard">
 
 <section class="timer-panel" id="timerPanel">` +
@@ -177,26 +177,26 @@ export function liveView() {
     `</svg>` +
     `<div class="dial-face">` +
     `<div class="dial-history">` +
-    `<button class="cycle-heading" data-action="cycle-log" aria-label="Open timestamped cycle log">` +
-    `<span id="cycleTitle">${st.s.cycle ? 'CPR cycle ' + st.s.cycle : 'Ready for CPR'}</span>` +
+    `<button class="cycle-heading" data-action="cycle-log" aria-label="${T('liveScreen.cycleLogAria')}">` +
+    `<span id="cycleTitle">${st.s.cycle ? T('liveScreen.cycleTitle', { number: st.s.cycle }) : T('liveScreen.readyForCpr')}</span>` +
     `<span class="dial-shocks">` +
     `<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true">` +
     `<path d="M14 1 1 19h9l-1 12 14-20h-9z"/>` +
     `</svg>` +
     `<strong>${c.shocks}</strong>` +
-    `<span>${c.shocks === 1 ? 'shock' : 'shocks'}</span>` +
+    `<span>${T(c.shocks === 1 ? 'liveScreen.shockOne' : 'liveScreen.shockMany')}</span>` +
     `</span>` +
     `</button>` +
-    `<button class="previous-shock" data-action="previous-shock" aria-label="Add a shock before app start"><span class="ps-plus" aria-hidden="true">+</span><span class="ps-words">Previous<br>shock</span></button>` +
+    `<button class="previous-shock" data-action="previous-shock" aria-label="${T('liveScreen.previousShockAria')}"><span class="ps-plus" aria-hidden="true">+</span><span class="ps-words">${T('liveScreen.previousShock')}</span></button>` +
     `</div>` +
     `<div class="dial-timing">` +
-    `<div class="countdown" id="cycleClock" role="timer" aria-label="Time remaining in CPR cycle">${countdown(R.CYCLE)}</div>` +
-    `<div class="cycle-caption" id="cycleCaption">Ready to start</div>` +
+    `<div class="countdown" id="cycleClock" role="timer" aria-label="${T('liveScreen.timerAria')}">${countdown(R.CYCLE)}</div>` +
+    `<div class="cycle-caption" id="cycleCaption">${T('liveScreen.captionReady')}</div>` +
     `</div>` +
     `<div class="dial-actions">` +
-    `<button class="unexpected-rosc" data-outcome="rosc" id="unexpectedRosc" aria-label="Record unexpected ROSC" ${!['Ready', 'Active'].includes(st.s.phase) ? 'hidden' : ''}>♡ ROSC</button>` +
+    `<button class="unexpected-rosc" data-outcome="rosc" id="unexpectedRosc" aria-label="${T('liveScreen.unexpectedRoscAria')}" ${!['Ready', 'Active'].includes(st.s.phase) ? 'hidden' : ''}>${T('liveScreen.unexpectedRosc')}</button>` +
     `<button class="start-button" data-action="${startAction}" id="startCycle" ${st.s.phase === 'Active' ? 'hidden' : ''}>${startLabel}</button>` +
-    `<button class="rhythm-check-button" data-action="rhythm-check" id="rhythmCheck" hidden>⌁ Rhythm check</button>` +
+    `<button class="rhythm-check-button" data-action="rhythm-check" id="rhythmCheck" hidden>${T('liveScreen.rhythmCheckButton')}</button>` +
     `</div>` +
     `</div>` +
     `</div>` +
@@ -209,7 +209,7 @@ export function liveView() {
     `<svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true">` +
     `<path d="M16 3v12m0-5-4 4m4-4 4 4M12 9C7 9 3 17 3 24c0 4 3 4 6 2l4-3V11M20 9c5 0 9 8 9 15 0 4-3 4-6 2l-4-3V11"/>` +
     `</svg>` +
-    `<span>Airway</span>` +
+    `<span>${T('liveScreen.airwayCard')}</span>` +
     `<span class="card-chevron" aria-hidden="true">›</span>` +
     `</button>` +
     `<button data-action="access">` +
@@ -217,17 +217,17 @@ export function liveView() {
     `<path d="M10 3h12v17a6 6 0 0 1-12 0V3ZM8 7h16M10 13h12M13 1v4m6-4v4m-3 21v5"/>` +
     `<path d="M16 17v4"/>` +
     `</svg>` +
-    `<span>Access</span>` +
+    `<span>${T('liveScreen.accessCard')}</span>` +
     `<span class="card-chevron" aria-hidden="true">›</span>` +
     `</button>` +
     `</div>`;
   return timer + accessCards +
     `<div class="drug-grid">${drugCard('adrenaline')}${lowerDrugCard()}</div>
-${st.s.phase === 'ROSC' ? '<button class="postrosc-main" data-action="postrosc">☑ Post ROSC checklist</button>' : ''}
+${st.s.phase === 'ROSC' ? '<button class="postrosc-main" data-action="postrosc">' + T('liveScreen.postRoscButton') + '</button>' : ''}
 <div class="tools-row">` +
     `<button data-action="interventions" ${finished() ? 'disabled' : ''}>` +
-    `<span aria-hidden="true">＋</span> Airway / access</button>` +
-    `<button data-action="note" ${finished() ? 'disabled' : ''}>+ Event</button>` +
+    `<span aria-hidden="true">＋</span> ${T('liveScreen.airwayAccessButton')}</button>` +
+    `<button data-action="note" ${finished() ? 'disabled' : ''}>${T('liveScreen.eventButton')}</button>` +
     `</div>` +
     `</div>`;
 }
@@ -253,32 +253,32 @@ export function checksView() {
   }).join('');
   const introduction = list.intro ? ' ' + list.intro : '';
   const source = formatGuidelineReference(list.code.split(' · ')[0]);
-  return `<button class="check-back" data-tab="${st.checkReturn}">← Back</button>` +
+  return `<button class="check-back" data-tab="${st.checkReturn}">${T('checks.back')}</button>` +
     `<div class="row"><h2>${list.label}</h2><span class="muted">${done}/${list.items.length}</span></div>` +
-    `<p class="caption">${list.code} · Each tick is timestamped.${introduction}</p>` +
+    `<p class="caption">${list.code} · ${T('checks.eachTick')}${introduction}</p>` +
     `<div class="panel" style="padding:0">${items}</div>` +
-    `<a href="${list.pdf}" target="_blank" rel="noopener">Original ${source} ↗</a>` +
-    `<p class="caption">A tick records checklist review, not administration or an intervention.</p>`;
+    `<a href="${list.pdf}" target="_blank" rel="noopener">${T('checks.originalLink', { source })}</a>` +
+    `<p class="caption">${T('checks.disclaimer')}</p>`;
 }
 
 // Render one event; synthetic checklist summaries open their checklist instead of an edit form.
 function logEntryMarkup(e) {
   const eventType = e.type === 'equipment' && ['iv', 'io'].includes(e.procedure) ? 'access' : e.type;
-  const displayedTime = e.timeUnknown ? 'Before app' : time(e.at);
+  const displayedTime = e.timeUnknown ? T('log.beforeApp') : time(e.at);
   const relativeTime = e.timeUnknown
-    ? '<small>Time not set</small>'
-    : `<small>${e.at < st.s.resusStart ? '−' : '+'}${clock(Math.abs(e.at - st.s.resusStart))} resus</small>`;
+    ? '<small>' + T('log.timeNotSet') + '</small>'
+    : `<small>${T('log.sinceResusStart', { sign: e.at < st.s.resusStart ? '−' : '+', clock: clock(Math.abs(e.at - st.s.resusStart)) })}</small>`;
   const shockIcon = e.type === 'shock'
     ? '<svg class="shock-bolt" viewBox="0 0 24 32" aria-hidden="true"><path d="M14 1 1 19h9l-1 12 14-20h-9z"/></svg>'
     : '';
   const reviewShock = e.needsReview && !e.voided
-    ? `<button class="review-shock" data-edit="${esc(e.id)}">Add time / edit details</button>`
+    ? `<button class="review-shock" data-edit="${esc(e.id)}">${T('log.addTimeButton')}</button>`
     : '';
-  const correction = e.correctedAt ? '<small class="caption">Corrected</small>' : '';
-  const voidNotice = e.voided ? '<small class="caption">Voided · excluded from counts</small>' : '';
+  const correction = e.correctedAt ? '<small class="caption">' + T('log.corrected') + '</small>' : '';
+  const voidNotice = e.voided ? '<small class="caption">' + T('log.voided') + '</small>' : '';
   const editButton = e.synthetic
-    ? `<button data-review-checklist="${esc(e.checklistId)}" aria-label="Review ${esc(e.title)}">↗</button>`
-    : `<button data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.title)} at ${e.timeUnknown ? 'time not set' : time(e.at)}">✎</button>`;
+    ? `<button data-review-checklist="${esc(e.checklistId)}" aria-label="${T('log.reviewAria', { title: esc(e.title) })}">↗</button>`
+    : `<button data-edit="${esc(e.id)}" aria-label="${T('log.editAria', { title: esc(e.title), time: e.timeUnknown ? T('log.timeNotSetAria') : time(e.at) })}">✎</button>`;
   return `<article data-event-type="${eventType}" class="log-entry ${e.voided ? 'void' : ''}">` +
     `<time>${displayedTime}${relativeTime}</time><div>${shockIcon}<b>${esc(e.title)}</b>` +
     `<p>${esc(e.details)}</p>${reviewShock}${correction}${voidNotice}</div>${editButton}</article>`;
@@ -289,25 +289,25 @@ export function logView() {
   const rows = logRows();
   const interventionsOnly = st.logScope === 'interventions';
   const filterHelp = interventionsOnly
-    ? 'CPR, shocks, rhythm checks, medicines, airway/access and recorded actions. Checklist items excluded.'
+    ? T('log.helpInterventions')
     : st.checklistDisplay === 'times'
-      ? 'Checklist start: first item checked. Finish: all items checked. Other events remain visible.'
-      : 'All recorded events, including individual checklist items.';
+      ? T('log.helpTimes')
+      : T('log.helpAll');
   const entries = rows.length
     ? rows.slice().reverse().map(logEntryMarkup).join('')
-    : '<p class="empty">No events in this view yet.</p>';
-  const startNote = st.s.resusStart < st.s.appStart ? ' · before app opened' : '';
-  return `<div class="row"><h2>Event log</h2><button data-action="copy" aria-label="Export event log to clipboard">Export</button></div>` +
-    `<div class="log-filters"><label>Show<select id="logScope">` +
-    `<option value="all" ${st.logScope === 'all' ? 'selected' : ''}>All events</option>` +
-    `<option value="interventions" ${interventionsOnly ? 'selected' : ''}>Interventions only</option></select></label>` +
-    `<label>Checklists<select id="checklistDisplay" ${interventionsOnly ? 'disabled' : ''}>` +
-    `<option value="items" ${st.checklistDisplay === 'items' ? 'selected' : ''}>Each item</option>` +
-    `<option value="times" ${st.checklistDisplay === 'times' ? 'selected' : ''}>Start & finish only</option></select></label></div>` +
-    `<p class="caption log-filter-help">${filterHelp} Export copies this view; voided entries are excluded.</p>` +
+    : '<p class="empty">' + T('log.noEvents') + '</p>';
+  const startNote = st.s.resusStart < st.s.appStart ? T('log.beforeAppOpenedNote') : '';
+  return `<div class="row"><h2>${T('log.heading')}</h2><button data-action="copy" aria-label="${T('log.exportAria')}">${T('log.exportButton')}</button></div>` +
+    `<div class="log-filters"><label>${T('log.showLabel')}<select id="logScope">` +
+    `<option value="all" ${st.logScope === 'all' ? 'selected' : ''}>${T('log.allEvents')}</option>` +
+    `<option value="interventions" ${interventionsOnly ? 'selected' : ''}>${T('log.interventionsOnly')}</option></select></label>` +
+    `<label>${T('log.checklistsLabel')}<select id="checklistDisplay" ${interventionsOnly ? 'disabled' : ''}>` +
+    `<option value="items" ${st.checklistDisplay === 'items' ? 'selected' : ''}>${T('log.eachItem')}</option>` +
+    `<option value="times" ${st.checklistDisplay === 'times' ? 'selected' : ''}>${T('log.startAndFinish')}</option></select></label></div>` +
+    `<p class="caption log-filter-help">${filterHelp} ${T('log.exportNote')}</p>` +
     `<p class="caption">${new Date(st.s.appStart).toLocaleDateString('en-NZ')} · ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)}<br>` +
-    `Resus start ${time(st.s.resusStart)}${startNote} · ${st.s.phase}</p>` +
-    `<button class="primary" data-action="note" ${finished() ? 'disabled' : ''}>+ Add event / earlier event</button>${entries}`;
+    `${T('log.resusStartLine', { time: time(st.s.resusStart), note: startNote, phase: st.s.phase })}</p>` +
+    `<button class="primary" data-action="note" ${finished() ? 'disabled' : ''}>${T('log.addEventButton')}</button>${entries}`;
 }
 
 /* Redraw the whole screen for the current tab, then update clocks. Called after every change. */
@@ -337,12 +337,13 @@ export function render() {
 
 /* Caption is derived from the cycle; it never creates an event. */
 function cycleCaption(t, on, running, due, stopped) {
-  if (stopped) return 'Recorded at ' + time(st.s.end);
-  if (due) return 'Rhythm check due' + (t.late > 1000 ? ' · +' + clock(t.late) : '');
-  if (on && !running) return 'Paused · resus clock continues';
-  if (running && t.left <= 15000) return 'Prepare for rhythm check';
-  if (running && t.left <= 30000) return '30 seconds remaining';
-  return running ? 'CPR in progress' : 'Ready to start';
+  const timing = R.RULES.numbers.timing;
+  if (stopped) return T('liveScreen.captionRecordedAt', { time: time(st.s.end) });
+  if (due) return t.late > timing.overdueShownAfterMs ? T('liveScreen.captionDueLate', { late: clock(t.late) }) : T('liveScreen.captionDue');
+  if (on && !running) return T('liveScreen.captionPaused');
+  if (running && t.left <= timing.prepareAtMs) return T('liveScreen.captionPrepare');
+  if (running && t.left <= timing.warningAtMs) return T('liveScreen.captionWarning');
+  return T(running ? 'liveScreen.captionRunning' : 'liveScreen.captionReady');
 }
 
 /* Update the visible CPR cycle; the timer itself records no treatment. */
@@ -351,19 +352,19 @@ function tickCycle(t, on, running, due, stopped) {
   let title;
   if (stopped) {
     const hasRosc = st.s.phase === 'ROSC';
-    clockText = hasRosc ? 'ROSC' : 'Ended';
-    title = hasRosc ? 'ROSC recorded' : 'Session ended';
+    clockText = T(hasRosc ? 'liveScreen.clockRosc' : 'liveScreen.clockEnded');
+    title = T(hasRosc ? 'liveScreen.titleRosc' : 'liveScreen.titleEnded');
   } else {
     clockText = countdown(t.left);
-    title = st.s.cycle ? 'CPR cycle ' + st.s.cycle : 'Ready for CPR';
+    title = st.s.cycle ? T('liveScreen.cycleTitle', { number: st.s.cycle }) : T('liveScreen.readyForCpr');
   }
   $('cycleClock').textContent = clockText;
   $('cycleTitle').textContent = title;
   $('cycleCaption').textContent = cycleCaption(t, on, running, due, stopped);
-  if ($('cycleAlert').textContent !== (due ? 'Cycle complete. Rhythm check.' : ''))
-    $('cycleAlert').textContent = due ? 'Cycle complete. Rhythm check.' : '';
+  const alertText = due ? T('liveScreen.cycleCompleteAlert') : '';
+  if ($('cycleAlert').textContent !== alertText) $('cycleAlert').textContent = alertText;
   $('timerPanel').classList.toggle('due', due);
-  $('timerPanel').classList.toggle('prepare', running && t.left > 0 && t.left <= 15000);
+  $('timerPanel').classList.toggle('prepare', running && t.left > 0 && t.left <= R.RULES.numbers.timing.prepareAtMs);
   $('timerPanel').classList.toggle('stopped', stopped);
   $('timerPanel').classList.toggle('ready', st.s.phase === 'Ready');
   $('progress').style.strokeDashoffset = String(
@@ -378,29 +379,29 @@ function tickCycle(t, on, running, due, stopped) {
 /* Status text is a reminder derived from the session, not a recorded dose.
    Keep the order: several conditions can apply at once. */
 function adrenalineStatus(remaining, enabled) {
-  if (!enabled) return 'Review inactive';
-  if (remaining === null) return 'No dose recorded';
+  if (!enabled) return T('liveCards.reviewInactive');
+  if (remaining === null) return T('liveCards.noDoseRecorded');
   if (remaining < 0) return R.guideText('adrenalineOverdue');
   return R.guideText('adrenalineUntilReview');
 }
 
 function amiodaroneStatus(elapsed, count, enabled, due) {
   if (torsades()) return R.guideText('withholdTorsades');
-  if (!enabled) return 'Review inactive';
-  if (due) return 'Review ' + (count ? 'second' : 'first') + ' dose';
+  if (!enabled) return T('liveCards.reviewInactive');
+  if (due) return T(count ? 'liveCards.reviewSecondDose' : 'liveCards.reviewFirstDose');
   const [first, second] = R.RULES.numbers.amiodarone.dueAtShocks;
-  if (count >= R.RULES.numbers.amiodarone.dueAtShocks.length) return 'Since last dose';
+  if (count >= R.RULES.numbers.amiodarone.dueAtShocks.length) return T('liveCards.sinceLastDose');
   if (elapsed === null) return R.guideText('amiodaroneReviewAt', { shocks: count ? second : first });
-  return 'Since last dose';
+  return T('liveCards.sinceLastDose');
 }
 
 /* Update medication review clocks and release an expired display lock. */
 function tickMedicines(t, c, on) {
   const enabled = on && !st.s.special;
   $('adrenalineClock').textContent =
-    t.adr === null ? '—' : t.adr < 0 ? '+' + clock(-t.adr) : countdown(t.adr);
+    t.adr === null ? T('liveCards.emptyClock') : t.adr < 0 ? T('liveCards.overdueClock', { time: clock(-t.adr) }) : countdown(t.adr);
   $('adrenalineStatus').textContent = adrenalineStatus(t.adr, enabled);
-  $('adrenalineCard').classList.toggle('attention', enabled && t.adr !== null && t.adr <= 30000);
+  $('adrenalineCard').classList.toggle('attention', enabled && t.adr !== null && t.adr <= R.RULES.numbers.timing.adrenalineHighlightMs);
   /* A5: while the lock runs the adrenaline button is greyed out (set when the card is drawn); when the
      3 min 30 s are up, free it again, but only if it was otherwise usable (weight entered, not ROSC, etc.). */
   const adrBtn = $('adrenalineCard').querySelector('button[data-a5-free]');
@@ -411,7 +412,7 @@ function tickMedicines(t, c, on) {
   if (R.lowerCard(st.s) === 'amiodarone') {
     if (!amioCardVisible()) return; // A2: placeholder tile has nothing to update
     const due = amioDue();
-    $('amiodaroneClock').textContent = t.amio === null ? '—' : clock(t.amio);
+    $('amiodaroneClock').textContent = t.amio === null ? T('liveCards.emptyClock') : clock(t.amio);
     $('amiodaroneStatus').textContent = amiodaroneStatus(t.amio, c.amio, enabled, due);
     $('amiodaroneCard').classList.toggle('attention', due);
   } else tickSupport(R.lowerCard(st.s), enabled);
@@ -441,9 +442,9 @@ export function tick() {
 export function guidance() {
   const guidelineLinks = R.RULES.sources.guidanceLinks
     .map((id) => R.RULES.sources.guidelines[id])
-    .map((g) => `<a href="${g.pdf}" target="_blank" rel="noopener">${g.label} · <em>EAS guideline ${g.code}</em> ↗</a>`).join('');
+    .map((g) => `<a href="${g.pdf}" target="_blank" rel="noopener">${g.label} · ${T('references.guidelineLink', { code: g.code })}</a>`).join('');
   sheet(
-    'Guidance & sources',
+    T('guidance.sourcesTitle'),
     paras('guidanceIntro') +
     `<div class="stack">${guidelineLinks}</div><details class="panel"><summary>${R.guideText('guidanceRsiTitle')}</summary>` +
     paras('guidanceRsi') + `</details>` +
@@ -457,50 +458,50 @@ export function supportCard(type) {
   const ref = mag ? R.magnesiumReference(st.s) : R.fluidReference(st.s);
   const stats = R.supportStats(st.s, type);
   let value;
-  if (mag) value = ref.dose === null ? 'Dose: clinical review' : ref.dose + ' mmol IV';
-  else value = ref.min === null ? 'Enter weight' : ref.min + '–' + ref.max + ' mL IV';
+  if (mag) value = ref.dose === null ? T('liveCards.doseClinicalReview') : T('liveCards.doseMmolIv', { dose: ref.dose });
+  else value = ref.min === null ? T('liveCards.enterWeight') : T('liveCards.volumeMlIv', { min: ref.min, max: ref.max });
 
   const enabled = !st.s.special && !['ROSC', 'Ended'].includes(st.s.phase);
   const maxDoses = R.RULES.numbers.magnesium.maxDoses;
   const canRef = enabled && (!mag || (ref.dose !== null && stats.count < maxDoses));
   let label;
-  if (!mag) label = 'Record fluid…';
+  if (!mag) label = T('liveCards.recordFluid');
   else if (stats.count >= maxDoses) label = R.guideText('maxDosesRecorded', { maxDoses });
-  else if (ref.dose === null) label = 'Review dose';
-  else if (stats.count) label = 'Record repeat…';
-  else label = 'Record ' + ref.dose + ' mmol IV';
+  else if (ref.dose === null) label = T('liveCards.reviewDose');
+  else if (stats.count) label = T('liveCards.recordRepeat');
+  else label = T('liveCards.recordMmolIv', { dose: ref.dose });
 
   let buttonText = label;
   if (!enabled) {
-    if (st.s.phase === 'ROSC') buttonText = 'ROSC recorded';
-    else if (st.s.phase === 'Ended') buttonText = 'Session ended';
-    else buttonText = 'Manual review';
+    if (st.s.phase === 'ROSC') buttonText = T('liveCards.roscRecorded');
+    else if (st.s.phase === 'Ended') buttonText = T('liveCards.sessionEnded');
+    else buttonText = T('liveCards.manualReview');
   }
-  return `<section class="drug ${type}" id="${type}Card"><h3>${mag ? 'Magnesium' : R.guideText('fluidsCardTitle')}</h3>` +
+  return `<section class="drug ${type}" id="${type}Card"><h3>${mag ? T('drugNames.magnesium') : R.guideText('fluidsCardTitle')}</h3>` +
       `<div class="drug-dose">${esc(value)}</div>` +
-      `<strong class="drug-clock" id="supportClock">—</strong>` +
+      `<strong class="drug-clock" id="supportClock">${T('liveCards.emptyClock')}</strong>` +
       `<p class="caption" id="supportStatus"></p>` +
-      `<button class="record" data-support="${type}" ${canRef ? '' : 'disabled'}>${buttonText}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}">Administration ⓘ</button>` +
-      `<button class="alternate" data-custom-drug="${type}">Other…</button></div></section>`;
+      `<button class="record" data-support="${type}" ${canRef ? '' : 'disabled'}>${buttonText}</button><div class="drug-links"><button class="administration-link" data-drug-info="${type}">${T('liveCards.administrationLink')}</button>` +
+      `<button class="alternate" data-custom-drug="${type}">${T('liveCards.otherLink')}</button></div></section>`;
 }
 
 /* Per-tick text for that card: time since last dose and status line. */
 export function tickSupport(type, enabled) {
   const stats = R.supportStats(st.s, type);
-  $('supportClock').textContent = stats.last ? clock(Date.now() - stats.last.at) : '—';
+  $('supportClock').textContent = stats.last ? clock(Date.now() - stats.last.at) : T('liveCards.emptyClock');
   let status;
   if (!enabled) {
-    status = 'Review inactive';
+    status = T('liveCards.reviewInactive');
   } else if (type === 'magnesium') {
     if (stats.count >= R.RULES.numbers.magnesium.maxDoses) status = R.guideText('magnesiumMaxDosesStatus');
     else if (stats.count) status = R.guideText('magnesiumRepeatStatus');
     else status = R.guideText('magnesiumFirstStatus');
   } else if (stats.total) {
-    status = stats.total + ' mL recorded · review total';
+    status = T('liveCards.fluidRecordedTotal', { total: stats.total });
   } else {
     const latest = R.latestLowerRhythm(st.s);
     const rhythm = latest === 'Asystole' || latest === 'Other' ? latest : 'PEA';
-    status = rhythm + ' · review fluid volume';
+    status = T('liveCards.fluidReviewVolume', { rhythm });
   }
   $('supportStatus').textContent = status;
 }
@@ -508,15 +509,15 @@ export function tickSupport(type, enabled) {
 /* The Guidance tab: a button for each checklist. */
 export function guidanceGrid() {
   const checklistButtons = R.RULES.checklists.lists
-    .map((c) => `<button data-open-check="${c.id}">☑ ${c.label}</button>`).join('');
-  const weight = st.s.weight ? esc(st.s.weight) + ' kg' : 'Enter weight';
-  const age = st.s.age ? esc(st.s.age) + ' years' : 'Age criteria';
+    .map((c) => `<button data-open-check="${c.id}">${T('guidance.checklistButton', { label: c.label })}</button>`).join('');
+  const weight = st.s.weight ? T('weightHeader.weightKg', { weight: esc(st.s.weight) }) : T('liveCards.enterWeight');
+  const age = st.s.age ? T('guidance.ageYears', { age: esc(st.s.age) }) : T('guidance.ageCriteria');
   const causeButtons = R.RULES.checklists.causes
     .map((c) => `<button data-cause-guide="${c.id}">${c.name}</button>`).join('');
-  return `<h2>Guidance</h2><div class="guidance-grid">${checklistButtons}` +
-    `<button data-reference="rsi">RSI doses<br><small>${weight}</small></button>` +
-    `<button data-reference="tubes">Tube sizes & age<br><small>${age}</small></button></div>` +
-    `<section class="causes-board"><h3>Reversible causes · 4 Hs & 4 Ts</h3><div>${causeButtons}</div></section>`;
+  return `<h2>${T('guidance.heading')}</h2><div class="guidance-grid">${checklistButtons}` +
+    `<button data-reference="rsi">${T('guidance.rsiButton')}<br><small>${weight}</small></button>` +
+    `<button data-reference="tubes">${T('guidance.tubesButton')}<br><small>${age}</small></button></div>` +
+    `<section class="causes-board"><h3>${T('guidance.causesHeading')}</h3><div>${causeButtons}</div></section>`;
 }
 
 /* Reference pop-up opened from Guidance (RSI doses, tube sizes), calculated from weight or age. */
@@ -527,32 +528,34 @@ export function referenceSheet(type) {
     // These are reference values only; opening this sheet records no medicine (rule: engine rsiDoses).
     const d = R.rsiDoses(w);
     const doseList = w
-      ? `<p><b>${w} kg</b> · ${R.guideText('rsiNotRecorded')}</p><dl>` +
-        `<dt>Fentanyl · conditional</dt><dd>${d.fentanylMcg} mcg IV</dd>` +
-        `<dt>Ketamine · usual</dt><dd>${d.ketamineMg} mg IV</dd>` +
-        `<dt>Ketamine · reduced</dt><dd>${d.reducedKetamineMg} mg IV</dd>` +
-        `<dt>Rocuronium OR suxamethonium</dt><dd>${d.blockerMg} mg IV</dd></dl>`
-      : '<button class="primary" data-action="weight">Enter patient weight</button>';
+      ? `<p><b>${T('weightHeader.weightKg', { weight: w })}</b> · ${R.guideText('rsiNotRecorded')}</p><dl>` +
+        `<dt>${T('referenceSheets.fentanylName')}</dt><dd>${T('referenceSheets.doseMcgIv', { dose: d.fentanylMcg })}</dd>` +
+        `<dt>${T('referenceSheets.ketamineUsualName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.ketamineMg })}</dd>` +
+        `<dt>${T('referenceSheets.ketamineReducedName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.reducedKetamineMg })}</dd>` +
+        `<dt>${T('referenceSheets.blockerName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.blockerMg })}</dd></dl>`
+      : '<button class="primary" data-action="weight">' + T('referenceSheets.enterWeightButton') + '</button>';
     sheet(
-      'RSI dose references',
+      T('referenceSheets.rsiTitle'),
       `${doseList}${paras('rsiConditions')}` +
-      `<a href="${R.RULES.sources.guidelines.rsi.pdf}" target="_blank"><em>EAS guideline ${R.RULES.sources.guidelines.rsi.code}</em> ↗</a>`,
+      `<a href="${R.RULES.sources.guidelines.rsi.pdf}" target="_blank">${T('references.guidelineLink', { code: R.RULES.sources.guidelines.rsi.code })}</a>`,
     );
     return;
   }
   const tube = R.tubeReference(age); // rule: engine tubeReference
   const igelRanges = R.RULES.equipment.igelRanges
-    .map((r) => `${r.size}: ${r.maxKg === null ? r.minKg + '+' : r.minKg + '–' + r.maxKg} kg`).join(' · ');
+    .map((r) => (r.maxKg === null
+      ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })
+      : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');
   const tubeReference = tube
-    ? `<p><b>Cuffed ETT:</b> ${tube.size}</p><p><b>Length at lips:</b> ${tube.length}</p>`
+    ? `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`
     : paras('tubeNoAge');
   sheet(
-    'Tube sizes & age criteria',
-    `<label>Patient age (years)<input id="referenceAge" type="number" min="0" max="120" step="any" value="${esc(st.s.age)}"></label>` +
-    `<button data-save-age>Use age</button>${tubeReference}` +
+    T('referenceSheets.tubesTitle'),
+    `<label>${T('referenceSheets.ageLabel')}<input id="referenceAge" type="number" min="0" max="120" step="any" value="${esc(st.s.age)}"></label>` +
+    `<button data-save-age>${T('referenceSheets.useAgeButton')}</button>${tubeReference}` +
     `<p class="caption">${R.guideText('tubeCaution')}</p>` +
-    `<h3>Age-based weight estimate</h3><p>${R.wording('tubeSheetAgeEstimate', R.ageEstimateGaps())}</p>` +
-    `<h3>iGel weight ranges</h3><p>${igelRanges}.</p>` +
-    `<a href="${R.RULES.sources.guidelines.paediatric.pdf}" target="_blank"><em>EAS guideline ${R.RULES.sources.guidelines.paediatric.code}</em> ↗</a><p class="caption">${R.guideText('igelSourceCaption')}</p>`,
+    `<h3>${T('referenceSheets.ageEstimateHeading')}</h3><p>${R.wording('tubeSheetAgeEstimate', R.ageEstimateGaps())}</p>` +
+    `<h3>${T('referenceSheets.igelHeading')}</h3><p>${T('referenceSheets.igelRangesLine', { ranges: igelRanges })}</p>` +
+    `<a href="${R.RULES.sources.guidelines.paediatric.pdf}" target="_blank">${T('references.guidelineLink', { code: R.RULES.sources.guidelines.paediatric.code })}</a><p class="caption">${R.guideText('igelSourceCaption')}</p>`,
   );
 }

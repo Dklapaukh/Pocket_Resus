@@ -36,13 +36,24 @@ async function onAPhone(editJson, fetchBehaviour) {
 }
 const ok = (url, text) => ({ ok: true, status: 200, text: async () => text });
 
-test('on a phone: the file is fetched next to the loader and gives exactly the baseline rule set', async () => {
+// Stage 2 added values to the file (pinned in tests/baseline/stage2-additions.json and checked in
+// rules-json-same-as-baseline.test.mjs), so "the same rule set" now means: exactly the five parts of the file on
+// disk, and every value of the frozen baseline still in it, identical.
+function assertHolds(actual, baseline, where) {
+  if (baseline !== null && typeof baseline === 'object') {
+    assert.ok(actual !== null && typeof actual === 'object' && Array.isArray(actual) === Array.isArray(baseline), where + ': wrong kind');
+    for (const key of Object.keys(baseline)) { assert.ok(key in actual, where + '.' + key + ' is missing'); assertHolds(actual[key], baseline[key], where + '.' + key); }
+  } else assert.ok(Object.is(actual, baseline), where + ': ' + JSON.stringify(actual) + ' is not ' + JSON.stringify(baseline));
+}
+test('on a phone: the file is fetched next to the loader and gives exactly the rule set in the file (with every baseline value)', async () => {
   const r = await onAPhone(null, ok);
   assert.equal(r.error, undefined);
   assert.equal(r.fetched.length, 1);
   assert.match(r.fetched[0], /\/src\/rules\/nz-eas\.json$/);
-  assert.deepEqual(r.engine.Resus.RULES, BASELINE);
+  const onDisk = JSON.parse(readFileSync(new URL('../src/rules/nz-eas.json', import.meta.url), 'utf8'));
+  assert.deepEqual(r.engine.Resus.RULES, Object.fromEntries(Object.keys(BASELINE).map((part) => [part, onDisk[part]])));
   assert.deepEqual(Object.keys(r.engine.Resus.RULES), Object.keys(BASELINE));
+  assertHolds(r.engine.Resus.RULES, BASELINE, 'rules');
   assert.equal(r.page.children.length, 0, 'no message when all is well');
 });
 
