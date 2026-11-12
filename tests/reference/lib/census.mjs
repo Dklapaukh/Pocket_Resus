@@ -1,6 +1,9 @@
 // Reference recordings (stage 0): which clinical behaviours each played case actually shows.
 // Used by tests/reference/coverage.mjs --census to report, for each behaviour on the stage 0 list,
 // in how many generated cases it appears (an honest count, not a guess from the story code).
+import { RULES as CLINICAL } from '../../../src/rules/nz-eas.js';
+import { SWEEP_AGES, SWEEP_WEIGHTS } from './cases.mjs';
+
 const parsed = new WeakMap();
 const sess = (step) => {
   if (!parsed.has(step)) { let v = {}; try { v = JSON.parse(step.saved.stored) || {}; } catch {} parsed.set(step, v); }
@@ -134,6 +137,22 @@ const RULES = {
   'larger text': (s) => s.screens.frame.startsWith('large') || / large/.test(s.screens.frame.split('|')[0]),
   'app error recorded (should be none)': (s) => !s.screens.frame.endsWith('errors=') && /errors=./.test(s.screens.frame),
 };
+
+/* Per-value checks: every age, every weight edge in every pop-up, every equipment size. */
+const typed = (step, field, value) => !!step && step.label.includes(`id=${field}`) && step.label.endsWith(`with "${value}"`);
+const devices = CLINICAL.equipment.devices;
+const equipment = (s, name, part) => ev(s).some((e) => e.type === 'equipment' && e.title === name && e.details.split(' · ').includes(part));
+Object.assign(RULES, {
+  ...Object.fromEntries(SWEEP_AGES.map((a) => [`weight from age "${a}"`, (s, p) => s.label.includes('data-action=estimate') && typed(p, 'ageInput', a)])),
+  ...Object.fromEntries(SWEEP_AGES.map((a) => [`tube sizes for age "${a}"`, (s, p) => s.label.includes('data-save-age') && typed(p, 'referenceAge', a)])),
+  ...Object.fromEntries(SWEEP_WEIGHTS.filter((w) => +w > 0 && +w <= 500).flatMap((w) => ['Adrenaline · reference', 'Amiodarone · reference', 'Magnesium · administration', 'Fluids · administration', 'RSI dose references']
+    .map((t) => [`${t} at ${w} kg`, (s) => title(s) === t && s.screens.header.includes(`<strong>${String(+w)} kg</strong>`)]))),
+  ...Object.fromEntries(Object.entries(devices).flatMap(([id, d]) => (id === 'laryngoscopy' ? [] : d.sizes).map((v) => [`${d.name} size ${v}`, (s) => equipment(s, d.name, 'size: ' + v)]))),
+  ...Object.fromEntries(['Video', 'Direct'].flatMap((m) => CLINICAL.equipment.blades[m].map((v) => [`Laryngoscopy ${m} blade ${v}`, (s) => ev(s).some((e) => e.title === 'Laryngoscopy' && e.details.includes('method: ' + m) && e.details.split(' · ').includes('size: ' + v))]))),
+  ...Object.fromEntries(['iv', 'io'].flatMap((k) => CLINICAL.equipment.sites[k].map((v) => [`${devices[k].name} site ${v}`, (s) => ev(s).some((e) => e.title === devices[k].name && / site: (Left |Right )?/.test(' ' + e.details) && e.details.includes(v))]))),
+  'event after midnight in the Log': (s) => /<time>00:\d\d:\d\d<small>/.test(s.screens.main),
+  'midnight: text export with 00:xx times': (s) => /\n00:\d\d:\d\d /.test(s.screens.export),
+});
 
 /* The set of behaviour names a played case shows. */
 export function censusOf(steps) {

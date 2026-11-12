@@ -18,7 +18,7 @@ const arg = (name, dflt) => { const i = process.argv.indexOf(name); return i > 0
 const ref = arg('--commit', null);
 if (!ref) { console.error('Say which commit is the reference: --commit <hash>'); process.exit(2); }
 const total = +arg('--cases', 3600), fast = +arg('--fast', 360);
-const { commit, dir } = appAtCommit(ref);
+const { commit, dir, cleanup } = appAtCommit(ref);
 console.log(`Recording ${total} cases from commit ${commit} (app copied to ${dir})`);
 
 const t0 = Date.now();
@@ -26,6 +26,7 @@ let n = 0;
 const done = await playMany(dir, Array.from({ length: total }, (_, i) => i), {
   onResult: () => { if (++n % 200 === 0) console.log(`  ${n}/${total} cases, ${((Date.now() - t0) / 1000).toFixed(0)} s`); return false; },
 });
+cleanup(); // the temporary copy of the reference app is removed again
 done.sort((a, b) => a.id - b.id);
 const steps = done.reduce((s, c) => s + c.n, 0);
 const jsdom = JSON.parse(readFileSync(new URL('../../node_modules/jsdom/package.json', import.meta.url), 'utf8')).version;

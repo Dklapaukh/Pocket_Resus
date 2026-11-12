@@ -4,7 +4,9 @@ import { playMany, playFull } from './run.mjs';
 import { comparePart, readRecording } from './format.mjs';
 import { GENERATOR_VERSION } from './cases.mjs';
 import { SCREEN_SURFACES, SAVED_SURFACES } from './driver.mjs';
-import { SCREENS_FILE, SAVED_FILE } from './reference-app.mjs';
+import { SCREENS_FILE, SAVED_FILE, appAtCommit } from './reference-app.mjs';
+import { lines, diff } from './textdiff.mjs';
+import { readFileSync as readJson } from 'node:fs';
 
 export function loadRecordings() {
   const screens = readRecording(readFileSync(SCREENS_FILE, 'utf8'), 'screens');
@@ -48,22 +50,43 @@ export async function replay(appDir, ids, rec, { failFast = false, parts, pool =
   return { found: found.sort((a, b) => a.id - b.id), played: done.length, ms: Date.now() - t0 };
 }
 
-/* A readable explanation of the first few differences, including the tap that led to each step. */
-export async function explain(appDir, found, max = 3) {
-  const lines = [];
-  for (const d of found.slice(0, max)) {
-    lines.push(`case ${d.id} (${d.theme}) ${d.part}: ${d.step ? `first difference at step ${d.step}` : ''}${d.surfaces.length ? ' in ' + d.surfaces.join(', ') : ''}${d.text ? ' - ' + d.text : ''}`);
-    if (d.step) {
-      const { steps } = await playFull(appDir, d.id);
-      for (let i = Math.max(0, d.step - 3); i < Math.min(steps.length, d.step); i++) lines.push(`    step ${i + 1}: ${steps[i].label}`);
-      const s = steps[d.step - 1];
-      if (s) for (const surf of d.surfaces) {
-        const text = (s.screens[surf] ?? s.saved[surf] ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-        lines.push(`    ${surf} now reads: ${text.slice(0, 300)}${text.length > 300 ? ' …' : ''}`);
+/* One plain-English sentence when this computer runs a different Node major version or jsdom version
+   from the one the recordings were made with (time and date text can then differ everywhere). */
+export function versionNote(header) {
+  const jsdom = JSON.parse(readJson(new URL('../../../node_modules/jsdom/package.json', import.meta.url), 'utf8')).version;
+  const major = (v) => String(v).replace(/^v/, '').split('.')[0];
+  const differ = [];
+  if (major(process.version) !== major(header.node)) differ.push(`Node ${process.version} (recorded with ${header.node})`);
+  if (jsdom !== header.jsdom) differ.push(`jsdom ${jsdom} (recorded with ${header.jsdom})`);
+  return differ.length
+    ? `NOTE FIRST: this computer runs ${differ.join(' and ')}. Differences below may come from that (for example how times are written), not from the app. Check on the recorded versions before treating them as app changes.\n`
+    : '';
+}
+
+/* A readable explanation of the first few differences: the taps leading to the step, then the lines
+   around the first change, from the reference commit when git can provide it (otherwise the lines that
+   changed since the previous step, as now drawn). */
+export async function explain(appDir, found, max = 3, header = null) {
+  const out = [];
+  let ref = null;
+  if (header) { try { ref = appAtCommit(header.madeFromCommit); } catch { ref = null; } }
+  try {
+    for (const d of found.slice(0, max)) {
+      out.push(`case ${d.id} (${d.theme}) ${d.part}: ${d.step ? `first difference at step ${d.step}` : ''}${d.surfaces.length ? ' in ' + d.surfaces.join(', ') : ''}${d.text ? ' - ' + d.text : ''}`);
+      if (d.step) {
+        const now = (await playFull(appDir, d.id)).steps, was = ref ? (await playFull(ref.dir, d.id)).steps : null;
+        for (let i = Math.max(0, d.step - 3); i < Math.min(now.length, d.step); i++) out.push(`    step ${i + 1}: ${now[i].label}`);
+        const text = (steps, k, surf) => (steps?.[k] ? steps[k].screens[surf] ?? steps[k].saved[surf] : undefined);
+        for (const surf of d.surfaces) {
+          const after = text(now, d.step - 1, surf) ?? '';
+          const before = was ? text(was, d.step - 1, surf) : text(now, d.step - 2, surf);
+          const head = was ? `    ${surf} ("-" reference, "+" now):` : `    ${surf} (no reference copy available: "-" previous step, "+" this step, as drawn now):`;
+          out.push(head, ...diff(lines(before ?? ''), lines(after), 2).slice(0, 14).map((l) => '    ' + l));
+        }
       }
+      out.push(`    see before/after:  node tests/reference/show.mjs ${d.id}${d.step ? ' --step ' + d.step : ''}${d.part === 'saved' ? ' --part saved' : ''}`);
     }
-    lines.push(`    see before/after:  node tests/reference/show.mjs ${d.id}${d.step ? ' --step ' + d.step : ''}${d.part === 'saved' ? ' --part saved' : ''}`);
-  }
-  if (found.length > max) lines.push(`… and ${found.length - max} more differing case(s): ${[...new Set(found.slice(max).map((d) => d.id))].slice(0, 40).join(', ')}`);
-  return lines.join('\n');
+  } finally { ref?.cleanup(); }
+  if (found.length > max) out.push(`… and ${found.length - max} more differing case(s): ${[...new Set(found.slice(max).map((d) => d.id))].slice(0, 40).join(', ')}`);
+  return out.join('\n');
 }

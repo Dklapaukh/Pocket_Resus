@@ -47,13 +47,14 @@ process.on('unhandledRejection', (reason) => {
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 export class Driver {
-  constructor(appDir) {
+  /* startOffset: start the clock this many ms after the usual fixed start time (e.g. just before midnight). */
+  constructor(appDir, { startOffset = 0 } = {}) {
     this.appDir = appDir;
     this.steps = [];
     this.errors = [];
     this.exported = { text: '', json: '' };
     currentDriver = this;
-    this.#open(null, 0);
+    this.#open(null, startOffset);
   }
 
   /* Open the app (fresh, or on a saved session) with its clock `offset` ms after the fixed start time. */
@@ -142,7 +143,7 @@ export class Driver {
       label,
       screens: {
         header: s.header,
-        main: s.main,
+        main: s.main + '|values=' + values(d.getElementById('main')),
         sheet: s.sheet + '|values=' + values(d.getElementById('sheet')),
         toast: s.toast,
         frame: s.body + '|' + s.nav + '|storageError hidden=' + s.storageError + '|errors=' + this.errors.join(' / '),

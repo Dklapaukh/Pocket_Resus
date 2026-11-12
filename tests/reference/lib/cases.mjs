@@ -15,7 +15,7 @@
 //
 // IMPORTANT: changing anything in this file changes the cases. Then GENERATOR_VERSION must go up
 // and the recordings must be made again FROM THE REFERENCE COMMIT (see tests/reference/README.md).
-export const GENERATOR_VERSION = 1;
+export const GENERATOR_VERSION = 2;
 export const SEED_BASE = 20261112;
 
 export const THEMES = [
@@ -23,8 +23,18 @@ export const THEMES = [
   'special', 'timers', 'references', 'reload', 'records', 'mixed',
 ];
 
+/* Cases 0-6 are fixed SWEEPS: every value of a per-value formula or table is tried in turn (all
+   ages, every weight-band edge, every equipment size, ...), so the fast set always covers them.
+   From case 7 on, the themes above take turns. */
+export const SWEEPS = ['ages', 'bandsAdrenaline', 'bandsAmiodarone', 'bandsMagnesium', 'bandsFluids', 'lists', 'midnight'];
+const MIDNIGHT = 5800000; // the fixed start is 22:13:20 UTC; this many ms later is 23:50:00
+
 export function caseInfo(id) {
-  return { id, theme: THEMES[id % THEMES.length], seed: (SEED_BASE + Math.imul(id, 2654435761)) >>> 0 };
+  const seed = (SEED_BASE + Math.imul(id, 2654435761)) >>> 0;
+  if (id < SWEEPS.length) return { id, theme: 'sweep ' + SWEEPS[id], seed, startOffset: SWEEPS[id] === 'midnight' ? MIDNIGHT : 0 };
+  const n = id - SWEEPS.length;
+  // every 40th regular case starts a few minutes before midnight, so its events run past 00:00
+  return { id, theme: THEMES[n % THEMES.length], seed, startOffset: n % 40 === 20 ? MIDNIGHT - (n % 7) * 60000 : 0 };
 }
 
 /* Repeatable random numbers from a seed (the same generator as tests/helpers/fuzz.mjs). */
@@ -120,7 +130,7 @@ class Story {
   }
 
   /* --- weight --- */
-  async weight(value, method) {
+  async weight(value, method, sure = false) { // sure: always save (no changing their mind)
     await this.closeSheet();
     await this.D.tap(this.p(0.15) && this.D.tab() === 'guidance' && this.has('[data-reference=rsi]') ? '[data-reference=rsi]' : '[data-action=weight]');
     if (this.D.sheetTitle() === 'RSI dose references') {
@@ -138,7 +148,7 @@ class Story {
       }
       if (method === 'mistakes' && this.p(0.5)) { await this.D.tap('[data-key="⌫"]'); if (keys.length) await this.D.tap(`[data-key="${keys.at(-1)}"]`); }
     }
-    if (this.p(0.08)) return this.closeSheet(); // changed their mind
+    if (!sure && this.p(0.08)) return this.closeSheet(); // changed their mind
     await this.D.tap('[data-action=save-weight]');
     if (this.D.sheetOpen()) await this.closeSheet(); // refused entry: error shown, then closed
   }
@@ -173,7 +183,7 @@ class Story {
     await this.D.tap(`#sheet [data-outcome=${outcome}]`);
     if (opt.abandon) return this.closeSheet(); // rhythm never chosen: left as "Rhythm not recorded"
     if (outcome === 'shock') {
-      const energy = opt.energy ?? (this.p(0.25) ? this.pick(ENERGIES) : null);
+      const energy = 'energy' in opt ? opt.energy : (this.p(0.25) ? this.pick(ENERGIES) : null);
       if (energy !== null) await this.D.fill('#shockEnergy', energy);
     }
     await this.D.tap(`#sheet [data-record-rhythm="${rhythm}"]`);
@@ -704,12 +714,126 @@ const STORIES = {
   },
 };
 
+/* ---------- the sweeps (cases 0-6) ---------- */
+/* Every whole year 0-15 plus fractions, the upper limits the boxes accept or refuse, and bad entries. */
+export const SWEEP_AGES = ['0', '0.01', '0.5', '0.99', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '10.5', '11', '12', '13', '14',
+  '14.5', '15', '16', '120', '121', '-1', 'abc', ''];
+/* Just below, on and just above every band edge (5, 10, 20, 30, 40 kg), plus RSI cap and rounding edges,
+   the maximum and refused entries. */
+export const SWEEP_WEIGHTS = ['0.5', '3', '4.9', '5', '5.1', '7.5', '9.9', '10', '10.1', '15', '19.9', '20', '20.1', '25', '29.9', '30', '30.1',
+  '35', '39.9', '40', '40.1', '41', '42', '50', '62.4', '62.5', '80', '99', '100', '101', '112.5', '120', '499.9', '500', '500.1', '600', '0'];
+
+const SWEEP_STORIES = {
+  /* Weight from age (weight pop-up) and tube sizes (Guidance) for every age in SWEEP_AGES. */
+  async ages(S) {
+    for (const age of SWEEP_AGES) {
+      await S.D.tap('[data-action=weight]');
+      await S.D.tap('#sheet details summary');
+      await S.D.fill('#ageInput', age);
+      await S.D.tap('[data-action=estimate]');
+      await S.D.tap('[data-action=save-weight]'); // a refused age leaves the pop-up open with the error
+      await S.closeSheet();
+    }
+    await S.toTab('guidance');
+    await S.D.tap('[data-reference=tubes]');
+    for (const age of SWEEP_AGES) { await S.D.fill('#referenceAge', age); await S.D.tap('[data-save-age]'); }
+    await S.closeSheet();
+    await S.live();
+  },
+  /* Every weight: header energy and pads, adrenaline card and pop-up, RSI doses. */
+  async bandsAdrenaline(S) {
+    for (const w of SWEEP_WEIGHTS) {
+      await S.weight(w, 'keypad', true);
+      await S.info('adrenaline');
+      await S.closeSheet();
+      await S.toTab('guidance'); await S.D.tap('[data-reference=rsi]'); await S.closeSheet(); await S.live();
+    }
+    await S.start(); await S.check('shock', 'VF', { energy: null }); // the shock pop-up's pre-filled energy at the last weight
+  },
+  /* Every weight with the amiodarone card showing (3 shocks): first-dose number and pop-up. */
+  async bandsAmiodarone(S) {
+    await S.start();
+    for (let i = 0; i < 3; i++) await S.check('shock', 'VF', { energy: null, late: 0 });
+    await S.live();
+    for (const w of SWEEP_WEIGHTS) { await S.weight(w, 'keypad', true); await S.info('amiodarone'); await S.closeSheet(); }
+    await S.weight('80', 'keypad', true); await S.amiodarone(); // adult: second dose "Due after 6 shocks"
+    for (const w of ['5', '15', '40', '40.1']) { await S.weight(w, 'keypad', true); await S.info('amiodarone'); await S.closeSheet(); }
+  },
+  /* Every weight with the magnesium card showing (torsades), incl. "Dose: clinical review" at 5 / 10 kg. */
+  async bandsMagnesium(S) {
+    await S.start();
+    await S.check('shock', 'Torsades', { energy: null, late: 0, torsades: 'confirm' });
+    for (const w of SWEEP_WEIGHTS) { await S.weight(w, 'keypad', true); await S.info('magnesium'); await S.closeSheet(); }
+  },
+  /* Every weight with the fluids card showing (PEA): volume from the actual weight, and pop-up. */
+  async bandsFluids(S) {
+    await S.start();
+    await S.check('noshock', 'PEA', { late: 0, fluidClose: 'button' });
+    for (const w of SWEEP_WEIGHTS) { await S.weight(w, 'keypad', true); await S.info('fluids'); await S.closeSheet(); }
+  },
+  /* Every equipment size (and blade for both laryngoscopy methods, every access site and side), every
+     checklist with every item ticked, every reversible cause. */
+  async lists(S) {
+    await S.start();
+    for (const device of DEVICES) {
+      const methods = device === 'laryngoscopy' ? ['Video', 'Direct'] : [null];
+      for (const method of methods) {
+        for (let k = 0; ; k++) {
+          await S.live(); await S.D.tap('#main [data-action=interventions]'); await S.D.tap(`#sheet [data-equipment=${device}]`);
+          if (method) await S.D.tap(`#equipmentForm input[name=method][value=${method}]`);
+          const sizes = S.D.$$('#equipmentForm input[name=size]');
+          if (k >= sizes.length) { await S.closeSheet(); break; }
+          await S.D.tap(sizes[k]);
+          const sides = S.D.$$('#equipmentForm input[name=side]'), sites = S.D.$$('#equipmentForm input[name=site]');
+          if (sides.length) await S.D.tap(sides[k % sides.length]);
+          if (sites.length) await S.D.tap(sites[k % sites.length]);
+          await S.D.tap('#equipmentForm button[type=submit]');
+        }
+      }
+    }
+    for (const site of ['iv', 'io']) { // every access site
+      for (let k = 0; ; k++) {
+        await S.live(); await S.D.tap('#main [data-action=access]'); await S.D.tap(`#sheet [data-equipment=${site}]`);
+        const sites = S.D.$$('#equipmentForm input[name=site]');
+        if (k >= sites.length) { await S.closeSheet(); break; }
+        await S.D.tap(sites[k]);
+        await S.D.tap('#equipmentForm button[type=submit]');
+      }
+    }
+    for (const list of CHECKLISTS) {
+      await S.toTab('guidance'); await S.D.tap(`[data-open-check="${list}"]`);
+      for (const b of S.D.$$('#main [data-check]').map((x) => x.dataset.check)) await S.D.tap(`#main [data-check="${b}"]`);
+    }
+    await S.toTab('guidance');
+    for (const c of CAUSES) { await S.D.tap(`[data-cause-guide="${c}"]`); await S.closeSheet(); }
+    await S.toTab('log'); await S.D.fill('#checklistDisplay', 'times');
+  },
+  /* A case that runs across midnight: events between 00:00 and 00:59, entries typed with times either
+     side of midnight, then the Log, cycle log and export. */
+  async midnight(S) {
+    await S.weight('20', 'keypad', true);
+    await S.start();
+    for (let i = 0; i < 9; i++) { await S.check(i % 3 === 2 ? 'noshock' : 'shock', i % 3 === 2 ? 'PEA' : 'VF', { late: 0, fluidClose: 'button' }); if (i % 2 === 0) await S.adrenaline(); }
+    await S.other('adrenaline'); // typed time options include before midnight
+    await S.live(); await S.D.tap('#main [data-custom-drug=adrenaline]');
+    await S.fillDrugForm({ dose: '0.2', route: 'IO', time: '23:58' }); // given before midnight, entered after
+    await S.D.awayAndBack(30 * MIN);
+    for (let i = 0; i < 4; i++) await S.check('shock', 'VT', { late: 0 });
+    await S.note();
+    await S.resusTime();
+    await S.D.tap('[data-action=cycle-log]'); await S.closeSheet();
+    await S.toTab('log'); await S.D.fill('#logScope', 'interventions'); await S.D.fill('#logScope', 'all');
+    await S.menu(); await S.D.tap('[data-action=export]'); await S.D.tap('#sheet [data-action=download-text]'); await S.D.tap('#sheet [data-action=copy]'); await S.D.tap('#sheet [data-action=download-json]');
+    await S.closeSheet();
+  },
+};
+
 /* Play one whole case on a Driver. */
 export async function playCase(D, id) {
   const info = caseInfo(id), S = new Story(D, rng(info.seed));
   await D.capture('app opened');
-  await S.setup();
-  await STORIES[info.theme](S);
+  if (info.theme.startsWith('sweep ')) await SWEEP_STORIES[info.theme.slice(6)](S);
+  else { await S.setup(); await STORIES[info.theme](S); }
   await S.finale();
   return info;
 }

@@ -2,7 +2,7 @@
 // `npm run test:deep` (every recorded case).
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadRecordings, recordingProblems, replay, explain } from './compare.mjs';
+import { loadRecordings, recordingProblems, replay, explain, versionNote } from './compare.mjs';
 import { ROOT } from './reference-app.mjs';
 
 export function referenceSuite({ deep }) {
@@ -21,7 +21,7 @@ export function referenceSuite({ deep }) {
     test(`reference recordings: ${count} generated cases, ${what} identical to commit ${rec.header.madeFromCommit.slice(0, 7)} at every step`, async () => {
       assert.equal(run.played, count, 'every case was played');
       const diffs = run.found.filter((d) => d.part === part || (part === 'screens' && d.part === 'actions'));
-      if (diffs.length) assert.fail(`${new Set(diffs.map((d) => d.id)).size} case(s) differ from the reference:\n` + await explain(ROOT, diffs));
+      if (diffs.length) assert.fail(versionNote(rec.header) + `${new Set(diffs.map((d) => d.id)).size} case(s) differ from the reference:\n` + await explain(ROOT, diffs, 3, rec.header));
     });
   }
 }

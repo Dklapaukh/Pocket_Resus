@@ -8,8 +8,8 @@ import { encodeCase } from './format.mjs';
 
 /* Play one case and return every step in full (used by the show tool and by recording). */
 export async function playFull(appDir, id) {
-  const D = new Driver(appDir);
   let info = caseInfo(id);
+  const D = new Driver(appDir, { startOffset: info.startOffset });
   try {
     info = await playCase(D, id);
   } catch (err) {

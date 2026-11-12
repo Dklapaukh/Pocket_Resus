@@ -10,6 +10,7 @@ import { playFull } from './lib/run.mjs';
 import { readRecording } from './lib/format.mjs';
 import { caseInfo } from './lib/cases.mjs';
 import { appAtCommit, ROOT, SCREENS_FILE } from './lib/reference-app.mjs';
+import { lines, diff } from './lib/textdiff.mjs';
 
 process.env.TZ = 'UTC';
 const argv = process.argv.slice(2);
@@ -17,13 +18,14 @@ const arg = (name, dflt) => { const i = argv.indexOf(name); return i >= 0 ? argv
 const id = Number(argv[0]);
 if (!Number.isInteger(id)) { console.error('Usage: node tests/reference/show.mjs <case number> [--step n] [--part screens|saved] [--ref commit | --ref-dir folder] [--full]'); process.exit(2); }
 const part = arg('--part', 'screens'), full = argv.includes('--full');
-let refDir = arg('--ref-dir', null), refName = refDir;
+let refDir = arg('--ref-dir', null), refName = refDir, cleanup = () => {};
 if (!refDir) {
   const commit = arg('--ref', readRecording(readFileSync(SCREENS_FILE, 'utf8'), 'screens').header.madeFromCommit);
-  ({ dir: refDir } = appAtCommit(commit)); refName = 'commit ' + commit.slice(0, 12);
+  ({ dir: refDir, cleanup } = appAtCommit(commit)); refName = 'commit ' + commit.slice(0, 12);
 }
 
 const before = await playFull(refDir, id), after = await playFull(ROOT, id);
+cleanup(); // the temporary copy of the reference app is removed again
 const bodyOf = (s) => (s ? s[part] : {});
 let step = arg('--step', null) ? Number(arg('--step')) : null;
 if (step === null) {
@@ -41,34 +43,11 @@ for (let i = Math.max(0, step - 8); i < step; i++) {
   console.log(`  ${String(i + 1).padStart(4)}  ${a}${a !== b ? '\n        | ' + b : ''}`);
 }
 
-/* Readable lines: HTML split at tags; JSON pretty-printed. */
-const lines = (text) => {
-  if (!text) return [];
-  if (/^[[{]/.test(text)) { try { return JSON.stringify(JSON.parse(text), null, 1).split('\n'); } catch {} }
-  return text.replace(/></g, '>\n<').replace(/\|/g, '\n|').split('\n');
-};
-/* Line difference (longest common subsequence). */
-function diff(a, b) {
-  const n = a.length, m = b.length;
-  if (n * m > 4e6) return ['(too long to compare line by line; use --full)'];
-  const L = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
-  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
-  const out = []; let i = 0, j = 0, same = 0;
-  const flushSame = () => { if (same) out.push(`    … ${same} matching line(s)`); same = 0; };
-  while (i < n || j < m) {
-    if (i < n && j < m && a[i] === b[j]) { same++; i++; j++; }
-    else if (i < n && (j === m || L[i + 1][j] >= L[i][j + 1])) { flushSame(); out.push('  - ' + a[i++]); }
-    else { flushSame(); out.push('  + ' + b[j++]); }
-  }
-  flushSame();
-  return out;
-}
-
 const a = bodyOf(before.steps[step - 1]), b = bodyOf(after.steps[step - 1]);
 console.log(`\nAt step ${step} ("-" = reference, "+" = working copy):`);
 for (const surface of Object.keys({ ...a, ...b })) {
   if (a[surface] === b[surface] && !full) continue;
   console.log(`\n=== ${surface} ${a[surface] === b[surface] ? '(same)' : '(DIFFERENT)'}`);
   if (a[surface] === b[surface]) console.log(lines(a[surface]).map((l) => '    ' + l).join('\n'));
-  else console.log(diff(lines(a[surface]), lines(b[surface])).join('\n'));
+  else console.log(diff(lines(a[surface]), lines(b[surface]), 3).join('\n'));
 }
