@@ -35,9 +35,11 @@ You are the **orchestrator**. You do not write the stage code yourself. For each
    120 lines; one paragraph per stage in doc 09).
 7. The Agent tool now sets the effort level as well as the model: pass both from the stage table.
 
-## Running unattended (set up 13 Nov 2026)
-A scheduled task ("Pocket Resus build") starts a fresh chat every few hours with the owner's standard
-prompt, so work carries on after a usage limit resets and while the owner is away. Every chat,
+## Running unattended (prepared 13 Nov 2026; the scheduled task is NOT switched on yet)
+Plan: a scheduled task ("Pocket Resus build", every 3 hours) starts a fresh chat with the prompt saved
+in `docs/20-UNATTENDED-PROMPT.md`, so work carries on after a usage limit resets and while the owner
+is away. Claude may not create it without the owner's clear yes in the chat (the app refused on
+13 Nov 2026); once the owner says yes, create it with that prompt and note it here. Every chat,
 attended or not:
 1. **First** run `sh tools/build-progress.sh check`. If it says BUSY, another chat is working: stop at
    once and do nothing else. If it says unfinished work is saved, run `... restore` and carry on from

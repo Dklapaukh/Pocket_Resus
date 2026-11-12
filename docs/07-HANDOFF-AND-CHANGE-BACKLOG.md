@@ -18,9 +18,10 @@ independent clinical review is deferred until the code and other key goals are r
   approval, or an owner action (e.g. a phone check).
 - **`main` (owner 13 Nov 2026):** standing permission to publish without asking each time, used for
   complete releases only (doc 19 "Publishing to `main`"). Git history is the rollback.
-- **Unattended running (13 Nov 2026):** a scheduled task restarts the build every few hours; every chat
-  first runs `sh tools/build-progress.sh check` (doc 19 "Running unattended"). The owner can pause it
-  in the Claude app under scheduled tasks.
+- **Unattended running (prepared 13 Nov 2026, not switched on):** every chat first runs
+  `sh tools/build-progress.sh check` (doc 19 "Running unattended"). A scheduled task that restarts the
+  build every 3 hours needs the owner's clear yes in the chat before Claude may create it (prompt in
+  doc 20); the owner can pause it any time in the Claude app under scheduled tasks.
 - **Owner goal (13 Nov 2026):** secure Android and iPhone apps with the editor in place, by December.
   Owner is away 18 Nov to 2 Dec 2026 with a phone only (can answer questions and do phone checks).
 - Explain simply, recommend one option, show the full text of any options, one decision at a time.
@@ -84,6 +85,7 @@ so rules can be updated, and new rule sets made for other services, without touc
   the editor can change (which card shows when, new medicines and cards, pop-ups, appearance). Cost:
   some editor screens are revisited at stage 4. Option B, "current order": stages 3 to 9 in sequence;
   no rework, but the editor probably arrives in January rather than December.
+- **Scheduled task (asked 13 Nov 2026):** say "yes, create the scheduled task" to switch on unattended running.
 - **Store apps (told 13 Nov 2026).** Apple's review rule 1.4.2: dose calculators must come from a
   hospital, university, manufacturer or similar approved body, or have regulator approval. Google: a
   new personal developer account must run a closed test with 12 testers for 14 days before public
