@@ -1,3 +1,5 @@
+/* BASELINE: the clinical rules exactly as they were in v22 plus approved change A8 (commit 91843ae), before they became JSON.
+   A frozen test copy: never loaded by the app, never edited. tests/rules-json-same-as-baseline.test.mjs compares src/rules/nz-eas.json with it. */
 /* CLINICAL RULES FILE: NZ EAS clinical practice guidelines (packaged exports 24 September 2026).
 
    Every clinical number and rule the app uses lives here (engine numbers since 11 Nov 2026; the

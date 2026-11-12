@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
+import { rulesBundleOptions, giveRulesToWindow } from './rules-for-fake-browser.mjs';
 
 process.env.TZ = 'UTC';                   // clock text must not depend on the computer's time zone
 export const T0 = 1700000000000;           // fixed start time used by every scenario
@@ -36,6 +37,7 @@ export function openApp({ appDir, savedState = null, scriptLoader = defaultLoade
   if (savedState !== null) w.localStorage.setItem('resus-pocket-v1', savedState);
 
   const srcs = [...w.document.querySelectorAll('script[src]')].map(s => s.getAttribute('src'));
+  giveRulesToWindow(w, appDir); // the rule set, for app copies that read it from nz-eas.json
   scriptLoader(w, appDir, srcs, dom);
 
   const $ = sel => w.document.querySelector(sel);
@@ -89,7 +91,7 @@ export function defaultLoader(w, dir, srcs, dom) {
   // strict-mode script first (browsers run modules in strict mode, so the test does too).
   const mod = srcs.find(x => x.startsWith('src/'));
   if (mod) {
-    const code = buildSync({ entryPoints: [path.join(dir, mod)], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' } }).outputFiles[0].text;
+    const code = buildSync({ entryPoints: [path.join(dir, mod)], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' }, ...rulesBundleOptions }).outputFiles[0].text;
     new vm.Script(code, { filename: mod }).runInContext(ctx);
     return;
   }

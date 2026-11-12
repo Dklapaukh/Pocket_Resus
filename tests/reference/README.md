@@ -109,3 +109,9 @@ stage 0 list in at least 3 fast-set cases and at least 48 of all cases. Not reac
 - repair of damaged saved sessions (covered by `step2-saved-session-repair`, `a6-…` and
   `cross-tab-session` tests).
 Results depend on the Node and jsdom versions named in the file headers (time and date formatting).
+
+**Rules file in the fake browser (stage 1).** The clinical rules are `src/rules/nz-eas.json`, read by
+`src/rules/load.js`. A phone fetches that file; the fake browser cannot, so `tests/helpers/rules-for-fake-browser.mjs`
+leaves the loader out of the bundle and gives the app the rule set read (with the same reader,
+`src/rules/parse.js`) from the `nz-eas.json` of the app folder being run. The reference commit (before the
+JSON) has no loader and runs as it was. A planted-change copy is edited in its own `nz-eas.json`.

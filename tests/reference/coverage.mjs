@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { buildSync } from 'esbuild';
 import { useBundle } from './lib/driver.mjs';
 import { playFull } from './lib/run.mjs';
+import { rulesBundleOptions } from '../helpers/rules-for-fake-browser.mjs';
 
 process.env.TZ = 'UTC';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -19,7 +20,7 @@ const arg = (name, dflt) => { const i = process.argv.indexOf(name); return i > 0
 const from = +arg('--from', 0), to = +arg('--to', 599), showBlocks = process.argv.includes('--blocks');
 
 const FILE = 'coverage-bundle.js';
-const built = buildSync({ entryPoints: [path.join(ROOT, 'src/app/main.js')], bundle: true, format: 'iife', write: false, sourcemap: 'external', outfile: path.join(ROOT, FILE), banner: { js: '"use strict";' } });
+const built = buildSync({ entryPoints: [path.join(ROOT, 'src/app/main.js')], bundle: true, format: 'iife', write: false, sourcemap: 'external', outfile: path.join(ROOT, FILE), banner: { js: '"use strict";' }, ...rulesBundleOptions });
 const code = built.outputFiles.find((f) => f.path.endsWith('.js')).text;
 const map = JSON.parse(built.outputFiles.find((f) => f.path.endsWith('.map')).text);
 useBundle(ROOT, code, FILE);

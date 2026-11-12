@@ -91,3 +91,38 @@ test('activation leaves unrelated caches alone and offline reads use the current
   sw.goOffline();
   assert.equal((await sw.request('src/app/state.js')).value, 'https://example.test/resus/src/app/state.js');
 });
+
+// Stage 1: the clinical rules are now a JSON file read by a loader module. If either is missing from the
+// offline list, the app would not start without signal, so these tests fail in that case.
+test('the rules file and its loader are saved at install and served with no signal', async () => {
+  const sw = worker();
+  await sw.install();
+  sw.goOffline();
+  for (const file of ['src/rules/nz-eas.json', 'src/rules/load.js', 'src/rules/parse.js', 'src/rules/check.js'])
+    assert.equal((await sw.request(file)).value, 'https://example.test/resus/' + file, file + ' must be available offline');
+});
+
+test('installation fails if the rules file cannot be fetched', async () => {
+  const sw = worker();
+  sw.failAsset('src/rules/nz-eas.json');
+  await assert.rejects(sw.install(), /Offline asset unavailable/);
+});
+
+test('every file the page needs, found by following its imports and file references, is in the offline list', async () => {
+  const { parse } = await import('acorn');
+  const listed = [...readFileSync(ROOT + '/sw.js', 'utf8').match(/const FILES=\[(.*?)\];/s)[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
+  const needed = new Set(), queue = ['src/app/main.js'];
+  while (queue.length) {
+    const file = queue.pop();
+    if (needed.has(file)) continue;
+    needed.add(file);
+    const source = readFileSync(ROOT + '/' + file, 'utf8');
+    const here = file.slice(0, file.lastIndexOf('/'));
+    const join = rel => new URL(rel, 'https://x.test/' + here + '/').pathname.slice(1);
+    for (const node of parse(source, { ecmaVersion: 'latest', sourceType: 'module' }).body)
+      if (node.type === 'ImportDeclaration' || (node.type === 'ExportNamedDeclaration' && node.source)) queue.push(join(node.source.value));
+    for (const m of source.matchAll(/new URL\('(\.[^']+)', import\.meta\.url\)/g)) needed.add(join(m[1])); // e.g. the rules JSON
+  }
+  assert.ok(needed.has('src/rules/nz-eas.json') && needed.has('src/rules/load.js'), 'the walk must reach the rules file');
+  assert.deepEqual([...needed].filter(f => !listed.includes(f)), []);
+});

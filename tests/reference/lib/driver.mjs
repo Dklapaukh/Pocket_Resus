@@ -18,6 +18,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { buildSync } from 'esbuild';
 import { openApp, T0 } from '../../helpers/dom-app.mjs';
+import { rulesBundleOptions } from '../../helpers/rules-for-fake-browser.mjs';
 
 const KEY = 'resus-pocket-v1';
 export const SCREEN_SURFACES = ['header', 'main', 'sheet', 'toast', 'frame', 'export'];
@@ -31,7 +32,7 @@ function bundleFor(appDir) {
   if (!bundles.has(appDir)) {
     const html = readFileSync(path.join(appDir, 'index.html'), 'utf8');
     const entry = /<script type="module" src="([^"]+)"/.exec(html)[1];
-    const code = buildSync({ entryPoints: [path.join(appDir, entry)], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' } }).outputFiles[0].text;
+    const code = buildSync({ entryPoints: [path.join(appDir, entry)], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' }, ...rulesBundleOptions }).outputFiles[0].text;
     bundles.set(appDir, new vm.Script(code, { filename: entry }));
   }
   return bundles.get(appDir);

@@ -1,7 +1,7 @@
 // Reference recordings (stage 0): which clinical behaviours each played case actually shows.
 // Used by tests/reference/coverage.mjs --census to report, for each behaviour on the stage 0 list,
 // in how many generated cases it appears (an honest count, not a guess from the story code).
-import { RULES as CLINICAL } from '../../../src/rules/nz-eas.js';
+import { RULES as CLINICAL } from '../../../src/rules/load.js';
 import { SWEEP_AGES, SWEEP_WEIGHTS } from './cases.mjs';
 
 const parsed = new WeakMap();

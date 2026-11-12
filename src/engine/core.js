@@ -4,9 +4,9 @@
    the original compact engine (root core.js plus change A1): tests/side-by-side.test.mjs runs both
    through thousands of random case sequences and every state and derived value must match.
 
-   Clinical numbers come from the rules file (src/rules/nz-eas.js), not from this file.
+   Clinical numbers come from the rules file (src/rules/nz-eas.json), not from this file.
    Times are epoch milliseconds. Nothing here records a clinical event just because time passed. */
-import { RULES } from '../rules/nz-eas.js';
+import { RULES } from '../rules/load.js';
 export { RULES }; // the active rule set, so the app reads limits and wording from the same place
 
 export const CYCLE = RULES.numbers.timing.cprCycleMs;

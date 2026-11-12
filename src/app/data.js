@@ -1,5 +1,5 @@
 /* Tutorial slides (not clinical). Checklists and causes (part 3), equipment (part 4) and guideline
-   links (part 5) moved to the rules file (src/rules/nz-eas.js) on 12 Nov 2026. */
+   links (part 5) moved to the rules file (src/rules/nz-eas.json) on 12 Nov 2026. */
 
 /* Slides of the Explain-me tutorial (screenshots in the tutorial folder). */
 export const EXPLAIN_ME_SLIDES = [

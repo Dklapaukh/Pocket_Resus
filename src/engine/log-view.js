@@ -2,7 +2,7 @@
 
    Rewritten for readability on 11 Nov 2026 (owner-approved); results are identical to the original
    (see tests/side-by-side.test.mjs). */
-import { RULES } from '../rules/nz-eas.js';
+import { RULES } from '../rules/load.js';
 import * as R from './core.js';
 
 /* Event types shown under the "Interventions only" filter. */

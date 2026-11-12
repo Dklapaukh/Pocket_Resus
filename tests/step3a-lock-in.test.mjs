@@ -1,15 +1,15 @@
 // Step 3a sub-step 8 (doc 18): lock the partition in. Clinical numbers, guideline sentences, guideline
-// links and PDFs live in the rules file (src/rules/nz-eas.js) only. These tests fail if any of them
+// links and PDFs live in the rules file (src/rules/nz-eas.json) only. These tests fail if any of them
 // reappears as text typed into the app or engine code, or if a {gap} in the wording is left unfilled.
 // Comments are ignored; only text the code can show (string and template pieces) is checked.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { tokenizer } from 'acorn';
-import { RULES } from '../src/rules/nz-eas.js';
+import { RULES } from '../src/rules/load.js';
 import { Resus as R } from '../src/engine/index.js';
 
-const DIRS = ['src/app', 'src/engine'];
+const DIRS = ['src/app', 'src/engine', 'src/rules']; // src/rules: the loader, reader and checker hold no rules text either
 const code = DIRS.flatMap((dir) => readdirSync(new URL(`../${dir}/`, import.meta.url))
   .filter((f) => f.endsWith('.js'))
   .map((f) => {

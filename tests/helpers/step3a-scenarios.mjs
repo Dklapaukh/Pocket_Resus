@@ -7,6 +7,7 @@ import vm from 'node:vm';
 import { buildSync } from 'esbuild';
 import { openApp } from './dom-app.mjs';
 import { toHashes } from './dom-run.mjs';
+import { rulesBundleOptions } from './rules-for-fake-browser.mjs';
 
 const MIN = 60000;
 export const WEIGHTS = ['', '3', '5', '15', '25', '42', '80', '600']; // '' = none; 600 = invalid (rejected)
@@ -111,7 +112,7 @@ export const SCENARIOS = {
 const ENTRY = path.join(path.dirname(new URL(import.meta.url).pathname), 'step3a-entry.mjs');
 function loader(w, dir, srcs, dom) {
   w.scrollTo = () => {};
-  const code = buildSync({ entryPoints: [ENTRY], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' },
+  const code = buildSync({ entryPoints: [ENTRY], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' }, ...rulesBundleOptions,
   }).outputFiles[0].text;
   new vm.Script(code, { filename: 'step3a-bundle.js' }).runInContext(dom.getInternalVMContext());
 }

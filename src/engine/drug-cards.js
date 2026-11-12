@@ -6,7 +6,7 @@
    childAmiodaroneAdvice / childSecondAmiodarone / secondAmiodaroneEarly   (C6b, C6b-2)
    doseFor             the adrenaline or next amiodarone dose reference in mg
    lockLeft            double-tap protection time left for a card (A5) */
-import { RULES } from '../rules/nz-eas.js';
+import { RULES } from '../rules/load.js';
 import * as R from './core.js';
 import { hasTorsades } from './rhythm-care.js';
 

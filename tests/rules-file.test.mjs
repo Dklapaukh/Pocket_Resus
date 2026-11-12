@@ -1,9 +1,9 @@
-// The clinical rules file (src/rules/nz-eas.js) checked value by value against the bundled NZ EAS
+// The clinical rules file (src/rules/nz-eas.json) checked value by value against the bundled NZ EAS
 // guideline PDFs (exports dated 24 Sep 2026). If a guideline changes, update the rules file AND this
 // test together, with the owner's approval recorded in docs/07. Page references are for auditors.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RULES } from '../src/rules/nz-eas.js';
+import { RULES } from '../src/rules/load.js';
 
 test('EAS 7.2 paediatric table: adrenaline, amiodarone, magnesium per weight band', () => {
   // cpg-paediatric-equipment.pdf, cardiac arrest tables by band (5 / 10 / 20 / 30 / 40 kg)

@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { RULES } from '../src/rules/nz-eas.js';
+import { RULES } from '../src/rules/load.js';
 import { LISTS } from './helpers/engines.mjs';
 
 const V21 = JSON.parse(readFileSync(new URL('./fixtures/step3a-v21-data.json', import.meta.url), 'utf8'));
