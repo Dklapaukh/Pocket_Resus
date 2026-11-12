@@ -4,7 +4,11 @@
     "timing": {
       "cprCycleMs": 120000,
       "adrenalineIntervalMs": 240000,
-      "checklistPromptMinLeftMs": 90000
+      "checklistPromptMinLeftMs": 90000,
+      "overdueShownAfterMs": 1000,
+      "prepareAtMs": 15000,
+      "warningAtMs": 30000,
+      "adrenalineHighlightMs": 30000
     },
     "weight": {
       "maxKg": 500,
@@ -152,6 +156,47 @@
       "adrenaline": 210000,
       "magnesium": 5000,
       "fluids": 5000
+    },
+    "resusStart": {
+      "quickChoicesMin": [5, 10, 15, 20]
+    },
+    "correctionRhythms": {
+      "shock": ["Unknown", "VF", "VT", "Torsades"],
+      "noshock": ["PEA", "Asystole", "Other", "Unknown"],
+      "rosc": ["Sinus rhythm", "Organised rhythm", "AF", "Other", "Unknown"],
+      "rhythm": [
+        "VF",
+        "VT",
+        "Torsades",
+        "PEA",
+        "Asystole",
+        "Sinus rhythm",
+        "Organised rhythm",
+        "AF",
+        "Other",
+        "Unknown"
+      ]
+    },
+    "log": {
+      "interventionEventTypes": [
+        "start",
+        "rearrest",
+        "shock",
+        "noshock",
+        "rosc",
+        "end",
+        "adrenaline",
+        "amiodarone",
+        "magnesium",
+        "fluids",
+        "medicine",
+        "equipment",
+        "note"
+      ]
+    },
+    "medicineForm": {
+      "units": ["mg", "mcg", "mmol", "mL", "g"],
+      "routes": ["IV", "IO", "IM", "Other"]
     }
   },
   "wording": {
@@ -234,7 +279,448 @@
     "tubeSizeFormula": "{mm} mm (formula)",
     "tubeLengthFormula": "{cm} cm (formula)",
     "weightSheetAgeEstimate": "Under 1 year: {underOneYearKg} kg. 1–{tenMaxAge} years: (age + {tenAddYears}) × {tenMultiplyBy}. {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy}. CPG 7.2; estimates may underestimate. Excludes newborn resuscitation.",
-    "tubeSheetAgeEstimate": "Under 1 year: {underOneYearKg} kg. Ages 1–{tenMaxAge}: (age + {tenAddYears}) × {tenMultiplyBy} kg. Ages {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy} kg. Estimates may underestimate actual weight."
+    "tubeSheetAgeEstimate": "Under 1 year: {underOneYearKg} kg. Ages 1–{tenMaxAge}: (age + {tenAddYears}) × {tenMultiplyBy} kg. Ages {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy} kg. Estimates may underestimate actual weight.",
+    "drugNames": {
+      "adrenaline": "Adrenaline",
+      "amiodarone": "Amiodarone",
+      "magnesium": "Magnesium"
+    },
+    "weightSources": {
+      "entered": "Entered"
+    },
+    "rhythmCheckTitles": {
+      "shock": "Shock delivered",
+      "noshock": "No shock · rhythm check",
+      "rosc": "ROSC"
+    },
+    "eventDetails": {
+      "shockWithEnergy": "{rhythm} · {energy} J",
+      "shockNoEnergy": "{rhythm} · energy not recorded",
+      "rhythmNotRecorded": "Rhythm not recorded",
+      "beforeAppOpened": "Before app opened · time/details not recorded",
+      "weightUpdated": "{weight} kg · {source}",
+      "resusStartCorrected": "{before} → {after}",
+      "earlierCounts": "{shocks} shocks · {noShock} no-shock cycles · {amiodarone} amiodarone doses",
+      "cycleNumber": "Cycle {number}",
+      "checklistChecked": "Checked: {item}",
+      "checklistUnmarked": "Unmarked: {item}",
+      "promptsDisabled": "Routine prompts disabled",
+      "promptsEnabled": "Routine prompts enabled",
+      "doseUnitRoute": "{dose} {unit} {route}",
+      "doseUnitRouteNotes": "{dose} {unit} {route} · {notes}",
+      "equipmentField": "{key}: {value}",
+      "sizeNotRecorded": "Size not recorded",
+      "confirmedWith": "Confirmed with: {methods}",
+      "confirmationNotRecorded": "Confirmation not recorded"
+    },
+    "eventTitles": {
+      "weightUpdated": "Patient weight updated",
+      "resusStartCorrected": "Resus start corrected",
+      "earlierCountsUpdated": "Earlier counts updated",
+      "cycleStarted": "CPR cycle started",
+      "rearrest": "Re-arrest · CPR restarted",
+      "sessionEnded": "Session ended",
+      "specialSituation": "Special situation mode",
+      "note": "Event"
+    },
+    "checklistSummary": {
+      "title": "{label} · {kind}",
+      "started": "started",
+      "finished": "finished",
+      "firstItemChecked": "First item checked",
+      "reopened": "Reopened for review",
+      "allItemsChecked": "All {count} items checked"
+    },
+    "shockRhythmButtons": {
+      "VF": "Ventricular fibrillation",
+      "VT": "Pulseless VT",
+      "Torsades": "Torsades de pointes"
+    },
+    "otherRhythmButtons": {
+      "VT": "Pulseless VT"
+    },
+    "references": {
+      "guidelineName": "{issuer} guideline {number}",
+      "guidelineLink": "<em>EAS guideline {code}</em> ↗",
+      "cpgSourceLabel": "NZCPG <em>EAS guideline {code}</em>",
+      "currentGuideline": "Current <em>EAS guideline {code}</em> ↗",
+      "offlineGuideline": "Offline <em>EAS guideline {code}</em> ↗"
+    },
+    "weightHeader": {
+      "buttonLabel": "Pt weight (kg)",
+      "buttonAria": "Patient weight",
+      "buttonAriaWithValue": "Patient weight {weight} kg",
+      "weightKg": "{weight} kg",
+      "enterKg": "Enter kg",
+      "energy": "{energy} J",
+      "energyEstimated": "{energy} J · est.",
+      "specialFlag": "Special situation · manual review"
+    },
+    "liveCards": {
+      "enterWeight": "Enter weight",
+      "doseMgIv": "{dose} mg IV",
+      "doseMmolIv": "{dose} mmol IV",
+      "volumeMlIv": "{min}–{max} mL IV",
+      "recordDoseMgIv": "Record {dose} mg IV",
+      "recordMmolIv": "Record {dose} mmol IV",
+      "recordFluid": "Record fluid…",
+      "recordRepeat": "Record repeat…",
+      "reviewDose": "Review dose",
+      "notYetDue": "Not yet due",
+      "manualReview": "Manual review",
+      "roscRecorded": "ROSC recorded",
+      "sessionEnded": "Session ended",
+      "weightNeeded": "Weight needed",
+      "selectDose": "Select dose",
+      "doseClinicalReview": "Dose: clinical review",
+      "administrationAria": "{name} administration guidance",
+      "administrationLink": "Administration ⓘ",
+      "otherLink": "Other…",
+      "otherAria": "Other {name} dose, route or time",
+      "emptyClock": "—",
+      "overdueClock": "+{time}",
+      "reviewInactive": "Review inactive",
+      "noDoseRecorded": "No dose recorded",
+      "reviewFirstDose": "Review first dose",
+      "reviewSecondDose": "Review second dose",
+      "sinceLastDose": "Since last dose",
+      "fluidRecordedTotal": "{total} mL recorded · review total",
+      "fluidReviewVolume": "{rhythm} · review fluid volume"
+    },
+    "liveScreen": {
+      "readyForCpr": "Ready for CPR",
+      "cycleTitle": "CPR cycle {number}",
+      "shockOne": "shock",
+      "shockMany": "shocks",
+      "cycleLogAria": "Open timestamped cycle log",
+      "previousShock": "Previous<br>shock",
+      "previousShockAria": "Add a shock before app start",
+      "timerAria": "Time remaining in CPR cycle",
+      "unexpectedRosc": "♡ ROSC",
+      "unexpectedRoscAria": "Record unexpected ROSC",
+      "startButton": "▶ Start CPR",
+      "rearrestButton": "Re-arrest · restart CPR",
+      "exportButton": "Export record",
+      "rhythmCheckButton": "⌁ Rhythm check",
+      "airwayCard": "Airway",
+      "accessCard": "Access",
+      "postRoscButton": "☑ Post ROSC checklist",
+      "airwayAccessButton": "Airway / access",
+      "eventButton": "+ Event",
+      "captionReady": "Ready to start",
+      "captionRunning": "CPR in progress",
+      "captionWarning": "{warningSeconds} seconds remaining",
+      "captionPrepare": "Prepare for rhythm check",
+      "captionDue": "Rhythm check due",
+      "captionDueLate": "Rhythm check due · +{late}",
+      "captionPaused": "Paused · resus clock continues",
+      "captionRecordedAt": "Recorded at {time}",
+      "clockRosc": "ROSC",
+      "clockEnded": "Ended",
+      "titleRosc": "ROSC recorded",
+      "titleEnded": "Session ended",
+      "cycleCompleteAlert": "Cycle complete. Rhythm check."
+    },
+    "cycleLog": {
+      "title": "Cycle log",
+      "earlierCounts": "{count} earlier cycles recorded as counts only; individual timestamps unavailable.",
+      "beforeApp": "Before app",
+      "cycleNumber": "Cycle {number}",
+      "timeNotSet": "Time not set",
+      "shockDelivered": "Shock delivered",
+      "noShock": "No shock · next cycle started",
+      "rearrest": "Re-arrest · CPR restarted",
+      "cycleStarted": "CPR cycle started",
+      "none": "No cycles recorded yet."
+    },
+    "checks": {
+      "back": "← Back",
+      "eachTick": "Each tick is timestamped.",
+      "originalLink": "Original {source} ↗",
+      "disclaimer": "A tick records checklist review, not administration or an intervention."
+    },
+    "log": {
+      "heading": "Event log",
+      "exportButton": "Export",
+      "exportAria": "Export event log to clipboard",
+      "showLabel": "Show",
+      "allEvents": "All events",
+      "interventionsOnly": "Interventions only",
+      "checklistsLabel": "Checklists",
+      "eachItem": "Each item",
+      "startAndFinish": "Start & finish only",
+      "helpInterventions": "CPR, shocks, rhythm checks, medicines, airway/access and recorded actions. Checklist items excluded.",
+      "helpTimes": "Checklist start: first item checked. Finish: all items checked. Other events remain visible.",
+      "helpAll": "All recorded events, including individual checklist items.",
+      "exportNote": "Export copies this view; voided entries are excluded.",
+      "resusStartLine": "Resus start {time}{note} · {phase}",
+      "beforeAppOpenedNote": " · before app opened",
+      "addEventButton": "+ Add event / earlier event",
+      "noEvents": "No events in this view yet.",
+      "beforeApp": "Before app",
+      "timeNotSet": "Time not set",
+      "timeNotSetAria": "time not set",
+      "sinceResusStart": "{sign}{clock} resus",
+      "addTimeButton": "Add time / edit details",
+      "corrected": "Corrected",
+      "voided": "Voided · excluded from counts",
+      "reviewAria": "Review {title}",
+      "editAria": "Edit {title} at {time}"
+    },
+    "guidance": {
+      "heading": "Guidance",
+      "sourcesTitle": "Guidance & sources",
+      "checklistButton": "☑ {label}",
+      "rsiButton": "RSI doses",
+      "tubesButton": "Tube sizes & age",
+      "ageYears": "{age} years",
+      "ageCriteria": "Age criteria",
+      "causesHeading": "Reversible causes · 4 Hs & 4 Ts"
+    },
+    "referenceSheets": {
+      "rsiTitle": "RSI dose references",
+      "fentanylName": "Fentanyl · conditional",
+      "ketamineUsualName": "Ketamine · usual",
+      "ketamineReducedName": "Ketamine · reduced",
+      "blockerName": "Rocuronium OR suxamethonium",
+      "doseMcgIv": "{dose} mcg IV",
+      "enterWeightButton": "Enter patient weight",
+      "tubesTitle": "Tube sizes & age criteria",
+      "ageLabel": "Patient age (years)",
+      "useAgeButton": "Use age",
+      "cuffedEtt": "Cuffed ETT:",
+      "lengthAtLips": "Length at lips:",
+      "ageEstimateHeading": "Age-based weight estimate",
+      "igelHeading": "iGel weight ranges",
+      "igelRange": "{size}: {min}–{max} kg",
+      "igelRangeAndAbove": "{size}: {min}+ kg",
+      "igelRangesLine": "{ranges}."
+    },
+    "popups": {
+      "closeAria": "Close dialog"
+    },
+    "forms": {
+      "timeLabel": "Time",
+      "eventTimeLabel": "Event time",
+      "givenAtLabel": "Given at",
+      "doseLabel": "Actual dose",
+      "unitLabel": "Unit",
+      "routeLabel": "Route",
+      "notesLabel": "Notes",
+      "optional": "Optional",
+      "timeSummary": "Time: {time} · Edit",
+      "noteAdded": "Note added · Edit",
+      "addNote": "+ Add note"
+    },
+    "rhythmSheet": {
+      "titles": {
+        "shock": "Record shock delivered",
+        "noshock": "Record no-shock cycle",
+        "rosc": "Record ROSC"
+      },
+      "energyLabel": "Energy delivered (J) · optional",
+      "energyPlaceholder": "Not recorded"
+    },
+    "weightSheet": {
+      "title": "Patient weight",
+      "weightLabel": "Weight (kg)",
+      "deleteDigitAria": "Delete digit",
+      "estimateSummary": "Estimate weight from age",
+      "ageLabel": "Age in years",
+      "useAgeEstimateButton": "Use age estimate",
+      "useWeightButton": "Use weight"
+    },
+    "rhythmCheckSheet": {
+      "title": "Rhythm check",
+      "prompt": "Choose the observed outcome.",
+      "shock": "Shock",
+      "shockNote": "Record delivered",
+      "noShock": "No shock",
+      "rosc": "ROSC"
+    },
+    "resusTime": {
+      "title": "When did resus start?",
+      "intro": "The app session clock stays unchanged.",
+      "startedLabel": "Resuscitation started",
+      "choiceLabel": "{minutes} min",
+      "choiceNote": "before app opened",
+      "note": "Resus duration is elapsed clock time from this start, including pauses. It freezes at ROSC or session end.",
+      "saveButton": "Save start time"
+    },
+    "settings": {
+      "title": "Session & display",
+      "tutorial": "Tutorial",
+      "undo": "↶ Undo last action",
+      "largerText": "Larger text",
+      "largerTextOn": "✓ Larger text on",
+      "screenAwake": "Keep screen awake",
+      "screenAwakeOn": "✓ Screen kept awake",
+      "install": "Add to home screen",
+      "history": "Earlier shocks / doses / cycles",
+      "resusTime": "Edit resus start",
+      "guidance": "Clinical guidance & sources",
+      "export": "Export event log",
+      "specialLabel": "Special situation · disable routine dose prompts",
+      "specialNote": "Use specific guidance for trauma, hypothermia, pregnancy, toxins and other special situations.",
+      "endButton": "End resuscitation session",
+      "newButton": "New patient / clear session",
+      "online": "Online",
+      "offline": "Offline",
+      "storageNote": "{state} · Events are saved in this browser on this device. App session time includes background time and continues after refresh. Export before clearing browser data."
+    },
+    "historySheet": {
+      "title": "Events before this app",
+      "intro": "These counts are added to events logged here. They do not create administration timestamps.",
+      "priorShocks": "Prior shocks",
+      "priorNoShock": "Prior no-shock cycles · total",
+      "priorStreak": "Prior consecutive no-shock cycles since last shock",
+      "priorAmio": "Prior amiodarone doses",
+      "saveButton": "Save earlier counts",
+      "earlierAdrenalineButton": "Record an earlier adrenaline dose"
+    },
+    "administration": {
+      "adrenalineTitle": "Adrenaline · reference",
+      "amiodaroneTitle": "Amiodarone · reference",
+      "fluidsTitle": "Fluids · administration",
+      "magnesiumTitle": "Magnesium · administration"
+    },
+    "medicineForm": {
+      "title": "Record {name}",
+      "fallbackName": "medicine",
+      "medicineLabel": "Medicine",
+      "dosePlaceholder": "Dose given",
+      "submit": "Record actual administration"
+    },
+    "selectDoseSheet": {
+      "title": "Select amiodarone dose",
+      "doseLabel": "Dose given (mg IV)",
+      "dosePlaceholder": "mg",
+      "submit": "Record dose"
+    },
+    "interventions": {
+      "airway": "Airway",
+      "access": "Access",
+      "both": "Airway / access"
+    },
+    "equipmentSheet": {
+      "recordButton": "Record {name}",
+      "recordAndAddIntubation": "Record Laryngoscopy and add Intubation"
+    },
+    "noteSheet": {
+      "title": "Record another event",
+      "eventLabel": "Event",
+      "eventPlaceholder": "What happened?",
+      "submit": "Record event",
+      "anotherMedicineButton": "Record another medicine"
+    },
+    "correctionSheet": {
+      "title": "Correct event",
+      "detailsLabel": "Recorded details",
+      "rhythmLabel": "Rhythm",
+      "energyLabel": "Energy (J)",
+      "saveButton": "Save correction",
+      "note": "Corrections update counters and medicine review clocks. They do not restart a CPR cycle. Original values are retained in JSON export.",
+      "stateChangeNote": "To reverse a session state change, use Undo. State events cannot be voided here.",
+      "restoreButton": "Restore event",
+      "voidButton": "Void event · keep audit record"
+    },
+    "magnesiumRepeatSheet": {
+      "title": "Repeat magnesium?",
+      "recordButton": "Record repeat {dose} mmol IV",
+      "backButton": "Back"
+    },
+    "torsadesConfirmSheet": {
+      "title": "Confirm Torsades",
+      "confirmButton": "Confirm Torsades",
+      "backButton": "Back to rhythms"
+    },
+    "fluidGuidanceSheet": {
+      "title": "Non-shockable rhythm · fluid guidance",
+      "continueButton": "Continue CPR"
+    },
+    "endSheet": {
+      "title": "End resuscitation session?",
+      "text": "This stops the cycle and resus clocks. Your event log is kept.",
+      "confirmButton": "End session now",
+      "keepButton": "Keep recording"
+    },
+    "newPatientSheet": {
+      "title": "Start a new patient?",
+      "text": "The current record will be cleared from this browser. Export it first if you need to keep it.",
+      "exportButton": "Export current record",
+      "clearButton": "Clear record & start new patient"
+    },
+    "installSheet": {
+      "title": "Add to home screen",
+      "android": "<b>Android / Chrome:</b> open the browser menu, then choose “Add to Home screen” or “Install app”.",
+      "iphone": "<b>iPhone / Safari:</b> tap Share, then “Add to Home Screen”.",
+      "note": "Open this site in your phone browser first. Offline files are prepared after the first successful load. Browser or device suspension can delay screen updates; clocks catch up on return. No background alarm is guaranteed."
+    },
+    "exportSheet": {
+      "title": "Export event log",
+      "intro": "Save the record before starting a new patient or clearing browser data.",
+      "downloadText": "Download text record",
+      "downloadJson": "Download complete JSON + audit",
+      "copyText": "Copy text record",
+      "note": "Text export follows the current log filters, with hh:mm:ss and key details. Complete JSON retains all events, dates, timezone and audit history. Records stay on this device unless you export or share them."
+    },
+    "exportRecord": {
+      "line": "{time} {title}",
+      "lineWithDetails": "{time} {title} — {details}",
+      "timeUnknown": "Before app · time not set",
+      "fileName": "resus-{start}.{extension}"
+    },
+    "tutorial": {
+      "title": "Tutorial",
+      "progressAria": "Tutorial progress",
+      "slidesAria": "Scrollable tutorial slides",
+      "endNote": "End of tutorial · scroll up to revisit a step",
+      "nextNote": "Scroll down for the next step ↓",
+      "back": "← Back",
+      "next": "Next ↓",
+      "done": "Done"
+    },
+    "toasts": {
+      "weightUpdated": "Weight reference updated",
+      "resusDurationUpdated": "Resus duration updated",
+      "earlierCountsSaved": "Earlier counts saved",
+      "cycleStarted": "CPR cycle started",
+      "rearrestRecorded": "Re-arrest recorded",
+      "sessionEnded": "Session ended · log kept",
+      "newPatient": "New patient · clocks started",
+      "previousShockAdded": "Previous shock added",
+      "undone": "Last action undone",
+      "recordedDose": "Recorded {dose} mg IV · Undo available",
+      "eventUpdated": "Event updated",
+      "administrationRecorded": "Administration recorded",
+      "interventionRecorded": "Intervention recorded",
+      "eventRecorded": "Event recorded",
+      "eventCorrected": "Event corrected",
+      "otherTab": "Session updated from another tab",
+      "recordCopied": "Record copied",
+      "couldNotCopy": "Could not copy. Try again in your phone browser.",
+      "sessionEndedUndo": "Session ended. Undo the end action to continue.",
+      "wakeLockUnavailable": "Screen wake lock is unavailable in this browser.",
+      "keepAwakeFailed": "Could not keep screen awake. Check device settings.",
+      "magnesiumRecorded": "Magnesium recorded · Undo available",
+      "roscRecorded": "ROSC recorded · clocks stopped",
+      "rhythmRecorded": "Rhythm recorded",
+      "recoveryBackedUp": "Saved case could not be read. A backup copy was kept and a new case started.",
+      "recoveryNotBackedUp": "Saved case could not be read and no backup could be kept. A new case started."
+    },
+    "errors": {
+      "resusStartAfterApp": "Resus start must be at or before the app session start.",
+      "earlierCounts": "Use whole numbers 0–100. Consecutive cycles cannot exceed the prior total.",
+      "medicineIncomplete": "Enter medicine, actual dose and route.",
+      "tubeSize": "Enter a valid tube size in mm.",
+      "eventEmpty": "Enter the event or action.",
+      "timeBeforeApp": "Use a time before the app opened.",
+      "stateChangeTime": "State-change times cannot be changed here. Undo and re-record the state change.",
+      "doseNotPositive": "Enter a positive actual dose.",
+      "age": "Enter a valid age.",
+      "energy": "Check the recorded energy.",
+      "timeInFuture": "Enter a valid time that is not in the future."
+    }
   },
   "checklists": {
     "lists": [
@@ -489,7 +975,50 @@
         "minKg": 90,
         "maxKg": null
       }
-    ]
+    ],
+    "accessDevices": ["iv", "io"],
+    "forms": {
+      "laryngoscopy": {
+        "methodQuestion": "Laryngoscopy",
+        "methods": ["Video", "Direct"],
+        "bladeHint": "Choose video or direct to show blade sizes.",
+        "bladeQuestion": "Blade",
+        "forcepsQuestion": "Magill forceps",
+        "forcepsChoices": ["Used", "Not used"],
+        "viewQuestion": "View",
+        "views": ["Grade I", "Grade IIa", "Grade IIb", "Grade III", "Grade IV", "No view"]
+      },
+      "intubation": {
+        "introducerQuestion": "Introducer",
+        "introducers": ["Bougie", "Stylet"],
+        "lipsQuestion": "Length at lips (cm)",
+        "lipsMinCm": 1,
+        "lipsMaxCm": 50,
+        "confirmQuestion": "Confirmed with",
+        "confirmMethods": [
+          "Waveform capnography",
+          "Visualised through cords",
+          "Chest rise",
+          "Auscultation"
+        ],
+        "sizeLegend": "Tube size (mm)",
+        "sizeUnit": "mm"
+      },
+      "outcome": {
+        "question": "Outcome",
+        "choices": ["Successful", "Unsuccessful"]
+      },
+      "access": {
+        "sideQuestion": "Side",
+        "sides": ["Left", "Right"],
+        "locationQuestion": "Location"
+      },
+      "sizes": {
+        "cannulaLegend": "Cannula size",
+        "otherLegend": "Size",
+        "cannulaSuffix": "G"
+      }
+    }
   },
   "sources": {
     "name": "NZ EAS clinical practice guidelines",
@@ -594,6 +1123,66 @@
     "sources.exportDate": "date of the packaged guideline PDFs",
     "sources.guidelines": "Guidelines the app links to: EAS code, label, PDF packaged with the app (offline) and web page.",
     "sources.guidelines.cardiacArrest.offlinePage": "the flowchart page",
-    "sources.guidanceLinks": "Links listed in the Guidance & sources pop-up, in this order."
+    "sources.guidanceLinks": "Links listed in the Guidance & sources pop-up, in this order.",
+    "numbers.timing.overdueShownAfterMs": "The Live screen adds how late the rhythm check is (for example \"Rhythm check due · +00:05\") only once it is more than this late: 1 second.",
+    "numbers.timing.prepareAtMs": "From this long before the end of a CPR cycle the screen says \"Prepare for rhythm check\" and the timer panel turns yellow: 15 seconds.",
+    "numbers.timing.warningAtMs": "From this long before the end of a CPR cycle the screen says \"30 seconds remaining\" (the number in that message is filled from this value): 30 seconds.",
+    "numbers.timing.adrenalineHighlightMs": "The adrenaline card is highlighted from this long before the adrenaline review is due, and while it is overdue: 30 seconds.",
+    "numbers.resusStart": "The \"When did resus start?\" pop-up.",
+    "numbers.resusStart.quickChoicesMin": "Quick choices on that pop-up: minutes before the app was opened, in the order shown.",
+    "numbers.correctionRhythms": "Rhythms offered on the \"Correct event\" form, for each kind of event, in the order shown on the form. This order differs on purpose from the recording lists in numbers.rhythms. \"rhythm\" is for a stand-alone rhythm entry.",
+    "numbers.log": "The event log.",
+    "numbers.log.interventionEventTypes": "Event kinds shown under \"Interventions only\" in the log. Checklist ticks are not included. A cause marked as treated is also shown (that rule is in the program).",
+    "numbers.medicineForm": "Choices on the \"Record medicine\" form (units and routes), in the order shown.",
+    "equipment.accessDevices": "Devices listed under Access. Every other device is listed under Airway; with no group chosen all devices are listed.",
+    "equipment.forms": "The questions and answer choices on the equipment forms, in the order shown. The words used as field names in the log (for example \"method: Video\") are the program's own and are not set here.",
+    "equipment.forms.laryngoscopy.methods": "Must match the two blade lists in equipment.blades (first = Video list, second = Direct list).",
+    "equipment.forms.intubation.lipsMinCm": "Length at lips: the smallest value the box accepts, in cm.",
+    "equipment.forms.intubation.lipsMaxCm": "Length at lips: the largest value the box accepts, in cm.",
+    "wording.estimatedWeightSource": "Must start with the word \"Estimated\": the weight button shows \"· est.\" beside the shock energy for any weight source that starts with it.",
+    "wording.drugNames": "Medicine names shown on the Live cards, in pop-up titles and written into the log. Changing a name here does not change which typed names count as that medicine: the program matches adrenaline, amiodarone, magnesium and the fluid name (numbers.products.fluid).",
+    "wording.weightSources": "Text saved with the weight when it is typed in. An age estimate saves its own sentence (estimatedWeightSource).",
+    "wording.rhythmCheckTitles": "Log titles for the three rhythm-check outcomes.",
+    "wording.eventDetails": "Text saved in the log (second line of an entry). New entries only; entries already saved keep their old text.",
+    "wording.eventTitles": "Log titles for recorded events. New entries only; entries already saved keep their old text.",
+    "wording.checklistSummary": "Log rows for \"Start & finish only\": the words \"started\" and \"finished\" are part of the row title.",
+    "wording.shockRhythmButtons": "Rhythm buttons after a shock, in the order shown. The key is the rhythm name saved in the log.",
+    "wording.otherRhythmButtons": "Rhythm buttons after no shock or ROSC show the rhythm name itself, except the names listed here.",
+    "wording.references": "How a guideline reference is written. \"{issuer}\" is EAS or ANZCOR.",
+    "wording.weightHeader": "The weight button at the top of every screen and the shock energy under it.",
+    "wording.liveCards": "Status lines, button labels and values on the Live medicine cards.",
+    "wording.liveScreen": "The timer, cycle captions and buttons on the Live screen.",
+    "wording.liveScreen.captionWarning": "{warningSeconds} is filled from numbers.timing.warningAtMs.",
+    "wording.cycleLog": "The \"Cycle log\" pop-up.",
+    "wording.checks": "Words around a checklist (the checklist items themselves are in part 3).",
+    "wording.log": "The Log tab.",
+    "wording.guidance": "The Guidance tab and the \"Guidance & sources\" pop-up title.",
+    "wording.referenceSheets": "The RSI dose and tube size pop-ups (the sentences in them are above).",
+    "wording.popups": "Words shared by every pop-up.",
+    "wording.forms": "Words shared by the record forms.",
+    "wording.rhythmSheet": "The pop-up for choosing a rhythm.",
+    "wording.weightSheet": "The weight entry pop-up.",
+    "wording.rhythmCheckSheet": "The \"Rhythm check\" pop-up.",
+    "wording.resusTime": "The \"When did resus start?\" pop-up.",
+    "wording.settings": "The \"Session & display\" pop-up.",
+    "wording.historySheet": "The \"Events before this app\" pop-up.",
+    "wording.administration": "Pop-up titles for the medicine Administration references.",
+    "wording.medicineForm": "The \"Record medicine\" form.",
+    "wording.selectDoseSheet": "The child second amiodarone \"Select dose\" form.",
+    "wording.interventions": "Titles of the Airway / Access pop-up.",
+    "wording.equipmentSheet": "Buttons on the equipment forms.",
+    "wording.noteSheet": "The \"Record another event\" form.",
+    "wording.correctionSheet": "The \"Correct event\" form.",
+    "wording.magnesiumRepeatSheet": "The \"Repeat magnesium?\" pop-up.",
+    "wording.torsadesConfirmSheet": "The \"Confirm Torsades\" pop-up.",
+    "wording.fluidGuidanceSheet": "The fluid guidance pop-up after a non-shockable rhythm.",
+    "wording.endSheet": "The \"End resuscitation session?\" pop-up.",
+    "wording.newPatientSheet": "The \"Start a new patient?\" pop-up.",
+    "wording.installSheet": "The \"Add to home screen\" instructions.",
+    "wording.exportSheet": "The \"Export event log\" pop-up.",
+    "wording.exportRecord": "The text record: one line per log entry, and the downloaded file name ({start} is the app start time).",
+    "wording.tutorial": "Tutorial pop-up controls (the slides themselves are not part of the rules file).",
+    "wording.toasts": "Short messages shown at the bottom of the screen.",
+    "wording.errors": "Messages shown in red inside a pop-up."
   }
 }

@@ -1,7 +1,7 @@
 /* Saving, recording events, drug doses, rhythm choices, screen wake lock.
    The rebuild preserved the original behaviour first; later approved changes are marked below.
    Shared screen and session state lives in st (see state.js). */
-import { $, KEY, R } from './base.js';
+import { $, KEY, R, T } from './base.js';
 import { render } from './views.js';
 import { closeSheet, error, openDrug, openSettings, peaSnippet, sheet, torsadesSnippet } from './sheets.js';
 import { finished, st } from './state.js';
@@ -32,7 +32,7 @@ export function commit(fn, message) {
 /* Recording is blocked after the session has ended (the user must undo the end first). */
 export function canRecord() {
   if (finished()) {
-    toast('Session ended. Undo the end action to continue.');
+    toast(T('toasts.sessionEndedUndo'));
     return false;
   }
   return true;
@@ -42,7 +42,7 @@ export function canRecord() {
 export async function keepAwake() {
   try {
     if (!('wakeLock' in navigator))
-      return toast('Screen wake lock is unavailable in this browser.');
+      return toast(T('toasts.wakeLockUnavailable'));
     if (st.wakeLock) {
       await st.wakeLock.release();
       st.wakeLock = null;
@@ -54,7 +54,7 @@ export async function keepAwake() {
     }
     openSettings();
   } catch {
-    toast('Could not keep screen awake. Check device settings.');
+    toast(T('toasts.keepAwakeFailed'));
   }
 }
 
@@ -95,24 +95,24 @@ export function recordSupport(type, confirmed = false) {
   if (ref.dose === null || stats.count >= R.RULES.numbers.magnesium.maxDoses) return;
   if (stats.count && !confirmed) {
     sheet(
-      'Repeat magnesium?',
+      T('magnesiumRepeatSheet.title'),
       `${torsadesSnippet()}<p>${R.guideText('repeatMagnesium')}</p>` +
-      `<button class="primary" data-confirm-magnesium>Record repeat ${ref.dose} mmol IV</button>` +
-      `<button class="primary" data-close>Back</button>`,
+      `<button class="primary" data-confirm-magnesium>${T('magnesiumRepeatSheet.recordButton', { dose: ref.dose })}</button>` +
+      `<button class="primary" data-close>${T('magnesiumRepeatSheet.backButton')}</button>`,
       { kind: 'repeat-magnesium' },
     );
     return;
   }
   commit(
     () =>
-      R.add(st.s, 'magnesium', 'Magnesium', ref.dose + ' mmol IV', Date.now(), {
+      R.add(st.s, 'magnesium', T('drugNames.magnesium'), T('liveCards.doseMmolIv', { dose: ref.dose }), Date.now(), {
         dose: ref.dose,
         unit: 'mmol',
         route: 'IV',
         weight: st.s.weight,
         weightBasis: ref.basis,
       }),
-    'Magnesium recorded · Undo available',
+    T('toasts.magnesiumRecorded'),
   );
   closeSheet();
 }
@@ -133,7 +133,7 @@ export function saveRhythm(
     ? R.completeOutcome(st.s, eventId, rhythm, energy)
     : outcome === 'rosc' && R.check(st.s, outcome, rhythm, energy, at);
   if (!accepted) {
-    error('Check the recorded energy.');
+    error(T('errors.energy'));
     return false;
   }
   const rosc = outcome === 'rosc';
@@ -145,7 +145,7 @@ export function saveRhythm(
     st.checkReturn = 'live';
   }
   render();
-  toast(rosc ? 'ROSC recorded · clocks stopped' : 'Rhythm recorded');
+  toast(T(rosc ? 'toasts.roscRecorded' : 'toasts.rhythmRecorded'));
   return true;
 }
 
@@ -158,14 +158,14 @@ export function selectRhythm(rhythm) {
     outcome = ctx.outcome;
   if (rhythm === 'Torsades' && outcome === 'shock') {
     if (R.invalidEnergy(energy)) {
-      error('Check the recorded energy.');
+      error(T('errors.energy'));
       return;
     }
     sheet(
-      'Confirm Torsades',
+      T('torsadesConfirmSheet.title'),
       `${torsadesSnippet()}<p>${R.guideText('confirmTorsades')}</p>` +
-      `<button class="primary" data-confirm-torsades>Confirm Torsades</button>` +
-      `<button class="primary" data-back-rhythms>Back to rhythms</button>`,
+      `<button class="primary" data-confirm-torsades>${T('torsadesConfirmSheet.confirmButton')}</button>` +
+      `<button class="primary" data-back-rhythms>${T('torsadesConfirmSheet.backButton')}</button>`,
       {
         kind: 'torsades-confirm',
         outcome,
@@ -180,7 +180,7 @@ export function selectRhythm(rhythm) {
   // A8: never after ROSC (the ROSC rhythm "Other" is not a non-shockable arrest rhythm).
   if (saveRhythm(outcome, rhythm, energy) && outcome !== 'rosc' && R.RULES.numbers.lowerCard.fluidRhythms.includes(rhythm))
     sheet(
-      'Non-shockable rhythm · fluid guidance',
-      `${peaSnippet()}<button class="primary" data-close>Continue CPR</button>`,
+      T('fluidGuidanceSheet.title'),
+      `${peaSnippet()}<button class="primary" data-close>${T('fluidGuidanceSheet.continueButton')}</button>`,
     );
 }

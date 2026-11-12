@@ -63,8 +63,8 @@ export function supportStats(session, type) {
 export function startOutcome(session, outcome, now = Date.now()) {
   if (!['shock', 'noshock'].includes(outcome) || !R.canRhythmCheck(session, now)) return null;
   R.snapshot(session);
-  const title = outcome === 'shock' ? 'Shock delivered' : 'No shock · rhythm check';
-  const event = R.add(session, outcome, title, 'Rhythm not recorded', now, { rhythm: 'Unknown', energy: '' });
+  const title = R.wording('rhythmCheckTitles.' + outcome);
+  const event = R.add(session, outcome, title, R.wording('eventDetails.rhythmNotRecorded'), now, { rhythm: 'Unknown', energy: '' });
   session.rhythm = 'Unknown';
   R.begin(session, now);
   session.pendingRhythm = { id: event.id, outcome, at: now };
@@ -94,7 +94,7 @@ export function completeOutcome(session, id, rhythm, energy = '') {
 /* "+ Previous shock": a shock given before the app was opened. Time and details are unknown,
    so it is placed just before app start and flagged for review. */
 export function addPreAppShock(session, now = Date.now()) {
-  return R.add(session, 'shock', 'Shock delivered', 'Before app opened · time/details not recorded', session.appStart - 1, {
+  return R.add(session, 'shock', R.wording('rhythmCheckTitles.shock'), R.wording('eventDetails.beforeAppOpened'), session.appStart - 1, {
     rhythm: 'Unknown',
     energy: '',
     preApp: true,
