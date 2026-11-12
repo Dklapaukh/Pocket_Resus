@@ -86,6 +86,43 @@ const BROKEN = [
   ['a web link that is not https', (c) => { c.sources.guidelines.magnesium.web = 'cpg.stjohn.org.nz/x'; }, 'sources.guidelines.magnesium.web: must be a secure web address'],
   ['a listed link to a guideline that does not exist', (c) => { c.sources.guidanceLinks.push('nonsense'); }, 'sources.guidanceLinks.4: "nonsense" is not a guideline'],
   ['a listed link whose guideline has no label', (c) => { c.sources.guidanceLinks[0] = 'adrenaline'; }, 'sources.guidanceLinks.0: "adrenaline" is listed as a link but has no label'],
+  // Stage 2: timer messages, quick choices, correction-form rhythms, log settings, equipment forms and screen wording.
+  ['the "30 seconds remaining" time after the end of the cycle', (c) => { c.numbers.timing.warningAtMs = 999999; }, 'numbers.timing.warningAtMs: the warning time'],
+  ['a warning time that is not a whole number of seconds', (c) => { c.numbers.timing.warningAtMs = 30500; }, 'numbers.timing.warningAtMs: must be a whole number of seconds'],
+  ['the "prepare" message coming before the warning', (c) => { c.numbers.timing.prepareAtMs = 45000; }, 'numbers.timing.prepareAtMs: the "prepare" time'],
+  ['a prepare time of zero', (c) => { c.numbers.timing.prepareAtMs = 0; }, 'numbers.timing.prepareAtMs: must be a whole number above 0'],
+  ['an adrenaline highlight longer than the adrenaline interval', (c) => { c.numbers.timing.adrenalineHighlightMs = 300000; }, 'numbers.timing.adrenalineHighlightMs: the highlight time'],
+  ['a negative lateness limit', (c) => { c.numbers.timing.overdueShownAfterMs = -1; }, 'numbers.timing.overdueShownAfterMs: must be a whole number of 0 or more'],
+  ['a timer setting is a word', (c) => { c.numbers.timing.warningAtMs = '30000'; }, 'numbers.timing.warningAtMs: must be a whole number'],
+  ['quick start choices out of order', (c) => { c.numbers.resusStart.quickChoicesMin = [5, 15, 10]; }, 'numbers.resusStart.quickChoicesMin.2: minutes must rise'],
+  ['a quick start choice of 0 minutes', (c) => { c.numbers.resusStart.quickChoicesMin[0] = 0; }, 'numbers.resusStart.quickChoicesMin.0: must be a whole number above 0'],
+  ['a quick start choice of a fraction', (c) => { c.numbers.resusStart.quickChoicesMin[1] = 7.5; }, 'numbers.resusStart.quickChoicesMin.1: must be a whole number'],
+  ['no quick start choices', (c) => { c.numbers.resusStart.quickChoicesMin = []; }, 'numbers.resusStart.quickChoicesMin: must be a list with at least one'],
+  ['a correction-form rhythm that does not exist', (c) => { c.numbers.correctionRhythms.shock.push('Wobbly'); }, 'numbers.correctionRhythms.shock.4: "Wobbly" is not a rhythm'],
+  ['a correction form that cannot keep a recorded rhythm', (c) => { c.numbers.correctionRhythms.shock = ['Unknown', 'VF', 'Torsades']; }, 'numbers.correctionRhythms.shock: must offer "VT"'],
+  ['an empty correction-form rhythm list', (c) => { c.numbers.correctionRhythms.rosc = []; }, 'numbers.correctionRhythms.rosc: must be a list with at least one item'],
+  ['no event types counted as interventions', (c) => { c.numbers.log.interventionEventTypes = []; }, 'numbers.log.interventionEventTypes: must be a list with at least one item'],
+  ['an intervention event type with no name', (c) => { c.numbers.log.interventionEventTypes[2] = ''; }, 'numbers.log.interventionEventTypes.2: must be some text'],
+  ['no medicine units', (c) => { c.numbers.medicineForm.units = []; }, 'numbers.medicineForm.units: must be a list with at least one item'],
+  ['a medicine route twice', (c) => { c.numbers.medicineForm.routes[1] = 'IV'; }, 'numbers.medicineForm.routes: has the same item more than once'],
+  ['a device group that names an unknown device', (c) => { c.equipment.accessDevices.push('catheter'); }, 'equipment.accessDevices.2: "catheter" is not a device type'],
+  ['every device listed under Access', (c) => { c.equipment.accessDevices = ['iv', 'io', 'opa', 'npa', 'igel', 'laryngoscopy', 'intubation']; }, 'equipment.accessDevices: leaves no device for the Airway list'],
+  ['the equipment form questions are missing', (c) => { delete c.equipment.forms; }, 'equipment.forms: must be a group of settings'],
+  ['a laryngoscopy method that has no blade list', (c) => { c.equipment.forms.laryngoscopy.methods = ['Video', 'Fibreoptic']; }, 'equipment.forms.laryngoscopy.methods: each method must be the name of a blade list'],
+  ['three laryngoscopy methods', (c) => { c.equipment.forms.laryngoscopy.methods.push('Other'); }, 'equipment.forms.laryngoscopy.methods: must have exactly two methods'],
+  ['no view grades', (c) => { c.equipment.forms.laryngoscopy.views = []; }, 'equipment.forms.laryngoscopy.views: must be a list with at least one item'],
+  ['a length-at-lips range the wrong way round', (c) => { c.equipment.forms.intubation.lipsMinCm = 60; }, 'equipment.forms.intubation.lipsMinCm: the smallest length'],
+  ['a length-at-lips limit of zero', (c) => { c.equipment.forms.intubation.lipsMaxCm = 0; }, 'equipment.forms.intubation.lipsMaxCm: must be a number above 0'],
+  ['an empty form question', (c) => { c.equipment.forms.outcome.question = ''; }, 'equipment.forms.outcome.question: must be some text'],
+  ['no confirmation methods', (c) => { c.equipment.forms.intubation.confirmMethods = []; }, 'equipment.forms.intubation.confirmMethods: must be a list with at least one item'],
+  ['screen wording that is empty', (c) => { c.wording.liveCards.reviewInactive = ' '; }, 'wording.liveCards.reviewInactive: must be some text'],
+  ['screen wording with a {gap} the app cannot fill', (c) => { c.wording.toasts.recordedDose = 'Recorded {dose} {nobodySuppliesThis}'; }, 'wording.toasts.recordedDose: {nobodySuppliesThis} cannot be filled'],
+  ['screen wording with a tag that is not allowed', (c) => { c.wording.errors.energy = '<b>Check</b> <i>the energy</i>'; }, 'wording.errors.energy: uses <i>'],
+  ['screen wording with a broken {gap} bracket', (c) => { c.wording.liveCards.doseMgIv = '{dose mg IV'; }, 'wording.liveCards.doseMgIv: has a curly bracket'],
+  ['screen wording nobody uses (typing slip)', (c) => { c.wording.liveCards.reviewInactiv = 'x'; }, 'wording.liveCards.reviewInactiv: is not a wording entry the app knows'],
+  ['wording two levels down that is empty', (c) => { c.wording.rhythmSheet.titles.shock = ''; }, 'wording.rhythmSheet.titles.shock: must be some text'],
+  ['a wording group that is a sentence', (c) => { c.wording.toasts = 'Record copied'; }, 'wording.toasts: must be a group of wording entries'],
+  ['the timer message loses its seconds {gap}', (c) => { c.wording.liveScreen.captionWarning = '{seconds} seconds remaining'; }, 'wording.liveScreen.captionWarning: {seconds} cannot be filled'],
   ['a note that explains nothing', (c) => { c.notes['numbers.timing.cprCycleMinutes'] = 'old note'; }, 'notes.numbers.timing.cprCycleMinutes: explains a value that does not exist'],
   ['an empty note', (c) => { c.notes['numbers.weight.maxKg'] = ''; }, 'notes.numbers.weight.maxKg: must be some text'],
 ];
@@ -107,4 +144,32 @@ test('the library holds at least 15 different kinds of fault, and a few notes wi
   assert.deepEqual(checkRuleSet(c), []);
   assert.deepEqual(checkRuleSet(null).length, 1);
   assert.equal(checkRuleSet(copy()).length, 0, 'checking does not change the file it is given');
+});
+
+// Stage 2: every single new wording entry, quick choice and setting is required (deleting any one is reported by name).
+test('every stage 2 wording entry and setting is required: deleting any one is reported as missing, by name', () => {
+  const walk = (node, path, out) => {
+    if (typeof node === 'string' || Array.isArray(node) || typeof node === 'number') out.push(path);
+    else for (const [k, v] of Object.entries(node)) walk(v, path ? path + '.' + k : k, out);
+    return out;
+  };
+  const leaves = walk(original.wording.liveCards, 'liveCards', []).concat(
+    ...['drugNames', 'eventTitles', 'eventDetails', 'toasts', 'errors', 'settings', 'log', 'rhythmSheet'].map((g) => walk(original.wording[g], g, [])));
+  assert.ok(leaves.length > 100);
+  for (const leaf of leaves) {
+    const c = copy();
+    const parts = leaf.split('.');
+    let node = c.wording;
+    for (const part of parts.slice(0, -1)) node = node[part];
+    delete node[parts.at(-1)];
+    assert.deepEqual(checkRuleSet(c).filter((p) => !p.startsWith('notes.')), [`wording.${leaf}: is missing`]);
+  }
+  for (const key of ['overdueShownAfterMs', 'prepareAtMs', 'warningAtMs', 'adrenalineHighlightMs']) {
+    const c = copy(); delete c.numbers.timing[key];
+    assert.deepEqual(checkRuleSet(c).filter((p) => !p.startsWith('notes.')), [`numbers.timing.${key}: is missing`]);
+  }
+  for (const group of ['resusStart', 'correctionRhythms', 'log', 'medicineForm']) {
+    const c = copy(); delete c.numbers[group];
+    assert.ok(checkRuleSet(c).some((p) => p.startsWith(`numbers.${group}:`)), group);
+  }
 });

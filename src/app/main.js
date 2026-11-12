@@ -6,6 +6,7 @@ import { toast } from './format.js';
 import { render, tick } from './views.js';
 import { openRhythm } from './sheets.js';
 import { st } from './state.js';
+import { T } from './base.js';
 
 // Write the session to storage, draw the screen, then update the clocks four times a second.
 save();
@@ -15,9 +16,7 @@ render();
 // A6: tell the user when an unreadable saved session was replaced.
 if (st.recovery)
   toast(
-    st.recovery === 'backed-up'
-      ? 'Saved case could not be read. A backup copy was kept and a new case started.'
-      : 'Saved case could not be read and no backup could be kept. A new case started.',
+    T(st.recovery === 'backed-up' ? 'toasts.recoveryBackedUp' : 'toasts.recoveryNotBackedUp'),
   );
 
 setInterval(tick, 250);

@@ -1,6 +1,6 @@
 /* Display helpers (escape, clock, time, notes, guideline links and short messages).
    Shared screen state, including the toast timeout, lives in st (see state.js). */
-import { $ } from './base.js';
+import { $, T } from './base.js';
 import { st } from './state.js';
 
 /* Make text safe to put inside HTML (stops typed notes being treated as page code). */
@@ -51,7 +51,7 @@ export function formatGuidelineReference(value) {
   return esc(value).replace(
     /\b(EAS|CPG|ANZCOR)(?: guideline)?\s+(\d+\.\d+)/g,
     (_, issuer, number) =>
-      '<em>' + (issuer === 'ANZCOR' ? 'ANZCOR' : 'EAS') + ' guideline ' + number + '</em>',
+      '<em>' + T('references.guidelineName', { issuer: issuer === 'ANZCOR' ? 'ANZCOR' : 'EAS', number }) + '</em>',
   );
 }
 
@@ -77,7 +77,7 @@ export function normalizeGuidelineReferences(root) {
       for (const part of parts) {
         if (/^\d/.test(part)) {
           const em = document.createElement('em');
-          em.textContent = issuer + ' guideline ' + part;
+          em.textContent = T('references.guidelineName', { issuer, number: part });
           fragment.append(em);
         } else fragment.append(document.createTextNode(part));
       }
@@ -116,9 +116,9 @@ export function compactOptionalFields() {
       isTime = field.name === 'at';
     details.className = 'optional-entry ' + (isTime ? 'optional-time' : 'optional-note');
     const update = () => {
-      if (isTime) summary.textContent = 'Time: ' + field.value + ' · Edit';
-      else if (field.value.trim()) summary.textContent = 'Note added · Edit';
-      else summary.textContent = '+ Add note';
+      if (isTime) summary.textContent = T('forms.timeSummary', { time: field.value });
+      else if (field.value.trim()) summary.textContent = T('forms.noteAdded');
+      else summary.textContent = T('forms.addNote');
     };
     update();
     details.append(summary);

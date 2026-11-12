@@ -1,6 +1,6 @@
 /* Pop-up sheets for weight, rhythm, drugs, equipment, notes, correction,
    export, settings and the tutorial. Shared state lives in st (see state.js). */
-import { $, R, paras } from './base.js';
+import { $, R, T, paras } from './base.js';
 import {
   compactOptionalFields,
   esc,
@@ -20,7 +20,7 @@ export function sheet(title, html, ctx = {}) {
   $('sheet').className = '';
   st.sheetContext = ctx;
   $('sheet').innerHTML =
-    `<div class="sheet-heading"><h2 id="sheetTitle">${title}</h2><button data-close aria-label="Close dialog">×</button></div>` +
+    `<div class="sheet-heading"><h2 id="sheetTitle">${title}</h2><button data-close aria-label="${T('popups.closeAria')}">×</button></div>` +
     `<div class="sheet-content">${html}<p id="sheetError" class="error" role="alert" hidden></p></div>`;
   normalizeGuidelineReferences($('sheet'));
   compactOptionalFields();
@@ -55,20 +55,15 @@ export function toggleField(name, label, values, value = '') {
 
 /* Pop-up to record a shock, no-shock cycle or ROSC: choose the rhythm (and energy for a shock). */
 export function openRhythm(outcome) {
-  const labels = {
-    shock: 'Record shock delivered',
-    noshock: 'Record no-shock cycle',
-    rosc: 'Record ROSC',
-  };
   const options = R.RULES.numbers.rhythms[outcome];
   const isShock = outcome === 'shock';
   const energy = isShock
-    ? '<label>Energy delivered (J) · optional<input id="shockEnergy" type="number" inputmode="numeric" min="1" max="' + R.RULES.numbers.shock.maxRecordableJ + '" value="' + (R.shockEnergy(st.s) ?? '') + '" placeholder="Not recorded"></label>'
+    ? '<label>' + T('rhythmSheet.energyLabel') + '<input id="shockEnergy" type="number" inputmode="numeric" min="1" max="' + R.RULES.numbers.shock.maxRecordableJ + '" value="' + (R.shockEnergy(st.s) ?? '') + '" placeholder="' + T('rhythmSheet.energyPlaceholder') + '"></label>'
     : '';
   const rhythms = isShock
     ? rhythmImages()
-    : `<div class="choice-grid">${options.map((r) => `<button data-record-rhythm="${r}">${r === 'VT' ? 'Pulseless VT' : r}</button>`).join('')}</div>`;
-  sheet(labels[outcome], energy + rhythms, {
+    : `<div class="choice-grid">${options.map((r) => `<button data-record-rhythm="${r}">${Object.hasOwn(R.RULES.wording.otherRhythmButtons, r) ? R.RULES.wording.otherRhythmButtons[r] : r}</button>`).join('')}</div>`;
+  sheet(T('rhythmSheet.titles.' + outcome), energy + rhythms, {
     kind: 'rhythm',
     outcome,
     eventId: st.s.pendingRhythm?.outcome === outcome ? st.s.pendingRhythm.id : null,
@@ -78,17 +73,17 @@ export function openRhythm(outcome) {
 /* Pop-up to enter or change patient weight. */
 export function openWeight() {
   const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫']
-    .map((key) => `<button data-key="${key}" aria-label="${key === '⌫' ? 'Delete digit' : key}">${key}</button>`)
+    .map((key) => `<button data-key="${key}" aria-label="${key === '⌫' ? T('weightSheet.deleteDigitAria') : key}">${key}</button>`)
     .join('');
   sheet(
-    'Patient weight',
-    `<label>Weight (kg)<input id="weightInput" type="text" inputmode="decimal" value="${esc(st.s.weight)}" autocomplete="off"></label>` +
+    T('weightSheet.title'),
+    `<label>${T('weightSheet.weightLabel')}<input id="weightInput" type="text" inputmode="decimal" value="${esc(st.s.weight)}" autocomplete="off"></label>` +
       `<div class="number-pad">${numberKeys}</div>` +
-      `<details><summary>Estimate weight from age</summary><label>Age in years<input id="ageInput" type="number" inputmode="decimal" min="0.01" max="${R.RULES.numbers.ageEstimate.elevenToFourteenYears.maxAge}" step="any" value="${esc(st.s.age)}"></label>` +
-      `<button data-action="estimate">Use age estimate</button><p class="caption">${R.wording('weightSheetAgeEstimate', R.ageEstimateGaps())}</p></details>` +
+      `<details><summary>${T('weightSheet.estimateSummary')}</summary><label>${T('weightSheet.ageLabel')}<input id="ageInput" type="number" inputmode="decimal" min="0.01" max="${R.RULES.numbers.ageEstimate.elevenToFourteenYears.maxAge}" step="any" value="${esc(st.s.age)}"></label>` +
+      `<button data-action="estimate">${T('weightSheet.useAgeEstimateButton')}</button><p class="caption">${R.wording('weightSheetAgeEstimate', R.ageEstimateGaps())}</p></details>` +
       `<p id="weightBasis" class="caption">${esc(st.s.weightSource)}</p>` +
       `<p id="weightPadPrompt" class="pads-entry" ${R.needsPaediatricPads(st.s.weight) ? '' : 'hidden'}>▰ ▰ ${R.guideText('padsPromptWithLimit')}</p>` +
-      `<button class="primary" data-action="save-weight">Use weight</button>`,
+      `<button class="primary" data-action="save-weight">${T('weightSheet.useWeightButton')}</button>`,
     { kind: 'weight', source: st.s.weightSource, replaceWeight: !!st.s.weight },
   );
 }
@@ -97,45 +92,45 @@ export function openWeight() {
 export function openRhythmCheck() {
   if (!R.canRhythmCheck(st.s)) return;
   sheet(
-    'Rhythm check',
-    `<p class="caption">Choose the observed outcome.</p>` +
-      `<div class="rhythm-outcomes"><button class="shock" data-outcome="shock"><span aria-hidden="true">ϟ</span><b>Shock</b><small>Record delivered</small></button>` +
-      `<button data-outcome="noshock"><span aria-hidden="true">⊘</span><b>No shock</b></button>` +
-      `<button class="rosc" data-outcome="rosc"><span aria-hidden="true">♡</span><b>ROSC</b></button></div>`,
+    T('rhythmCheckSheet.title'),
+    `<p class="caption">${T('rhythmCheckSheet.prompt')}</p>` +
+      `<div class="rhythm-outcomes"><button class="shock" data-outcome="shock"><span aria-hidden="true">ϟ</span><b>${T('rhythmCheckSheet.shock')}</b><small>${T('rhythmCheckSheet.shockNote')}</small></button>` +
+      `<button data-outcome="noshock"><span aria-hidden="true">⊘</span><b>${T('rhythmCheckSheet.noShock')}</b></button>` +
+      `<button class="rosc" data-outcome="rosc"><span aria-hidden="true">♡</span><b>${T('rhythmCheckSheet.rosc')}</b></button></div>`,
   );
 }
 
 /* "When did resus start?" pop-up (the app session clock is unchanged). */
 export function openResusTime() {
-  const earlierChoices = [5, 10, 15, 20]
-    .map((minutes) => `<button data-earlier="${minutes}">${minutes} min<small>before app opened</small></button>`)
+  const earlierChoices = R.RULES.numbers.resusStart.quickChoicesMin
+    .map((minutes) => `<button data-earlier="${minutes}">${T('resusTime.choiceLabel', { minutes })}<small>${T('resusTime.choiceNote')}</small></button>`)
     .join('');
   sheet(
-    'When did resus start?',
-    `<p>The app session clock stays unchanged.</p><label>Resuscitation started<input id="resusStartInput" type="datetime-local" step="60" value="${local(st.s.resusStart)}" max="${local(st.s.appStart)}"></label>` +
+    T('resusTime.title'),
+    `<p>${T('resusTime.intro')}</p><label>${T('resusTime.startedLabel')}<input id="resusStartInput" type="datetime-local" step="60" value="${local(st.s.resusStart)}" max="${local(st.s.appStart)}"></label>` +
       `<div class="choice-grid">${earlierChoices}</div>` +
-      `<p class="caption">Resus duration is elapsed clock time from this start, including pauses. It freezes at ROSC or session end.</p>` +
-      `<button class="primary" data-action="save-resus-time">Save start time</button>`,
+      `<p class="caption">${T('resusTime.note')}</p>` +
+      `<button class="primary" data-action="save-resus-time">${T('resusTime.saveButton')}</button>`,
   );
 }
 
 /* "Session & display" pop-up: tutorial, undo, large text and other session settings. */
 export function openSettings() {
   sheet(
-    'Session & display',
-    `<div class="stack"><button data-action="explain-me">Tutorial</button>` +
-      `<button id="undo" ${st.s.undo.length ? '' : 'disabled'}>↶ Undo last action</button>` +
-      `<button data-action="large">${st.s.largeText ? '✓ Larger text on' : 'Larger text'}</button>` +
-      `<button data-action="wake">${st.wakeLock ? '✓ Screen kept awake' : 'Keep screen awake'}</button>` +
-      `<button data-action="install">Add to home screen</button>` +
-      `<button data-action="history">Earlier shocks / doses / cycles</button>` +
-      `<button data-action="resus-time">Edit resus start</button>` +
-      `<button data-action="guidance">Clinical guidance & sources</button>` +
-      `<button data-action="export">Export event log</button></div>` +
-      `<label><input id="specialInput" type="checkbox" ${st.s.special ? 'checked' : ''}>Special situation · disable routine dose prompts</label><p class="caption">Use specific guidance for trauma, hypothermia, pregnancy, toxins and other special situations.</p>` +
-      `<div class="stack"><button class="danger" data-action="end" ${finished() ? 'disabled' : ''}>End resuscitation session</button>` +
-      `<button class="danger" data-action="new">New patient / clear session</button></div>` +
-      `<p class="caption" id="offlineState">${navigator.onLine ? 'Online' : 'Offline'} · Events are saved in this browser on this device. App session time includes background time and continues after refresh. Export before clearing browser data.</p>`,
+    T('settings.title'),
+    `<div class="stack"><button data-action="explain-me">${T('settings.tutorial')}</button>` +
+      `<button id="undo" ${st.s.undo.length ? '' : 'disabled'}>${T('settings.undo')}</button>` +
+      `<button data-action="large">${T(st.s.largeText ? 'settings.largerTextOn' : 'settings.largerText')}</button>` +
+      `<button data-action="wake">${T(st.wakeLock ? 'settings.screenAwakeOn' : 'settings.screenAwake')}</button>` +
+      `<button data-action="install">${T('settings.install')}</button>` +
+      `<button data-action="history">${T('settings.history')}</button>` +
+      `<button data-action="resus-time">${T('settings.resusTime')}</button>` +
+      `<button data-action="guidance">${T('settings.guidance')}</button>` +
+      `<button data-action="export">${T('settings.export')}</button></div>` +
+      `<label><input id="specialInput" type="checkbox" ${st.s.special ? 'checked' : ''}>${T('settings.specialLabel')}</label><p class="caption">${T('settings.specialNote')}</p>` +
+      `<div class="stack"><button class="danger" data-action="end" ${finished() ? 'disabled' : ''}>${T('settings.endButton')}</button>` +
+      `<button class="danger" data-action="new">${T('settings.newButton')}</button></div>` +
+      `<p class="caption" id="offlineState">${T('settings.storageNote', { state: T(navigator.onLine ? 'settings.online' : 'settings.offline') })}</p>`,
   );
 }
 
@@ -145,13 +140,13 @@ export function openHistory() {
     .map((count) => `<option ${st.s.priorAmio === count ? 'selected' : ''}>${count}</option>`)
     .join('');
   sheet(
-    'Events before this app',
-    `<p class="caption">These counts are added to events logged here. They do not create administration timestamps.</p><label>Prior shocks<input id="priorShocks" type="number" inputmode="numeric" min="0" max="100" value="${st.s.priorShocks}"></label>` +
-      `<label>Prior no-shock cycles · total<input id="priorNoShock" type="number" inputmode="numeric" min="0" max="100" value="${st.s.priorNoShock}"></label>` +
-      `<label>Prior consecutive no-shock cycles since last shock<input id="priorStreak" type="number" inputmode="numeric" min="0" max="100" value="${st.s.priorStreak}"></label>` +
-      `<label>Prior amiodarone doses<select id="priorAmio">${priorAmiodaroneOptions}</select></label>` +
-      `<button class="primary" data-action="save-history">Save earlier counts</button>` +
-      `<button class="primary" data-custom-drug="adrenaline">Record an earlier adrenaline dose</button>`,
+    T('historySheet.title'),
+    `<p class="caption">${T('historySheet.intro')}</p><label>${T('historySheet.priorShocks')}<input id="priorShocks" type="number" inputmode="numeric" min="0" max="100" value="${st.s.priorShocks}"></label>` +
+      `<label>${T('historySheet.priorNoShock')}<input id="priorNoShock" type="number" inputmode="numeric" min="0" max="100" value="${st.s.priorNoShock}"></label>` +
+      `<label>${T('historySheet.priorStreak')}<input id="priorStreak" type="number" inputmode="numeric" min="0" max="100" value="${st.s.priorStreak}"></label>` +
+      `<label>${T('historySheet.priorAmio')}<select id="priorAmio">${priorAmiodaroneOptions}</select></label>` +
+      `<button class="primary" data-action="save-history">${T('historySheet.saveButton')}</button>` +
+      `<button class="primary" data-custom-drug="adrenaline">${T('historySheet.earlierAdrenalineButton')}</button>`,
   );
 }
 
@@ -162,7 +157,7 @@ export function administration(type) {
   const adrenaline = type === 'adrenaline';
   let doseText = R.guideText('noWeightDoseReference');
   if (d) {
-    if (adrenaline) doseText = d.adr + ' mg IV';
+    if (adrenaline) doseText = T('liveCards.doseMgIv', { dose: d.adr });
     else if (R.isPaediatric(st.s)) doseText = R.guideText('amiodaroneChildPopupDose', { first: d.amio1 });
     else doseText = R.guideText('amiodaroneAdultPopupDose', { first: d.amio1, second: d.amio2 });
     doseText = esc(doseText);
@@ -171,10 +166,10 @@ export function administration(type) {
   const source = R.RULES.sources.guidelines[adrenaline ? 'adrenaline' : 'amiodarone'];
   const guideline = source.code;
   sheet(
-    adrenaline ? 'Adrenaline · reference' : 'Amiodarone · reference',
+    T(adrenaline ? 'administration.adrenalineTitle' : 'administration.amiodaroneTitle'),
     `<p><b>${doseText}</b></p>` +
       `<p class="caption">${d ? formatGuidelineReference(d.basis) : R.guideText('referenceOnly')}</p>` +
-      `${instructions}<a href="${source.pdf}" target="_blank" rel="noopener"><em>EAS guideline ${guideline}</em> ↗</a>` +
+      `${instructions}<a href="${source.pdf}" target="_blank" rel="noopener">${T('references.guidelineLink', { code: guideline })}</a>` +
       `<p class="caption">${R.guideText('drugPopupFooter', { guideline })}</p>`,
   );
 }
@@ -183,9 +178,9 @@ export function administration(type) {
    a blank medicine field for manual entry. */
 function medicineEntryName(type) {
   switch (type) {
-    case 'adrenaline': return 'Adrenaline';
-    case 'amiodarone': return 'Amiodarone';
-    case 'magnesium': return 'Magnesium';
+    case 'adrenaline': return T('drugNames.adrenaline');
+    case 'amiodarone': return T('drugNames.amiodarone');
+    case 'magnesium': return T('drugNames.magnesium');
     case 'fluids': return R.RULES.numbers.products.fluid;
     default: return '';
   }
@@ -196,21 +191,21 @@ export function openDrug(type) {
   const name = medicineEntryName(type);
   const now = Date.now();
   const defaultUnit = type === 'magnesium' ? 'mmol' : type === 'fluids' ? 'mL' : 'mg';
-  const units = ['mg', 'mcg', 'mmol', 'mL', 'g']
+  const units = R.RULES.numbers.medicineForm.units
     .map((unit) => `<option ${unit === defaultUnit ? 'selected' : ''}>${unit}</option>`).join('');
   const route = ['magnesium', 'fluids'].includes(type) ? 'IV' : '';
   const torsadesWarning = type === 'amiodarone' && torsades()
     ? `<p class="error">${R.guideText('amiodaroneAfterTorsadesWarning')}</p>`
     : '';
   sheet(
-    'Record ' + (name || 'medicine'),
-    `<form id="drugForm"><label>Medicine<input name="name" value="${name}" required></label>` +
-      `<div class="inline-two"><label>Actual dose<input name="dose" type="number" inputmode="decimal" min="0.001" step="any" required placeholder="Dose given"></label>` +
-      `<label>Unit<select name="unit">${units}</select></label></div>` +
-      toggleField('route', 'Route', ['IV', 'IO', 'IM', 'Other'], route) +
-      `<label>Given at<input name="at" type="time" step="60" value="${local(now).slice(11)}" required></label>` +
-      `<label>Notes<input name="notes" placeholder="Optional"></label>` +
-      `<button class="primary" type="submit">Record actual administration</button></form>${torsadesWarning}`,
+    T('medicineForm.title', { name: name || T('medicineForm.fallbackName') }),
+    `<form id="drugForm"><label>${T('medicineForm.medicineLabel')}<input name="name" value="${name}" required></label>` +
+      `<div class="inline-two"><label>${T('forms.doseLabel')}<input name="dose" type="number" inputmode="decimal" min="0.001" step="any" required placeholder="${T('medicineForm.dosePlaceholder')}"></label>` +
+      `<label>${T('forms.unitLabel')}<select name="unit">${units}</select></label></div>` +
+      toggleField('route', T('forms.routeLabel'), R.RULES.numbers.medicineForm.routes, route) +
+      `<label>${T('forms.givenAtLabel')}<input name="at" type="time" step="60" value="${local(now).slice(11)}" required></label>` +
+      `<label>${T('forms.notesLabel')}<input name="notes" placeholder="${T('forms.optional')}"></label>` +
+      `<button class="primary" type="submit">${T('medicineForm.submit')}</button></form>${torsadesWarning}`,
     { kind: 'drug', type, at: now },
   );
 }
@@ -220,13 +215,13 @@ export function openDrug(type) {
 export function openSelectDose() {
   const now = Date.now();
   sheet(
-    'Select amiodarone dose',
+    T('selectDoseSheet.title'),
     `<p>${R.guideText('selectDoseAdvice')}</p>` +
-      `<form id="drugForm"><input type="hidden" name="name" value="Amiodarone">` +
+      `<form id="drugForm"><input type="hidden" name="name" value="${T('drugNames.amiodarone')}">` +
       `<input type="hidden" name="unit" value="mg"><input type="hidden" name="route" value="IV">` +
-      `<label>Dose given (mg IV)<input name="dose" type="number" inputmode="decimal" min="0.001" step="any" required placeholder="mg"></label>` +
-      `<label>Given at<input name="at" type="time" step="60" value="${local(now).slice(11)}" required></label>` +
-      `<button class="primary" type="submit">Record dose</button></form>`,
+      `<label>${T('selectDoseSheet.doseLabel')}<input name="dose" type="number" inputmode="decimal" min="0.001" step="any" required placeholder="${T('selectDoseSheet.dosePlaceholder')}"></label>` +
+      `<label>${T('forms.givenAtLabel')}<input name="at" type="time" step="60" value="${local(now).slice(11)}" required></label>` +
+      `<button class="primary" type="submit">${T('selectDoseSheet.submit')}</button></form>`,
     { kind: 'drug', type: 'amiodarone', at: now },
   );
 }
@@ -234,11 +229,11 @@ export function openSelectDose() {
 /* Pop-up listing the airway and/or access options to choose from. */
 export function openInterventions(group) {
   sheet(
-    group === 'airway' ? 'Airway' : group === 'access' ? 'Access' : 'Airway / access',
+    T(group === 'airway' ? 'interventions.airway' : group === 'access' ? 'interventions.access' : 'interventions.both'),
     `<div class="choice-grid">${Object.entries(R.RULES.equipment.devices)
       .filter(
         ([k]) =>
-          !group || (group === 'access' ? ['iv', 'io'].includes(k) : !['iv', 'io'].includes(k)),
+          !group || (group === 'access' ? R.RULES.equipment.accessDevices.includes(k) : !R.RULES.equipment.accessDevices.includes(k)),
       )
       .map(([k, e]) => `<button data-equipment="${k}">${e.name}</button>`)
       .join('')}</div>`,
@@ -248,8 +243,9 @@ export function openInterventions(group) {
 
 /* Size choice buttons for a device type. */
 export function colourSizes(type, values) {
-  const legend = type === 'iv' ? 'Cannula size' : 'Size';
-  const suffix = type === 'iv' ? 'G' : '';
+  const sizes = R.RULES.equipment.forms.sizes;
+  const legend = type === 'iv' ? sizes.cannulaLegend : sizes.otherLegend;
+  const suffix = type === 'iv' ? sizes.cannulaSuffix : '';
   const options = values.map((v) => {
     const colour = R.RULES.equipment.colours[type]?.[v] || '#ccd9d3';
     return `<label class="toggle"><input type="radio" name="size" aria-label="${v}${suffix}" value="${v}">` +
@@ -264,10 +260,10 @@ export function sizeFields(type) {
   if (type === 'iv') return colourSizes(type, sizes);
   if (type === 'intubation') {
     const options = sizes.map((v) =>
-      `<label class="toggle"><input type="radio" name="size" value="${v}" aria-label="${v} mm">` +
-      `<span>${v}<small>mm</small></span></label>`,
+      `<label class="toggle"><input type="radio" name="size" value="${v}" aria-label="${v} ${R.RULES.equipment.forms.intubation.sizeUnit}">` +
+      `<span>${v}<small>${R.RULES.equipment.forms.intubation.sizeUnit}</small></span></label>`,
     ).join('');
-    return `<fieldset class="toggles tube-options"><legend>Tube size (mm)</legend>` +
+    return `<fieldset class="toggles tube-options"><legend>${R.RULES.equipment.forms.intubation.sizeLegend}</legend>` +
       `<div class="tube-grid">${options}</div></fieldset>`;
   }
   return colourSizes(type, sizes);
@@ -276,8 +272,8 @@ export function sizeFields(type) {
 /* Side (left / right) and location choices for IV or IO access. */
 export function sitePicker(type) {
   return (
-    toggleField('side', 'Side', ['Left', 'Right']) +
-    toggleField('site', 'Location', R.RULES.equipment.sites[type]).replace(
+    toggleField('side', R.RULES.equipment.forms.access.sideQuestion, R.RULES.equipment.forms.access.sides) +
+    toggleField('site', R.RULES.equipment.forms.access.locationQuestion, R.RULES.equipment.sites[type]).replace(
       'class="toggles"',
       'class="toggles ' + (type === 'iv' ? 'iv-sites' : 'io-sites') + '"',
     )
@@ -330,29 +326,30 @@ export function equipmentFeedback(e) {
 export function openEquipment(type) {
   const now = Date.now();
   const isLaryngoscopy = type === 'laryngoscopy';
+  const forms = R.RULES.equipment.forms;
   const deviceFields = isLaryngoscopy
-    ? toggleField('method', 'Laryngoscopy', ['Video', 'Direct']) +
-      '<div id="bladeChoices"><p class="caption">Choose video or direct to show blade sizes.</p></div>' +
-      toggleField('forceps', 'Magill forceps', ['Used', 'Not used']) +
-      toggleField('view', 'View', ['Grade I', 'Grade IIa', 'Grade IIb', 'Grade III', 'Grade IV', 'No view'])
+    ? toggleField('method', forms.laryngoscopy.methodQuestion, forms.laryngoscopy.methods) +
+      '<div id="bladeChoices"><p class="caption">' + forms.laryngoscopy.bladeHint + '</p></div>' +
+      toggleField('forceps', forms.laryngoscopy.forcepsQuestion, forms.laryngoscopy.forcepsChoices) +
+      toggleField('view', forms.laryngoscopy.viewQuestion, forms.laryngoscopy.views)
     : sizeFields(type);
-  const accessFields = ['iv', 'io'].includes(type) ? sitePicker(type) : '';
+  const accessFields = R.RULES.equipment.accessDevices.includes(type) ? sitePicker(type) : '';
   const intubationFields = type === 'intubation'
-    ? toggleField('adjunct', 'Introducer', ['Bougie', 'Stylet']) +
-      '<label>Length at lips (cm)<input name="lips" type="number" min="1" max="50" inputmode="decimal" step="any"></label><fieldset class="toggles"><legend>Confirmed with</legend>' +
-      ['Waveform capnography', 'Visualised through cords', 'Chest rise', 'Auscultation']
+    ? toggleField('adjunct', forms.intubation.introducerQuestion, forms.intubation.introducers) +
+      '<label>' + forms.intubation.lipsQuestion + '<input name="lips" type="number" min="' + forms.intubation.lipsMinCm + '" max="' + forms.intubation.lipsMaxCm + '" inputmode="decimal" step="any"></label><fieldset class="toggles"><legend>' + forms.intubation.confirmQuestion + '</legend>' +
+      forms.intubation.confirmMethods
         .map((x) => `<label><input name="confirmation" type="checkbox" value="${x}">${x}</label>`).join('') +
       '</fieldset>'
     : '';
-  const outcomeFields = isLaryngoscopy ? '' : toggleField('outcome', 'Outcome', ['Successful', 'Unsuccessful']);
+  const outcomeFields = isLaryngoscopy ? '' : toggleField('outcome', forms.outcome.question, forms.outcome.choices);
   const followUp = isLaryngoscopy
-    ? '<button class="primary" type="submit" name="followUp" value="intubation">Record Laryngoscopy and add Intubation</button>'
+    ? '<button class="primary" type="submit" name="followUp" value="intubation">' + T('equipmentSheet.recordAndAddIntubation') + '</button>'
     : '';
   sheet(
     R.RULES.equipment.devices[type].name,
-    `<form id="equipmentForm">${deviceFields}${accessFields}${intubationFields}${outcomeFields}<label>Time<input name="at" type="time" step="60" required value="${local(now).slice(11)}"></label>` +
-      `<label>Notes<textarea rows="1" name="notes" placeholder="Optional"></textarea></label>` +
-      `<div class="equipment-record-actions"><button class="primary" type="submit">Record ${R.RULES.equipment.devices[type].name}</button>${followUp}</div></form>`,
+    `<form id="equipmentForm">${deviceFields}${accessFields}${intubationFields}${outcomeFields}<label>${T('forms.timeLabel')}<input name="at" type="time" step="60" required value="${local(now).slice(11)}"></label>` +
+      `<label>${T('forms.notesLabel')}<textarea rows="1" name="notes" placeholder="${T('forms.optional')}"></textarea></label>` +
+      `<div class="equipment-record-actions"><button class="primary" type="submit">${T('equipmentSheet.recordButton', { name: R.RULES.equipment.devices[type].name })}</button>${followUp}</div></form>`,
     { kind: 'equipment', type, at: now },
   );
   enhanceEquipment();
@@ -362,11 +359,11 @@ export function openEquipment(type) {
 export function openNote() {
   const now = Date.now();
   sheet(
-    'Record another event',
-    `<form id="noteForm"><label>Event<textarea rows="1" name="text" required placeholder="What happened?"></textarea></label>` +
-      `<label>Event time<input name="at" type="time" step="60" required value="${local(now).slice(11)}"></label>` +
-      `<button class="primary" type="submit">Record event</button></form>` +
-      `<button class="primary" data-custom-drug="other">Record another medicine</button>`,
+    T('noteSheet.title'),
+    `<form id="noteForm"><label>${T('noteSheet.eventLabel')}<textarea rows="1" name="text" required placeholder="${T('noteSheet.eventPlaceholder')}"></textarea></label>` +
+      `<label>${T('forms.eventTimeLabel')}<input name="at" type="time" step="60" required value="${local(now).slice(11)}"></label>` +
+      `<button class="primary" type="submit">${T('noteSheet.submit')}</button></form>` +
+      `<button class="primary" data-custom-drug="other">${T('noteSheet.anotherMedicineButton')}</button>`,
     { kind: 'note', at: now },
   );
 }
@@ -377,38 +374,35 @@ export function editEvent(id) {
   if (!event) return;
 
   // A correction can change only the rhythms appropriate to that event type.
-  let rhythms = [];
-  if (event.type === 'shock') rhythms = ['Unknown', 'VF', 'VT', 'Torsades'];
-  else if (event.type === 'noshock') rhythms = ['PEA', 'Asystole', 'Other', 'Unknown'];
-  else if (event.type === 'rosc') rhythms = ['Sinus rhythm', 'Organised rhythm', 'AF', 'Other', 'Unknown'];
-  else if (event.type === 'rhythm') rhythms = ['VF', 'VT', 'Torsades', 'PEA', 'Asystole', 'Sinus rhythm', 'Organised rhythm', 'AF', 'Other', 'Unknown'];
+  const correctionRhythms = R.RULES.numbers.correctionRhythms;
+  const rhythms = Object.hasOwn(correctionRhythms, event.type) ? correctionRhythms[event.type] : [];
   const rhythmOptions = rhythms.map((rhythm) =>
     '<option ' + (event.rhythm === rhythm ? 'selected' : '') + '>' + rhythm + '</option>',
   ).join('');
   const rhythmFields = rhythms.length
-    ? '<label>Rhythm<select name="rhythm">' + rhythmOptions + '</select></label>'
+    ? '<label>' + T('correctionSheet.rhythmLabel') + '<select name="rhythm">' + rhythmOptions + '</select></label>'
     : '';
   const medicineFields = ['adrenaline', 'amiodarone', 'magnesium', 'fluids', 'medicine'].includes(event.type)
-    ? '<div class="inline-two"><label>Actual dose<input name="dose" type="number" step="any" min="0.001" value="' + esc(event.dose || '') + '" required></label>' +
-      '<label>Unit<input name="unit" value="' + esc(event.unit || 'mg') + '" required></label></div>' +
-      '<label>Route<input name="route" value="' + esc(event.route || 'IV') + '" required></label>'
+    ? '<div class="inline-two"><label>' + T('forms.doseLabel') + '<input name="dose" type="number" step="any" min="0.001" value="' + esc(event.dose || '') + '" required></label>' +
+      '<label>' + T('forms.unitLabel') + '<input name="unit" value="' + esc(event.unit || 'mg') + '" required></label></div>' +
+      '<label>' + T('forms.routeLabel') + '<input name="route" value="' + esc(event.route || 'IV') + '" required></label>'
     : '';
   const energyField = event.type === 'shock'
-    ? '<label>Energy (J)<input name="energy" type="number" min="1" max="' + R.RULES.numbers.shock.maxRecordableJ + '" inputmode="numeric" value="' + esc(event.energy || '') + '"></label>'
+    ? '<label>' + T('correctionSheet.energyLabel') + '<input name="energy" type="number" min="1" max="' + R.RULES.numbers.shock.maxRecordableJ + '" inputmode="numeric" value="' + esc(event.energy || '') + '"></label>'
     : '';
   const stateChange = ['start', 'pause', 'resume', 'rearrest', 'end', 'rosc'].includes(event.type);
   const voidControl = stateChange
-    ? '<p class="caption">To reverse a session state change, use Undo. State events cannot be voided here.</p>'
-    : '<button class="danger primary" data-void="' + esc(id) + '">' + (event.voided ? 'Restore event' : 'Void event · keep audit record') + '</button>';
+    ? '<p class="caption">' + T('correctionSheet.stateChangeNote') + '</p>'
+    : '<button class="danger primary" data-void="' + esc(id) + '">' + T(event.voided ? 'correctionSheet.restoreButton' : 'correctionSheet.voidButton') + '</button>';
   const eventTime = event.timeUnknown ? '' : local(event.at).slice(11);
   sheet(
-    'Correct event',
+    T('correctionSheet.title'),
     '<form id="editForm"><p><b>' + esc(event.title) + '</b></p>' +
-      '<label>Event time<input name="at" type="time" step="60" required value="' + eventTime + '"></label>' +
-      '<label>Recorded details<textarea rows="1" name="details">' + esc(event.details) + '</textarea></label>' +
+      '<label>' + T('forms.eventTimeLabel') + '<input name="at" type="time" step="60" required value="' + eventTime + '"></label>' +
+      '<label>' + T('correctionSheet.detailsLabel') + '<textarea rows="1" name="details">' + esc(event.details) + '</textarea></label>' +
       rhythmFields + medicineFields + energyField +
-      '<button class="primary" type="submit">Save correction</button></form>' +
-      '<p class="caption">Corrections update counters and medicine review clocks. They do not restart a CPR cycle. Original values are retained in JSON export.</p>' + voidControl,
+      '<button class="primary" type="submit">' + T('correctionSheet.saveButton') + '</button></form>' +
+      '<p class="caption">' + T('correctionSheet.note') + '</p>' + voidControl,
     { kind: 'edit', id },
   );
 }
@@ -416,7 +410,7 @@ export function editEvent(id) {
 /* Source line linking the current EAS cardiac arrest guideline. */
 export function cpgSource() {
   const g = R.RULES.sources.guidelines.cardiacArrest;
-  return `<p class="caption">NZCPG <em>EAS guideline ${g.code}</em><br><a href="${g.web}" target="_blank" rel="noopener">Current <em>EAS guideline ${g.code}</em> ↗</a> · <a href="${g.pdf}#page=${g.offlinePage}" target="_blank">Offline <em>EAS guideline ${g.code}</em> ↗</a></p>`;
+  return `<p class="caption">${T('references.cpgSourceLabel', { code: g.code })}<br><a href="${g.web}" target="_blank" rel="noopener">${T('references.currentGuideline', { code: g.code })}</a> · <a href="${g.pdf}#page=${g.offlinePage}" target="_blank">${T('references.offlineGuideline', { code: g.code })}</a></p>`;
 }
 
 /* Torsades guideline extract (withhold amiodarone; magnesium IV), reused in several pop-ups. */
@@ -435,9 +429,9 @@ export function peaSnippet() {
 export function supportAdministration(type) {
   if (type === 'fluids') {
     const ref = R.fluidReference(st.s);
-    const volume = ref.min === null ? 'Enter weight' : ref.min + '–' + ref.max + ' mL IV';
+    const volume = ref.min === null ? T('liveCards.enterWeight') : T('liveCards.volumeMlIv', { min: ref.min, max: ref.max });
     sheet(
-      'Fluids · administration',
+      T('administration.fluidsTitle'),
       `${peaSnippet()}<p><b>${volume}</b> · ${formatGuidelineReference(ref.basis)}</p>` +
       paras('fluidsRecordNote'),
     );
@@ -445,23 +439,19 @@ export function supportAdministration(type) {
   }
   const ref = R.magnesiumReference(st.s);
   const G = R.RULES.sources.guidelines;
-  const dose = ref.dose === null ? R.guideText('magnesiumNoDose') : ref.dose + ' mmol IV';
+  const dose = ref.dose === null ? R.guideText('magnesiumNoDose') : T('liveCards.doseMmolIv', { dose: ref.dose });
   sheet(
-    'Magnesium · administration',
+    T('administration.magnesiumTitle'),
     `${torsadesSnippet()}<p><b>${dose}</b> · ${formatGuidelineReference(ref.basis)}</p>` +
     paras('magnesiumHow') +
-    `<a href="${G.magnesium.web}" target="_blank" rel="noopener"><em>EAS guideline ${G.magnesium.code}</em> ↗</a>` +
-    `<p><a href="${G.paediatric.pdf}" target="_blank"><em>EAS guideline ${G.paediatric.code}</em> ↗</a></p>`,
+    `<a href="${G.magnesium.web}" target="_blank" rel="noopener">${T('references.guidelineLink', { code: G.magnesium.code })}</a>` +
+    `<p><a href="${G.paediatric.pdf}" target="_blank">${T('references.guidelineLink', { code: G.paediatric.code })}</a></p>`,
   );
 }
 
 /* Rhythm choice buttons (VF, pulseless VT, torsades). Despite the name there are no pictures. */
 export function rhythmImages() {
-  return `<div class="rhythm-image-choices">${[
-    ['VF', 'Ventricular fibrillation'],
-    ['VT', 'Pulseless VT'],
-    ['Torsades', 'Torsades de pointes'],
-  ]
+  return `<div class="rhythm-image-choices">${Object.entries(R.RULES.wording.shockRhythmButtons)
     .map(([id, title]) => `<button data-record-rhythm="${id}">${title}</button>`)
     .join('')}</div>`;
 }
@@ -471,10 +461,11 @@ export function exportText() {
   return logRows(false)
     .map(
       (e) =>
-        (e.timeUnknown ? 'Before app · time not set' : time(e.at)) +
-        ' ' +
-        e.title +
-        (e.details ? ' — ' + e.details : ''),
+        T(e.details ? 'exportRecord.lineWithDetails' : 'exportRecord.line', {
+          time: e.timeUnknown ? T('exportRecord.timeUnknown') : time(e.at),
+          title: e.title,
+          details: e.details,
+        }),
     )
     .join('\n');
 }
@@ -484,7 +475,7 @@ export function download(content, type, ext) {
   const a = document.createElement('a'),
     url = URL.createObjectURL(new Blob([content], { type }));
   a.href = url;
-  a.download = 'resus-' + new Date(st.s.appStart).toISOString().replace(/[:.]/g, '-') + '.' + ext;
+  a.download = T('exportRecord.fileName', { start: new Date(st.s.appStart).toISOString().replace(/[:.]/g, '-'), extension: ext });
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -517,18 +508,18 @@ export async function copyLog() {
       focus?.focus();
     }
   }
-  toast(copied ? 'Record copied' : 'Could not copy. Try again in your phone browser.');
+  toast(T(copied ? 'toasts.recordCopied' : 'toasts.couldNotCopy'));
 }
 
 /* "Export event log" pop-up: download or copy the record. */
 export function exportSheet() {
   sheet(
-    'Export event log',
-    `<p>Save the record before starting a new patient or clearing browser data.</p>` +
-      `<div class="stack"><button data-action="download-text">Download text record</button>` +
-      `<button data-action="download-json">Download complete JSON + audit</button>` +
-      `<button data-action="copy">Copy text record</button></div>` +
-      `<p class="caption">Text export follows the current log filters, with hh:mm:ss and key details. Complete JSON retains all events, dates, timezone and audit history. Records stay on this device unless you export or share them.</p>`,
+    T('exportSheet.title'),
+    `<p>${T('exportSheet.intro')}</p>` +
+      `<div class="stack"><button data-action="download-text">${T('exportSheet.downloadText')}</button>` +
+      `<button data-action="download-json">${T('exportSheet.downloadJson')}</button>` +
+      `<button data-action="copy">${T('exportSheet.copyText')}</button></div>` +
+      `<p class="caption">${T('exportSheet.note')}</p>`,
   );
 }
 
@@ -556,7 +547,7 @@ export function dateValue(form, now = Date.now()) {
     at = d.getTime();
   }
   if (!Number.isFinite(at) || at > now + 1000) {
-    error('Enter a valid time that is not in the future.');
+    error(T('errors.timeInFuture'));
     return null;
   }
   return at;
@@ -566,8 +557,8 @@ export function dateValue(form, now = Date.now()) {
 export function weightChanged() {
   const w = $('weightInput').value.replace(',', '.');
   $('weightPadPrompt').hidden = !R.needsPaediatricPads(w);
-  st.sheetContext.source = 'Entered';
-  $('weightBasis').textContent = 'Entered';
+  st.sheetContext.source = T('weightSources.entered');
+  $('weightBasis').textContent = T('weightSources.entered');
 }
 
 /* Explain-me tutorial: remembers how to stop it. */
@@ -585,18 +576,18 @@ export function stopExplainMe() {
 export function openExplainMe() {
   const slideMarkup = EXPLAIN_ME_SLIDES.map((item, i) => {
     const instruction = i === EXPLAIN_ME_SLIDES.length - 1
-      ? 'End of tutorial · scroll up to revisit a step'
-      : 'Scroll down for the next step ↓';
+      ? T('tutorial.endNote')
+      : T('tutorial.nextNote');
     return `<section class="explain-slide" aria-label="${esc(item.title)}"><h3>${esc(item.title)}</h3>` +
       `<div class="explain-shot"><img src="${item.image}" alt="${esc(item.alt)}"></div>` +
       `<p class="explain-action">${item.action}</p><p class="explain-note">${item.note}</p>` +
       `<small>${instruction}</small></section>`;
   }).join('');
   sheet(
-    'Tutorial',
-    `<div class="explain-progress" role="progressbar" aria-label="Tutorial progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="10"><span style="width:10%"></span></div>
- <div class="explain-pages" aria-label="Scrollable tutorial slides">${slideMarkup}</div>
- <div class="explain-controls"><button type="button" data-explain-prev disabled>← Back</button><button type="button" data-explain-next>Next ↓</button></div>`,
+    T('tutorial.title'),
+    `<div class="explain-progress" role="progressbar" aria-label="${T('tutorial.progressAria')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="10"><span style="width:10%"></span></div>
+ <div class="explain-pages" aria-label="${T('tutorial.slidesAria')}">${slideMarkup}</div>
+ <div class="explain-controls"><button type="button" data-explain-prev disabled>${T('tutorial.back')}</button><button type="button" data-explain-next>${T('tutorial.next')}</button></div>`,
     { kind: 'explain-me' },
   );
   const dialog = $('sheet');
@@ -614,7 +605,7 @@ export function openExplainMe() {
     bar.style.width = amount + '%';
     progress.setAttribute('aria-valuenow', amount);
     prev.disabled = i === 0;
-    next.textContent = i === slides.length - 1 ? 'Done' : 'Next ↓';
+    next.textContent = i === slides.length - 1 ? T('tutorial.done') : T('tutorial.next');
   }
   function scrollToSlide(i) {
     i = Math.max(0, Math.min(slides.length - 1, i));

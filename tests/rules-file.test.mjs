@@ -81,7 +81,18 @@ test('reference wording is plain text, and every {gap} is one the app fills', ()
     guidanceIntro: ['cprCycleMinWord', 'adrenalineEveryMin', 'amiodaroneFirstShocks', 'amiodaroneSecondShocks', 'bandList', 'joulesPerKg', 'adultShockJ'],
     guidanceCaption: ['exportDate', 'reversibleCauses'], igelSourceCaption: ['igel'],
     guidanceRsi: ['fentanylMcgPerKg', 'fentanylMaxMcg', 'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg'] };
-  for (const [key, entry] of Object.entries(RULES.wording)) {
+  // Stage 2: screen text, labels and messages are in groups (one level, or two). Their gaps are filled by the app
+  // (listed here) or by the engine from part 1 / part 5; the checker (src/rules/check.js) lists each entry's own gaps.
+  const GROUP_GAPS_THE_APP_FILLS = ['dose', 'name', 'weight', 'source', 'energy', 'rhythm', 'minutes', 'count', 'number', 'late', 'time', 'sign', 'clock', 'note',
+    'phase', 'before', 'after', 'shocks', 'noShock', 'amiodarone', 'item', 'key', 'value', 'methods', 'unit', 'route', 'notes', 'code', 'issuer', 'label', 'kind',
+    'title', 'details', 'start', 'extension', 'state', 'min', 'max', 'size', 'total', 'ranges', 'age', 'warningSeconds'];
+  const entries = [];
+  (function walk(node, path, top) {
+    if (typeof node === 'string' || Array.isArray(node)) entries.push([path, node, top]);
+    else for (const [key, value] of Object.entries(node)) walk(value, path ? path + '.' + key : key, top ?? key);
+  })(RULES.wording, '', null);
+  assert.ok(entries.length > 400, 'the wording holds the stage 2 groups too');
+  for (const [key, entry, top] of entries) {
     const texts = [].concat(entry); // a list = one paragraph per item
     assert.ok(texts.length > 0, key);
     for (const text of texts) {
@@ -89,7 +100,9 @@ test('reference wording is plain text, and every {gap} is one the app fills', ()
       assert.ok(text.trim().length > 0, key + ' is empty');
       assert.deepEqual([...text.matchAll(/<\/?(\w+)/g)].map((m) => m[1]).filter((tag) => !['b', 'em', 'br'].includes(tag)), [], key + ': only <b>, <em>, <br>');
     }
-    assert.deepEqual([...texts.join(' ').matchAll(/\{(\w+)\}/g)].map((m) => m[1]), gaps[key] || [], key);
+    const used = [...texts.join(' ').matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+    if (key === top) assert.deepEqual(used, gaps[key] || [], key);
+    else for (const gap of used) assert.ok(GROUP_GAPS_THE_APP_FILLS.includes(gap), key + ': {' + gap + '} is not one the app fills');
   }
 });
 

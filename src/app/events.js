@@ -39,7 +39,7 @@ import {
   syncRhythm,
 } from './session.js';
 import { checkStatus, openCycleLog, referenceSheet, render, tick } from './views.js';
-import { $, KEY, R } from './base.js';
+import { $, KEY, R, T } from './base.js';
 import { fitNote, fitNotes, formatGuidelineReference, local, toast } from './format.js';
 import { st, torsades } from './state.js';
 
@@ -68,25 +68,25 @@ function saveWeight() {
       age,
     });
     delete st.s.adultConfirmed;
-    R.add(st.s, 'weight', 'Patient weight updated', w + ' kg · ' + source);
-  }, 'Weight reference updated');
+    R.add(st.s, 'weight', T('eventTitles.weightUpdated'), T('eventDetails.weightUpdated', { weight: w, source }));
+  }, T('toasts.weightUpdated'));
   closeSheet();
 }
 
 function saveResusTime() {
   const at = new Date($('resusStartInput').value).getTime();
   if (!Number.isFinite(at) || at > st.s.appStart)
-    return error('Resus start must be at or before the app session start.');
+    return error(T('errors.resusStartAfterApp'));
   commit(() => {
     const prev = st.s.resusStart;
     st.s.resusStart = at;
     R.add(
       st.s,
       'resus-time',
-      'Resus start corrected',
-      new Date(prev).toISOString() + ' → ' + new Date(at).toISOString(),
+      T('eventTitles.resusStartCorrected'),
+      T('eventDetails.resusStartCorrected', { before: new Date(prev).toISOString(), after: new Date(at).toISOString() }),
     );
-  }, 'Resus duration updated');
+  }, T('toasts.resusDurationUpdated'));
   closeSheet();
 }
 
@@ -101,21 +101,16 @@ function saveHistory() {
     Object.values(vals).some((v) => !Number.isInteger(v) || v < 0 || v > 100) ||
     vals.priorStreak > vals.priorNoShock
   )
-    return error('Use whole numbers 0–100. Consecutive cycles cannot exceed the prior total.');
+    return error(T('errors.earlierCounts'));
   commit(() => {
     Object.assign(st.s, vals);
     R.add(
       st.s,
       'history',
-      'Earlier counts updated',
-      vals.priorShocks +
-        ' shocks · ' +
-        vals.priorNoShock +
-        ' no-shock cycles · ' +
-        vals.priorAmio +
-        ' amiodarone doses',
+      T('eventTitles.earlierCountsUpdated'),
+      T('eventDetails.earlierCounts', { shocks: vals.priorShocks, noShock: vals.priorNoShock, amiodarone: vals.priorAmio }),
     );
-  }, 'Earlier counts saved');
+  }, T('toasts.earlierCountsSaved'));
   closeSheet();
 }
 
@@ -125,8 +120,8 @@ function startCycle() {
   commit(() => {
     const now = Date.now();
     R.begin(st.s, now);
-    R.add(st.s, 'start', 'CPR cycle started', 'Cycle ' + st.s.cycle, now);
-  }, 'CPR cycle started');
+    R.add(st.s, 'start', T('eventTitles.cycleStarted'), T('eventDetails.cycleNumber', { number: st.s.cycle }), now);
+  }, T('toasts.cycleStarted'));
   requestWakeSilently();
 }
 
@@ -134,8 +129,8 @@ function recordRearrest() {
   if (st.s.phase !== 'ROSC') return;
   commit(() => {
     R.begin(st.s, Date.now());
-    R.add(st.s, 'rearrest', 'Re-arrest · CPR restarted');
-  }, 'Re-arrest recorded');
+    R.add(st.s, 'rearrest', T('eventTitles.rearrest'));
+  }, T('toasts.rearrestRecorded'));
 }
 
 function endSession() {
@@ -145,8 +140,8 @@ function endSession() {
     st.s.phase = 'Ended';
     st.s.deadline = null;
     st.s.end = now;
-    R.add(st.s, 'end', 'Session ended', '', now);
-  }, 'Session ended · log kept');
+    R.add(st.s, 'end', T('eventTitles.sessionEnded'), '', now);
+  }, T('toasts.sessionEnded'));
   closeSheet();
 }
 
@@ -160,7 +155,7 @@ function startNewPatient() {
   save();
   closeSheet();
   render();
-  toast('New patient · clocks started');
+  toast(T('toasts.newPatient'));
 }
 
 /* The complete export retains events and audit history, but omits the undo
@@ -182,10 +177,10 @@ async function offerInstallation() {
     st.installPrompt = null;
   } else
     sheet(
-      'Add to home screen',
-      `<p><b>Android / Chrome:</b> open the browser menu, then choose “Add to Home screen” or “Install app”.</p>` +
-      `<p><b>iPhone / Safari:</b> tap Share, then “Add to Home Screen”.</p>` +
-      `<p class="caption">Open this site in your phone browser first. Offline files are prepared after the first successful load. Browser or device suspension can delay screen updates; clocks catch up on return. No background alarm is guaranteed.</p>`,
+      T('installSheet.title'),
+      `<p>${T('installSheet.android')}</p>` +
+      `<p>${T('installSheet.iphone')}</p>` +
+      `<p class="caption">${T('installSheet.note')}</p>`,
     );
 }
 
@@ -207,7 +202,7 @@ async function handleAction(action) {
     render();
   }
   if (action === 'previous-shock' && canRecord())
-    commit(() => R.addPreAppShock(st.s), 'Previous shock added');
+    commit(() => R.addPreAppShock(st.s), T('toasts.previousShockAdded'));
   if (action === 'explain-me') openExplainMe();
   if (action === 'weight') openWeight();
   if (action === 'cycle-log') openCycleLog();
@@ -241,16 +236,16 @@ async function handleAction(action) {
   if (action === 'copy') await copyLog();
   if (action === 'end')
     sheet(
-      'End resuscitation session?',
-      `<p>This stops the cycle and resus clocks. Your event log is kept.</p><button class="primary danger" data-action="confirm-end">End session now</button><button class="primary" data-close>Keep recording</button>`,
+      T('endSheet.title'),
+      `<p>${T('endSheet.text')}</p><button class="primary danger" data-action="confirm-end">${T('endSheet.confirmButton')}</button><button class="primary" data-close>${T('endSheet.keepButton')}</button>`,
     );
   if (action === 'confirm-end') return endSession();
   if (action === 'new')
     sheet(
-      'Start a new patient?',
-      `<p>The current record will be cleared from this browser. Export it first if you need to keep it.</p>` +
-      `<button class="primary" data-action="export">Export current record</button>` +
-      `<button class="primary danger" data-action="confirm-new">Clear record & start new patient</button>`,
+      T('newPatientSheet.title'),
+      `<p>${T('newPatientSheet.text')}</p>` +
+      `<button class="primary" data-action="export">${T('newPatientSheet.exportButton')}</button>` +
+      `<button class="primary danger" data-action="confirm-new">${T('newPatientSheet.clearButton')}</button>`,
     );
   if (action === 'confirm-new') return startNewPatient();
   if (action === 'install') await offerInstallation();
@@ -262,7 +257,7 @@ function undoLastAction() {
   save();
   closeSheet();
   render();
-  toast('Last action undone');
+  toast(T('toasts.undone'));
 }
 
 function selectTab(tab) {
@@ -304,8 +299,8 @@ function recordQuickDrug(b) {
       R.add(
         st.s,
         type,
-        type === 'adrenaline' ? 'Adrenaline' : 'Amiodarone',
-        value + ' mg IV',
+        T(type === 'adrenaline' ? 'drugNames.adrenaline' : 'drugNames.amiodarone'),
+        T('liveCards.doseMgIv', { dose: value }),
         Date.now(),
         {
           dose: value,
@@ -316,7 +311,7 @@ function recordQuickDrug(b) {
           group: st.s.group,
         },
       ),
-    'Recorded ' + value + ' mg IV · Undo available',
+    T('toasts.recordedDose', { dose: value }),
   );
   return;
 }
@@ -337,7 +332,7 @@ function toggleEventVoid(b) {
     ev.voided = !ev.voided;
     ev.correctedAt = Date.now();
     syncRhythm();
-  }, 'Event updated');
+  }, T('toasts.eventUpdated'));
   closeSheet();
   return;
 }
@@ -494,7 +489,7 @@ document.addEventListener('change', (e) => {
         st.s,
         'checklist',
         list.label,
-        (checked ? 'Checked: ' : 'Unmarked: ') + list.items[+i],
+        T(checked ? 'eventDetails.checklistChecked' : 'eventDetails.checklistUnmarked', { item: list.items[+i] }),
         Date.now(),
         { key, checked },
       );
@@ -506,8 +501,8 @@ document.addEventListener('change', (e) => {
       R.add(
         st.s,
         'context',
-        'Special situation mode',
-        st.s.special ? 'Routine prompts disabled' : 'Routine prompts enabled',
+        T('eventTitles.specialSituation'),
+        T(st.s.special ? 'eventDetails.promptsDisabled' : 'eventDetails.promptsEnabled'),
       );
     });
   }
@@ -541,7 +536,7 @@ function submitDrug(form, at) {
     unit = form.get('unit'),
     route = form.get('route');
   if (!name || !Number.isFinite(dose) || dose <= 0 || !route)
-    return error('Enter medicine, actual dose and route.');
+    return error(T('errors.medicineIncomplete'));
   const type = manualMedicineType(name);
   commit(
     () =>
@@ -549,11 +544,11 @@ function submitDrug(form, at) {
         st.s,
         type,
         name,
-        dose + ' ' + unit + ' ' + route + (form.get('notes') ? ' · ' + form.get('notes') : ''),
+        T(form.get('notes') ? 'eventDetails.doseUnitRouteNotes' : 'eventDetails.doseUnitRoute', { dose, unit, route, notes: form.get('notes') }),
         at,
         { dose, unit, route, notes: form.get('notes') },
       ),
-    'Administration recorded',
+    T('toasts.administrationRecorded'),
   );
   closeSheet();
 }
@@ -569,14 +564,14 @@ function submitEquipment(form, at, submitEvent) {
     data.size &&
     (!Number.isFinite(+data.size) || +data.size <= 0 || +data.size > R.RULES.equipment.maxTubeSizeMm)
   )
-    return error('Enter a valid tube size in mm.');
+    return error(T('errors.tubeSize'));
   const parts = Object.entries(data)
     .filter(([k, v]) => !['at', 'confirmation', 'sizeUnit', 'side'].includes(k) && v)
-    .map(([k, v]) => k + ': ' + v);
-  if (!data.size) parts.unshift('Size not recorded');
+    .map(([k, v]) => T('eventDetails.equipmentField', { key: k, value: v }));
+  if (!data.size) parts.unshift(T('eventDetails.sizeNotRecorded'));
   if (type === 'intubation')
     parts.push(
-      confirmed.length ? 'Confirmed with: ' + confirmed.join(', ') : 'Confirmation not recorded',
+      confirmed.length ? T('eventDetails.confirmedWith', { methods: confirmed.join(', ') }) : T('eventDetails.confirmationNotRecorded'),
     );
   commit(
     () =>
@@ -584,7 +579,7 @@ function submitEquipment(form, at, submitEvent) {
         procedure: type,
         equipment: { ...data, confirmation: confirmed },
       }),
-    'Intervention recorded',
+    T('toasts.interventionRecorded'),
   );
   closeSheet();
   if (type === 'laryngoscopy' && submitEvent.submitter?.value === 'intubation') openEquipment('intubation');
@@ -593,24 +588,22 @@ function submitEquipment(form, at, submitEvent) {
 function submitNote(form, at) {
   if (!canRecord()) return;
   const text = form.get('text').trim();
-  if (!text) return error('Enter the event or action.');
-  commit(() => R.add(st.s, 'note', 'Event', text, at, {}), 'Event recorded');
+  if (!text) return error(T('errors.eventEmpty'));
+  commit(() => R.add(st.s, 'note', T('eventTitles.note'), text, at, {}), T('toasts.eventRecorded'));
   closeSheet();
 }
 
 function submitCorrection(form, at) {
   const event = st.s.events.find((x) => x.id === st.sheetContext.id);
-  if (event.preApp && at >= st.s.appStart) return error('Use a time before the app opened.');
+  if (event.preApp && at >= st.s.appStart) return error(T('errors.timeBeforeApp'));
   if (
     ['start', 'pause', 'resume', 'rearrest', 'end', 'rosc'].includes(event.type) &&
     local(at) !== local(event.at)
   )
-    return error(
-      'State-change times cannot be changed here. Undo and re-record the state change.',
-    );
+    return error(T('errors.stateChangeTime'));
   const dose = form.has('dose') ? +form.get('dose') : null;
   if (form.has('dose') && (!Number.isFinite(dose) || dose <= 0))
-    return error('Enter a positive actual dose.');
+    return error(T('errors.doseNotPositive'));
   commit(() => {
     auditBeforeChange(event);
     event.at = at;
@@ -626,17 +619,13 @@ function submitCorrection(form, at) {
       event.dose = dose;
       event.unit = form.get('unit');
       event.route = form.get('route');
-      event.details = dose + ' ' + event.unit + ' ' + event.route + (event.notes ? ' · ' + event.notes : '');
+      event.details = T(event.notes ? 'eventDetails.doseUnitRouteNotes' : 'eventDetails.doseUnitRoute', { dose, unit: event.unit, route: event.route, notes: event.notes });
     }
     if (form.has('energy')) event.energy = form.get('energy');
     if (['shock', 'noshock', 'rosc', 'rhythm'].includes(event.type))
-      event.details =
-        event.rhythm +
-        (event.type === 'shock'
-          ? ' · ' + (event.energy ? event.energy + ' J' : 'energy not recorded')
-          : '');
+      event.details = R.rhythmDetails(event.type, event.rhythm, event.energy);
     syncRhythm();
-  }, 'Event corrected');
+  }, T('toasts.eventCorrected'));
   closeSheet();
 }
 
@@ -678,7 +667,7 @@ window.addEventListener('storage', (e) => {
       st.s = restored.session;
       closeSheet();
       render();
-      toast('Session updated from another tab');
+      toast(T('toasts.otherTab'));
     }
   } catch {}
 });
@@ -737,7 +726,7 @@ document.addEventListener('click', (e) => {
   }
   if (b.hasAttribute('data-save-age')) {
     const a = Number($('referenceAge').value);
-    if (!Number.isFinite(a) || a < 0 || a > 120) return error('Enter a valid age.');
+    if (!Number.isFinite(a) || a < 0 || a > 120) return error(T('errors.age'));
     commit(() => (st.s.age = String(a)));
     referenceSheet('tubes');
   }
@@ -751,8 +740,10 @@ document.addEventListener('click', (e) => {
 /* Switching laryngoscopy between video and direct changes the blade size choices. */
 document.addEventListener('change', (e) => {
   if (e.target.name === 'method' && st.sheetContext?.type === 'laryngoscopy') {
-    const sizes = R.RULES.equipment.blades[e.target.value === 'Video' ? 'Video' : 'Direct'];
-    $('bladeChoices').innerHTML = toggleField('size', 'Blade', sizes);
+    const blades = R.RULES.equipment.blades,
+      methods = R.RULES.equipment.forms.laryngoscopy.methods,
+      sizes = blades[e.target.value === methods[0] ? methods[0] : methods[1]];
+    $('bladeChoices').innerHTML = toggleField('size', R.RULES.equipment.forms.laryngoscopy.bladeQuestion, sizes);
     const row = $('bladeChoices').firstElementChild;
     row.classList.add('entry-row');
     row.insertAdjacentHTML('beforeend', '<span class="row-confirm" aria-hidden="true">✓</span>');
