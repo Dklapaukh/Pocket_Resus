@@ -77,8 +77,8 @@ so rules can be updated, and new rule sets made for other services, without touc
 | 2 Remaining text and settings into data | Done 13 Nov 2026 (commit 097ee00). 506 values added to `nz-eas.json` (labels, messages, timer thresholds, rhythm button names, correction-form lists, resus-start choices, equipment form questions, log intervention list, export labels); additions frozen in `tests/baseline/stage2-additions.json`; all 425 earlier values identical. 359 tests and the deep run pass; real-browser check matched the reference on 21 screens and offline; 25 new planted faults caught; review: no blocking findings |
 | 2b Safer update (`sw.js`), then publish v23 | Done and **published as v23 on 13 Nov 2026** (commits c770cb8, b028bdc; release d28f809 plus docs). New `sw.js`: a complete new set is downloaded and checked against the fingerprint in its store name before anything changes; answers come from the version's own store; nothing is saved while the app runs; a new version takes over only at a fresh open. `tools/set-cache-name.mjs` sets the name; a test fails if a shipped file changes without a new name. 375 tests and the deep run pass; review (Opus, high, two passes): no blocking findings, 31 planted faults caught after fixes, real-browser v22 → v23 update clean. **Waiting: owner phone check** |
 | E1 Checker for today's rule set + what-changed report | Done 14 Nov 2026 (commits df08202, a58c974, 328b76d). `src/rules/check.js`: every number has a type and an allowed range, lists in order, wording uses exactly its own gaps and only bold, italic and line break (checklists included), no double quotes in any rule-set text, web addresses `https://` only; over 70 deliberately bad rule sets rejected, reference accepted. `tools/rules-diff.mjs` plays the generated cases through two rule sets and lists every screen and saved-session difference; it never says "no differences" when nothing was compared. 494 tests and the deep run pass; review (Opus, high): no blocking findings after two rounds of fixes; app behaviour unchanged (the app never loads the checker) |
-| E1b Rule set becomes YAML | **Next** (owner chose this on 13 Nov 2026; doc 19, first-editor steps; doc 18 decision 9). Reader: js-yaml, the most widely used one, copied into the app as one file |
-| E2 Editor page, Rules view | After E1b, and after the owner has confirmed the two editor points below |
+| E1b Rule set becomes YAML | Done 14 Nov 2026 (commits e41d850, 36f9a53; not live). `src/rules/nz-eas.yaml` replaces `nz-eas.json`: all 991 values identical in value, type and order to the frozen copy `tests/baseline/nz-eas-before-yaml.json`. Reader `src/rules/parse.js` uses js-yaml 5.5.0 (one file in `src/vendor/`, proved equal to the published package) in its strictest mode: look-alike numbers, dates, repeated names, anchors, tags, comments, tabs and a second document are refused; `yes`, `no`, `~` stay text. The file must hold exactly the seven parts in order and end with the line `...`, so a file cut short anywhere is refused (tested at every character). Writer `src/rules/write.js` rewrites the file byte for byte. 627 tests and the deep run pass; review (Opus, high): one blocking finding (cut-short file could start the app) fixed and re-checked, 19 of 19 effective planted faults caught, real-browser start, offline, slow, broken file and update from the previous store all clean |
+| E2 Editor page, Rules view | **Next, but waiting for the owner:** the question at the top of "Waiting for the owner" must be answered first |
 | E3 Approve, publish, rollback | After E2; needs a short design note and one owner decision first |
 | 3 to 6, then full 7 to 10, 11 store apps | After the first editor is published (owner chose "editor first", 13 Nov 2026) |
 
@@ -101,6 +101,13 @@ so rules can be updated, and new rule sets made for other services, without touc
 - What-changed tool: two rule sets that fail the checker in the same way are reported as the same (the warnings are printed); a case over the testing limits under only one rule set is left out, not reported as a change; a reversed range (`5-3`) says "nothing compared".
 - The app writes rule-set text into page attributes without escaping it; the checker now refuses double quotes instead. Escape in the app (stage 4 or 6) so quotes can be allowed again.
 
+**Carried forward from the E1b review (not blocking; do before the editor saves files, E2):**
+- The writer can write `-0`, `1e-7` and `1e21` in a form the reader then refuses (the editor could save a file it cannot reopen).
+- Numbers with more than about 16 digits lose their last digits without an error (JSON did the same): refuse a number that does not write back as typed.
+- The reader accepts things the writer never writes: `|` and `>` multi-line text, plain text carried onto a second line, escapes that make invisible characters, and a JSON-style body (values read correctly). Refuse them in the reader or the checker.
+- Deleting one whole line from the rules file (a deliberate edit, not a cut) is still read, and the phone does not run the checker, so the app would start without that setting (JSON had the same weakness). Design question for E3: should the phone run the checker, or check a fingerprint of the rules file?
+- `tools/rules-diff.mjs` cannot read the YAML of commit e41d850 (no end line); older commits fall back to their JSON.
+
 **Owner's limits for test cases (13 Nov 2026):** do not run test cases that record a case longer than
 90 minutes, and adrenaline is never given more than 10 times to one patient. Apply to every NEW
 generated or recorded test case (E1 difference report, later safety-net additions): at most 90 minutes
@@ -110,13 +117,25 @@ edited and none is skipped: the pretend clock means long cases take no longer to
 owner said not to skip them if it saves no time.
 
 **Waiting for the owner:**
+- **QUESTION TO ANSWER NEXT (blocks step E2, the editor page; written by the unattended chat, 14 Nov 2026).**
+  You wrote on `main`: "the user never needs to see previous versions or version history. They only need
+  to see the current version number". Which of these do you mean for the editor?
+  - **Option A (recommended):** No history screens; the editor shows only the current version number.
+    Before a draft is confirmed, the editor still shows a "what this will change" list (every screen and
+    number that would differ), as a safety check. The previous rule set is kept out of sight so it can be
+    put back in one step if something is wrong.
+  - **Option B:** No history screens and no "what this will change" list. Only the current version
+    number is shown. The previous rule set is still kept out of sight for putting back.
+  - **Option C:** Keep the earlier plan: the "what this will change" list and a screen listing earlier
+    versions.
+  Recommended: A, because the "what this will change" list is the main guard against a slip such as a
+  tenfold dose, and it is not history.
+  After this, still to ask one at a time before E2 and E3: the checker's six clinical-relationship rules
+  (item below), and "rule sets go live when confirmed in the editor" (changes decision 20; E3).
 - **Phone check of v23 (asked 13 Nov 2026).** With good signal: open the app, wait 30 seconds, close it
   fully (swipe it away); open and close it twice more; turn on airplane mode and open it: it must start
   and Start must work. Then check A8: record ROSC with rhythm "Other"; no "Continue CPR" pop-up should
   follow. Do not rely on the app offline for a case until this has worked.
-- **Two editor points from the owner's answers on `main` to confirm next (doc 18, last section):** no
-  version-history screens (only the current version number), and rule sets go live when confirmed in
-  the editor (changes decision 20; needs a design note at E3).
 - Reviewer (answered 13 Nov 2026): Opus · high; Fable · high if Opus is stopped by a limit again.
 - **Store apps (told 13 Nov 2026).** Apple's review rule 1.4.2: dose calculators must come from a
   hospital, university, manufacturer or similar approved body, or have regulator approval. Google: a
