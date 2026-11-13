@@ -1,11 +1,12 @@
 // Rules editor stage E1: the what-changed tool (tests/reference/lib/rules-diff.mjs, run from tools/rules-diff.mjs).
 // Proof that it (1) finds planted changes of several kinds and names the screens they change, (2) reports
 // nothing at all for two identical rule sets, and (3) leaves out cases over the owner's testing limits
-// (90 minutes of case time, 10 adrenaline doses). Each planted change is played only on a few cases that are
+// (90 minutes of case time, 10 adrenaline doses), (4) never claims "no differences" when nothing was really compared, and
+// (5) compares the saved session by default. Each planted change is played only on a few cases that are
 // known to show it, to keep the test quick; the tool itself plays the whole fast set by default.
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -25,14 +26,19 @@ async function whatChanged(edit, caseIds, options = {}) {
 }
 const screensWith = (result, surface, side, needle) => result.differences.filter((d) => d.surface === surface && d[side].includes(needle));
 
-test('two identical rule sets: nothing differs, in any case, on any screen or in the saved session', async () => {
-  const result = await compareRuleSets(fresh(), fresh(), { caseIds: [0, 1, 2, 3, 7, 11], includeSaved: true, pool });
+test('two identical rule sets: nothing differs, in any case, on any screen or in the saved session (both are compared by default)', async () => {
+  const result = await compareRuleSets(fresh(), fresh(), { caseIds: [0, 1, 2, 3, 7, 11], pool });
+  assert.equal(result.savedCompared, true, 'the saved session must be compared unless the person opts out');
+  assert.equal(result.nothingDiffers, true);
+  assert.equal(result.complete, true);
+  assert.deepEqual(result.trouble, []);
+  assert.deepEqual(result.notPlayed, []);
   assert.deepEqual(result.differences, []);
   assert.deepEqual(result.differingCases, []);
   assert.equal(result.casesCompared, result.casesChosen);
   assert.equal(result.casesIdentical, result.casesCompared);
   assert.ok(result.casesCompared >= 5, 'the identical rule sets were not really played');
-  assert.match(formatReport(result), /No screen differs/);
+  assert.match(formatReport(result), /No screen differs and the saved session does not differ/);
 });
 
 test('planted change, a number: adult adrenaline 1 mg becomes 0.5 mg; the Live screen is named, before and after', async () => {
@@ -55,7 +61,7 @@ test('planted change, a sentence: "No dose recorded" becomes "No dose given"', a
 });
 
 test('planted change, a list item: "Other" no longer brings the fluids card', async () => {
-  const result = await whatChanged((r) => { r.numbers.lowerCard.fluidRhythms = ['PEA', 'Asystole']; }, [14, 11, 12]);
+  const result = await whatChanged((r) => { r.numbers.lowerCard.fluidRhythms = ['PEA', 'Asystole']; }, [14, 11, 12], { includeSaved: false }); // screens only, as this test is about screens
   assert.ok(result.differences.length >= 1, 'the removed list item changed no screen');
   assert.ok(result.differences.every((d) => d.part === 'screens'));
   assert.ok(result.differences.some((d) => d.surface === 'main'), 'the Live screen should be named');
@@ -90,15 +96,30 @@ test('planted change, a table row: the 30 kg band magnesium 6 mmol becomes 7 mmo
   assert.ok(popup.length && popup.every((d) => d.before.includes('6 mmol IV')), 'the Administration pop-up should change from 6 to 7 mmol');
 });
 
-test('the saved session is compared only when asked for: a changed event title is found there, as readable lines', async () => {
-  const edit = (r) => { r.wording.eventTitles.cycleStarted = 'Cycle begun'; };
-  const screensOnly = await whatChanged(edit, [1]);
-  assert.ok(screensOnly.differences.length > 0 && screensOnly.differences.every((d) => d.part === 'screens'));
-  const withSaved = await whatChanged(edit, [1], { includeSaved: true });
-  const saved = withSaved.differences.filter((d) => d.part === 'saved' && d.surface === 'stored');
-  assert.ok(saved.length, 'the changed title should be found in the saved session');
-  assert.ok(saved.every((d) => d.after.includes('Cycle begun') && !d.before.includes('Cycle begun')));
-  assert.ok(saved.every((d) => d.after.split('\n').length > 20), 'the saved session should be shown as indented lines, not one long line');
+test('the saved session is compared by default: a change that touches only what is saved (a log entry\'s wording) is found, as readable lines', async () => {
+  const edit = (r) => { r.wording.eventDetails.rhythmNotRecorded += ' (changed)'; }; // case 1 saves this wording but never shows it on a screen
+  const byDefault = await whatChanged(edit, [1]);
+  assert.equal(byDefault.savedCompared, true);
+  assert.ok(byDefault.differences.length > 0 && byDefault.differences.every((d) => d.part === 'saved'), 'the change should be found in the saved session only');
+  assert.equal(byDefault.nothingDiffers, false);
+  assert.doesNotMatch(formatReport(byDefault), /No screen differs|behave the same/);
+  const stored = byDefault.differences.filter((d) => d.surface === 'stored');
+  assert.ok(stored.length, 'the changed wording should be found in the saved session');
+  assert.ok(stored.every((d) => d.after.includes('(changed)') && !d.before.includes('(changed)')));
+  assert.ok(stored.every((d) => d.after.split('\n').length > 20), 'the saved session should be shown as indented lines, not one long line');
+  // Still found with a change to a title that also shows on screen: screens and saved session both listed.
+  const both = await whatChanged((r) => { r.wording.eventTitles.cycleStarted = 'Cycle begun'; }, [1]);
+  assert.ok(both.differences.some((d) => d.part === 'screens') && both.differences.some((d) => d.part === 'saved'));
+});
+
+test('opting out of the saved session ("screens only"): the same saved-only change is missed, and the report says plainly that the saved session was NOT compared', async () => {
+  const result = await whatChanged((r) => { r.wording.eventDetails.rhythmNotRecorded += ' (changed)'; }, [1], { includeSaved: false });
+  assert.equal(result.savedCompared, false);
+  assert.deepEqual(result.differences, []);
+  const report = formatReport(result);
+  assert.match(report, /saved session[^.]*was NOT compared/);
+  assert.doesNotMatch(report, /behave the same/, 'a screens-only report must never say the rule sets behave the same');
+  assert.doesNotMatch(report, /saved session does not differ/);
 });
 
 test('the testing limits: a case over 90 minutes, or over 10 adrenaline doses, is left out and listed', async () => {
@@ -125,18 +146,124 @@ test('readable() turns a screen into the words a person reads', () => {
   assert.equal(readable('<div class="x"><b>Adrenaline</b> 1 mg</div><button>Record &amp; go</button>|values=a=1'), 'Adrenaline 1 mg\nRecord & go\n|values=a=1');
 });
 
-test('the command line prints "no screen differs" for two identical rules files, and the report for a changed one', () => {
+/* ---------- A comparison that compared nothing must never read as "no differences" ---------- */
+
+const notReportedAsSame = (result) => {
+  assert.equal(result.nothingDiffers, false);
+  assert.doesNotMatch(formatReport(result), /No screen differs|behave the same|does not differ/);
+};
+
+test('nothing compared (an empty case list): not reported as "no differences"', async () => {
+  const result = await compareRuleSets(fresh(), fresh(), { caseIds: [], pool });
+  assert.equal(result.casesCompared, 0);
+  assert.equal(result.complete, false);
+  notReportedAsSame(result);
+  assert.match(formatReport(result), /NOTHING WAS COMPARED/);
+});
+
+test('nothing compared (every chosen case is over the testing limits): not reported as "no differences"', async () => {
+  const result = await compareRuleSets(fresh(), fresh(), { caseIds: [16], pool }); // case 16 runs about 196 minutes
+  assert.equal(result.casesCompared, 0);
+  assert.deepEqual(result.skipped.map((s) => s.id), [16]);
+  notReportedAsSame(result);
+  assert.match(formatReport(result), /NOTHING WAS COMPARED[^]*every chosen case was over the testing limits/);
+});
+
+test('case numbers that do not exist are an error, never silently ignored', async () => {
+  await assert.rejects(compareRuleSets(fresh(), fresh(), { caseIds: [1, 999999], pool }), /case 999999 does not exist/);
+  await assert.rejects(compareRuleSets(fresh(), fresh(), { caseIds: [-1], pool }), /does not exist/);
+  await assert.rejects(compareRuleSets(fresh(), fresh(), { caseIds: [1.5], pool }), /does not exist/);
+  assert.throws(() => parseCaseList('5,99999'), /case 99999 does not exist/);
+});
+
+test('a play that returns nothing for a case: the case is not counted as compared, and the report says so', async () => {
+  const returnsNothing = { play: async () => [] };
+  const result = await compareRuleSets(fresh(), fresh(), { caseIds: [1, 2], pool: returnsNothing });
+  assert.deepEqual(result.notPlayed, [1, 2]);
+  assert.equal(result.casesCompared, 0);
+  notReportedAsSame(result);
+  assert.match(formatReport(result), /PROBLEM: 2 chosen case\(s\) were not compared/);
+  // Only one of two cases returned: the other is compared, but the whole comparison is incomplete and not "the same".
+  const dropsCaseTwo = { play: async (dir, ids, o) => (await pool.play(dir, ids, o)).filter((enc) => enc.id !== 2) };
+  const partly = await compareRuleSets(fresh(), fresh(), { caseIds: [1, 2], pool: dropsCaseTwo });
+  assert.deepEqual(partly.notPlayed, [2]);
+  assert.equal(partly.casesCompared, 1);
+  assert.equal(partly.complete, false);
+  notReportedAsSame(partly);
+});
+
+test('a case found different in the first pass is never counted as identical, even if the second pass lists nothing for it', async () => {
+  const changed = fresh(); changed.wording.liveCards.noDoseRecorded = 'No dose given';
+  // Second pass returns nothing at all:
+  const noSecondPass = { play: (dir, ids, o) => (o?.mode === 'full' ? Promise.resolve([]) : pool.play(dir, ids, o)) };
+  const a = await compareRuleSets(fresh(), changed, { caseIds: [1], pool: noSecondPass });
+  assert.equal(a.casesDifferent, 1);
+  assert.equal(a.casesIdentical, 0);
+  assert.ok(a.differingCases.includes(1));
+  assert.ok(a.trouble.length >= 1);
+  notReportedAsSame(a);
+  assert.match(formatReport(a), /PROBLEM: case 1 differs/);
+  // Second pass plays the SAME rule set twice, so it lists no differing screen:
+  let firstDir = null;
+  const sameTwice = { play: (dir, ids, o) => { if (o?.mode !== 'full') return pool.play(dir, ids, o); firstDir ??= dir; return pool.play(firstDir, ids, o); } };
+  const b = await compareRuleSets(fresh(), changed, { caseIds: [1], pool: sameTwice });
+  assert.equal(b.casesDifferent, 1);
+  assert.equal(b.casesIdentical, 0);
+  assert.deepEqual(b.differences, []);
+  assert.match(b.trouble.join('\n'), /case 1 was found different in the first pass, but the second pass lists no differing screen/);
+  notReportedAsSame(b);
+  assert.doesNotMatch(formatReport(b), /Identical: 1/);
+});
+
+test('the command line: identical files report no differences; a changed file gives the report; a saved-only change is found by default', () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-rules-diff-test-'));
   try {
-    const same = path.join(dir, 'same.json'), changed = path.join(dir, 'changed.json');
+    const same = path.join(dir, 'same.json'), changed = path.join(dir, 'changed.json'), savedOnly = path.join(dir, 'saved-only.json');
     writeFileSync(same, rulesText);
     const edited = fresh(); edited.wording.liveCards.noDoseRecorded = 'No dose given';
     writeFileSync(changed, JSON.stringify(edited));
-    const run = (...args) => execFileSync('node', ['tools/rules-diff.mjs', ...args, '--cases', '1'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-    assert.match(run(same, same), /No screen differs/);
-    const report = run(same, changed);
-    assert.match(report, /screen\(s\) differ/);
-    assert.match(report, /- .*No dose recorded/);
-    assert.match(report, /\+ .*No dose given/);
+    const logOnly = fresh(); logOnly.wording.eventDetails.rhythmNotRecorded += ' (changed)';
+    writeFileSync(savedOnly, JSON.stringify(logOnly));
+    assert.match(cli(same, same, '--cases', '1').stdout, /No screen differs and the saved session does not differ/);
+    assert.equal(cli(same, same, '--cases', '1').status, 0);
+    const report = cli(same, changed, '--cases', '1');
+    assert.equal(report.status, 0);
+    assert.match(report.stdout, /screen\(s\) differ/);
+    assert.match(report.stdout, /- .*No dose recorded/);
+    assert.match(report.stdout, /\+ .*No dose given/);
+    // A change that alters only what is saved: found by default, missed (and said so) with --screens-only.
+    const found = cli(same, savedOnly, '--cases', '1');
+    assert.match(found.stdout, /screen\(s\) differ \(stored \d+/);
+    assert.match(found.stdout, /\(saved session\)/);
+    assert.doesNotMatch(found.stdout, /No screen differs|behave the same/);
+    const screensOnly = cli(same, savedOnly, '--cases', '1', '--screens-only');
+    assert.match(screensOnly.stdout, /saved session[^.]*was NOT compared/);
+    assert.doesNotMatch(screensOnly.stdout, /behave the same/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('the command line exits with a non-zero code when nothing (or not everything) was compared, and when a case number does not exist', () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-rules-diff-test-'));
+  try {
+    const same = path.join(dir, 'same.json');
+    writeFileSync(same, rulesText);
+    const tooLong = cli(same, same, '--cases', '16'); // case 16 is over the 90-minute testing limit, so nothing is compared
+    assert.notEqual(tooLong.status, 0);
+    assert.match(tooLong.stdout, /NOTHING WAS COMPARED/);
+    assert.doesNotMatch(tooLong.stdout, /No screen differs|behave the same/);
+    const empty = cli(same, same, '--cases', '');
+    assert.notEqual(empty.status, 0);
+    assert.doesNotMatch(empty.stdout, /No screen differs|behave the same/);
+    const unknown = cli(same, same, '--cases', '1,999999');
+    assert.notEqual(unknown.status, 0);
+    assert.match(unknown.stderr, /case 999999 does not exist/);
+    assert.equal(unknown.stdout, '');
+    assert.notEqual(cli(same, same, '--cases', '1', '--no-such-option').status, 0);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+/* Run the command-line tool; returns { status, stdout, stderr } (never throws on a non-zero exit). */
+function cli(...args) {
+  const run = spawnSync('node', ['tools/rules-diff.mjs', ...args], { cwd: ROOT, encoding: 'utf8' });
+  return { status: run.status, stdout: run.stdout, stderr: run.stderr };
+}
