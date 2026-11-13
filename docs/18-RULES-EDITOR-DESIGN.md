@@ -100,8 +100,14 @@ thresholds (yellow at 15 s, adrenaline highlight 30 s before review); checklist 
 with each checklist in part 3; the tutorial slides (`data.js`).
 
 ## Editor decisions still to make (after 3a)
+    Decisions have been added inline - the questions below have to be removed, the answers need to be incorporated into the relevant parts of the plan
 - File format for a rule set (keep JavaScript data, or plain JSON that any tool can open).
+     - Decision from author: use YAML 
 - Where the editor runs and who can use it.
+    - Decision from author: The editor will run as a standalone webpage. An organisation will decide who has access and those allocated people will use it 
 - How the "what changed" view is shown and how owner approval is recorded.
+    - Decision from author: the user never needs to see previous versions or version history. They only need to see the current version number 
 - How a rule set goes live and how the app chooses a service's rule set.
+    - Decision from author: Rule sets go live when confirmed in the editor after appropriate testing. Each service will have a different URL.
 - How the automatic tests apply to a new service's rule set (which tests are NZ-EAS-specific).
+    - Decision from Author: We will need to identify tests which are purely functional and therefore applicable everywhere. Beyond that we will need to develop bespoke tests for each service's rule set as part of the creation/ editing process 
