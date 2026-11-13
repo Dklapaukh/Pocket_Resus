@@ -7,7 +7,7 @@
 // live in temporary folders that are removed again afterwards.
 //
 // The main function is compareRuleSets(before, after, options). It takes two rule-set objects (the five
-// parts, as in src/rules/nz-eas.json) and returns a plain object (see its comment), so the editor can use it
+// parts, as in src/rules/nz-eas.yaml) and returns a plain object (see its comment), so the editor can use it
 // later. The command-line wrapper is tools/rules-diff.mjs, which only prints the result.
 //
 // LIMITS FOR TEST CASES (the owner's testing limits, not app rules): a case counts only if it stays within
@@ -23,6 +23,7 @@ import { FAST_CASES, RECORDED_CASES } from './cases.mjs';
 import { ROOT } from './reference-app.mjs';
 import { lines, diff } from './textdiff.mjs';
 import { checkRuleSet } from '../../../src/rules/check.js';
+import { rulesFileText } from '../../../src/rules/write.js';
 
 const PASS_TWO_BATCH = 16; // how many differing cases are held in full at one time
 export const CASE_LIMITS = { maxMinutes: 90, maxAdrenalineDoses: 10 };
@@ -37,7 +38,7 @@ export function appWithRules(rules) {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-rules-diff-'));
   cpSync(path.join(ROOT, 'index.html'), path.join(dir, 'index.html'));
   cpSync(path.join(ROOT, 'src'), path.join(dir, 'src'), { recursive: true });
-  writeFileSync(path.join(dir, 'src/rules/nz-eas.json'), JSON.stringify(rules, null, 2));
+  writeFileSync(path.join(dir, 'src/rules/nz-eas.yaml'), rulesFileText(rules));
   return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
