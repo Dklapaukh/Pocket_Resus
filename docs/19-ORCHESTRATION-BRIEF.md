@@ -48,6 +48,8 @@ under scheduled tasks. Every chat, attended or not:
    a snapshot on the scratch branch `rules-editor-wip` only; half-finished work never goes on
    `rules-editor`.
 3. If doc 07 shows that everything left is waiting for the owner, stop at once (say so in one line).
+   When a chat finishes with everything committed and pushed, its last act is
+   `sh tools/build-progress.sh save "IDLE: <what is next>"`, so the next chat can start at once.
 4. Before every push run `git pull --rebase origin rules-editor` (another chat may have pushed docs).
 5. **Usage limits.** If an agent fails with a limit error, do not retry in a loop and do not swap in a
    different model on your own: note it in doc 07 (which model, when it resets), carry on with work

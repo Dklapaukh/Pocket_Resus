@@ -11,6 +11,8 @@
 #   sh tools/build-progress.sh restore          put the saved snapshot back into the working folder
 #
 # "Busy" means the last save was under 100 minutes ago. Save at least once an hour while working.
+# When a chat has finished and committed everything, save with a note that starts "IDLE:" so the
+# next chat can start at once instead of waiting 100 minutes.
 set -eu
 cd "$(git rev-parse --show-toplevel)"
 WIP=rules-editor-wip
@@ -22,7 +24,8 @@ case "${1:-}" in
 check)
   if tip=$(fetch_wip); then
     age=$(( $(date +%s) - $(git log -1 --format=%ct "$tip") ))
-    if [ "$age" -lt "$BUSY_SECONDS" ]; then echo "BUSY: another chat saved work $((age / 60)) minutes ago. Do not start work."
+    if git log -1 --format=%s "$tip" | grep -q '^IDLE:'; then echo "FREE: the last chat finished and left the build idle."
+    elif [ "$age" -lt "$BUSY_SECONDS" ]; then echo "BUSY: another chat saved work $((age / 60)) minutes ago. Do not start work."
     else echo "FREE: last save was $((age / 60)) minutes ago."; fi
     base=$(git rev-parse "$tip^1")
     if [ "$(git rev-parse "$tip^{tree}")" = "$(git rev-parse "$base^{tree}")" ]; then echo "No unfinished work is saved."
