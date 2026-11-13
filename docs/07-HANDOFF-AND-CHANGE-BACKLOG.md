@@ -21,8 +21,8 @@ independent clinical review is deferred until the code and other key goals are r
 - **Unattended running (on since 13 Nov 2026):** the scheduled task "Pocket Resus build" restarts the
   build every 3 hours; every chat first runs `sh tools/build-progress.sh check` (doc 19 "Running
   unattended"). The owner can pause it any time in the Claude app under scheduled tasks.
-- **Usage:** Opus reached its weekly limit on 13 Nov 2026 (resets 17 Nov, 4 pm NZ time). The plan's
-  weekly allowance, not the work, sets the pace.
+- **Usage:** Opus reached its weekly limit on 13 Nov 2026 (resets 17 Nov, 4 pm NZ time) but an Opus
+  reviewer ran normally on 14 Nov 2026. The plan's weekly allowance, not the work, sets the pace.
 - **Owner goal (13 Nov 2026):** secure Android and iPhone apps with the editor in place, by December.
   Owner is away 18 Nov to 2 Dec 2026 with a phone only (can answer questions and do phone checks).
 - Explain simply, recommend one option, show the full text of any options, one decision at a time.
@@ -57,8 +57,8 @@ so rules can be updated, and new rule sets made for other services, without touc
    (five parts); screens proved identical to v21 (278 recorded screens); lock-in test stops them
    creeping back. 182 tests pass. **Sub-step 9:** owner chose to publish first, then phone-check
    the live app (published as v22, 12 Nov 2026). **Next: owner's v22 phone check, and the
-   remaining editor decisions in doc 18, one at a time.** Owner 12 Nov 2026: format JSON (doc 18
-   decision 9); editor must cover any clinically relevant function plus visual settings
+   remaining editor decisions in doc 18, one at a time.** Owner: format YAML (doc 18
+   decision 9, changed 13 Nov 2026); editor must cover any clinically relevant function plus visual settings
    (decision 10). **Re-plan drafted 12 Nov 2026 in doc 18** (inventory of behaviour still in
    code, revised plan, stages); nothing built. Decision 11 made (menus and rule tables). Owner goals added (decision 12):
    two ways into the editor (tap a card in an app view; technical rules view) and, long term, a
@@ -76,8 +76,9 @@ so rules can be updated, and new rule sets made for other services, without touc
 | 1 Rule set becomes JSON | Done 13 Nov 2026. `src/rules/nz-eas.json` (five parts + `about` + `notes`), `load.js`, `parse.js`, `check.js` (first checker, tests only); old file kept as `tests/baseline/nz-eas-v22-a8.js`. 425 values identical incl. order; real-browser start, offline, slow network and failure cases checked; review: no blocking findings. 318 tests pass |
 | 2 Remaining text and settings into data | Done 13 Nov 2026 (commit 097ee00). 506 values added to `nz-eas.json` (labels, messages, timer thresholds, rhythm button names, correction-form lists, resus-start choices, equipment form questions, log intervention list, export labels); additions frozen in `tests/baseline/stage2-additions.json`; all 425 earlier values identical. 359 tests and the deep run pass; real-browser check matched the reference on 21 screens and offline; 25 new planted faults caught; review: no blocking findings |
 | 2b Safer update (`sw.js`), then publish v23 | Done and **published as v23 on 13 Nov 2026** (commits c770cb8, b028bdc; release d28f809 plus docs). New `sw.js`: a complete new set is downloaded and checked against the fingerprint in its store name before anything changes; answers come from the version's own store; nothing is saved while the app runs; a new version takes over only at a fresh open. `tools/set-cache-name.mjs` sets the name; a test fails if a shipped file changes without a new name. 375 tests and the deep run pass; review (Opus, high, two passes): no blocking findings, 31 planted faults caught after fixes, real-browser v22 → v23 update clean. **Waiting: owner phone check** |
-| E1 Checker for today's rule set + what-changed report | **Next** (doc 19, first-editor steps). Does not depend on the YAML question below |
-| E2 Editor page, Rules view | After E1, and after the owner has answered the YAML question and the two editor points below |
+| E1 Checker for today's rule set + what-changed report | Done 14 Nov 2026 (commits df08202, a58c974, 328b76d). `src/rules/check.js`: every number has a type and an allowed range, lists in order, wording uses exactly its own gaps and only bold, italic and line break (checklists included), no double quotes in any rule-set text, web addresses `https://` only; over 70 deliberately bad rule sets rejected, reference accepted. `tools/rules-diff.mjs` plays the generated cases through two rule sets and lists every screen and saved-session difference; it never says "no differences" when nothing was compared. 494 tests and the deep run pass; review (Opus, high): no blocking findings after two rounds of fixes; app behaviour unchanged (the app never loads the checker) |
+| E1b Rule set becomes YAML | **Next** (owner chose this on 13 Nov 2026; doc 19, first-editor steps; doc 18 decision 9). Reader: js-yaml, the most widely used one, copied into the app as one file |
+| E2 Editor page, Rules view | After E1b, and after the owner has confirmed the two editor points below |
 | E3 Approve, publish, rollback | After E2; needs a short design note and one owner decision first |
 | 3 to 6, then full 7 to 10, 11 store apps | After the first editor is published (owner chose "editor first", 13 Nov 2026) |
 
@@ -89,11 +90,16 @@ so rules can be updated, and new rule sets made for other services, without touc
 - Not checked anywhere: real phones, iPhone Safari, the bytes GitHub Pages actually serves.
 
 **Carried forward from the stage 2 review (not blocking; do before the editor is used):**
-- Checker (`src/rules/check.js`) is too lenient for the new wording groups: it does not notice an entry that drops its own `{gap}`, a rule-set gap in a log entry (would save the word "undefined"), "30" typed in place of `{warningSeconds}`, markup in equipment questions, an unknown event type in the interventions list, or "mg" removed from the medicine units. Today the frozen additions list catches these; the editor will rely on the checker. Tighten at the checker stage (7).
-- Add two narrower planted changes: warning at 31 s with the text unchanged; yellow panel alone at 10 s (both are caught today when planted by hand).
 - The 100 limit on the earlier-counts boxes is typed in code (three places) while its error text "0–100" is in the rule set: move the limit into the rule set (stage 3).
 - `index.html` still holds screen text ("Saving unavailable", tab names, header labels): move with appearance settings (stage 6) or earlier.
 - Changing a name in `wording.drugNames` does not change which hand-typed names count as that medicine (noted in the file).
+
+**Carried forward from the E1 review (not blocking; do before the editor is used, E2):**
+- The checker's ranges only stop the impossible: a tenfold slip passes (adult adrenaline 10 mg). The editor's typed confirmation for a large change (E2) and the what-changed report are the guard; consider tighter ranges.
+- Rhythm names the code relies on (PEA, Torsades and others) can be renamed or removed and the checker still passes.
+- Bold and italic tags in the wrong order pass; a `<` meaning "less than" is refused (false alarm); `&quot;` shows as a quote mark (harmless).
+- What-changed tool: two rule sets that fail the checker in the same way are reported as the same (the warnings are printed); a case over the testing limits under only one rule set is left out, not reported as a change; a reversed range (`5-3`) says "nothing compared".
+- The app writes rule-set text into page attributes without escaping it; the checker now refuses double quotes instead. Escape in the app (stage 4 or 6) so quotes can be allowed again.
 
 **Owner's limits for test cases (13 Nov 2026):** do not run test cases that record a case longer than
 90 minutes, and adrenaline is never given more than 10 times to one patient. Apply to every NEW
@@ -108,15 +114,6 @@ owner said not to skip them if it saves no time.
   fully (swipe it away); open and close it twice more; turn on airplane mode and open it: it must start
   and Start must work. Then check A8: record ROSC with rhythm "Other"; no "Continue CPR" pop-up should
   follow. Do not rely on the app offline for a case until this has worked.
-- **Rule set file format (asked 13 Nov 2026; blocks E2, not E1).** The owner wrote "use YAML" on `main`
-  (doc 18, last section; `CLAUDE.md` rule 10), which conflicts with decision 9 (plain JSON, 12 Nov
-  2026, built in stage 1). Option A (recommended): keep JSON as the file the app loads; it is already
-  built and proved, it is strict (a typing slip cannot silently change a value), and people will change
-  rules through the editor, not by opening the file; the rule set already is the single central file
-  rule 10 asks for. Option B: switch the rule set to YAML now; costs about one stage, adds a YAML
-  reader to the app (a new package inside the safety-critical loading step) and the format tests are
-  redone. Option C: people and the editor work in YAML, and a publish step converts it to the strict
-  JSON the phone loads; needs a publish step (fits "go live from the editor" in step E3).
 - **Two editor points from the owner's answers on `main` to confirm next (doc 18, last section):** no
   version-history screens (only the current version number), and rule sets go live when confirmed in
   the editor (changes decision 20; needs a design note at E3).
@@ -132,7 +129,7 @@ owner said not to skip them if it saves no time.
   guideline PDFs alone would not. Whether it is a medical device under NZ law is a question for Medsafe.
 - A8: confirm "Option A" meant updating the step 2 comparison test (doc 09).
 - New start-up message if the rule set cannot be read (stage 1; wording in `src/rules/parse.js`): owner may reword.
-- Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit): confirm at stage 7.
+- Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit; six in all) have been switched on since stage 1, though E1 said to list them only. Example of what they refuse: a band energy rounded to a defibrillator step (20 J typed as 21 J). Keep them on, or list only? To be asked before E2.
 - Three existing app behaviours found while recording (unchanged, recorded as they are; each a possible A-table row, one decision at a time): (1) a manual entry timed later than now is saved as the previous day; (2) closing the rhythm pop-up with × leaves "Rhythm not recorded"; (3) Tube sizes "Use age" with an empty or non-number box saves age 0 and shows infant sizes.
 
 ## Decisions made by owner

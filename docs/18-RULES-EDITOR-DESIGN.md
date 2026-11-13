@@ -19,7 +19,7 @@ goes live.
 | 6 | 12 Nov 2026 | Part 4 filled: `equipment.devices`, `sites`, `colours` (from `data.js`), plus `blades` (laryngoscope choices, from `events.js`), `maxTubeSizeMm` (12) and `igelRanges` (data; the tube sheet builds the same line from it). Tests: equal to v21; colours valid and for listed sizes; iGel ranges ordered with no gaps. Screens identical. 175 tests pass. |
 | 7 | 12 Nov 2026 | Part 5 filled: guideline name, export date, ANZCOR and iGel source names, and each linked guideline's EAS code, label, PDF and web page (`sources.guidelines`), plus the Guidance pop-up link order. `data.js` now holds only the tutorial slides. Tests: links equal v21; every PDF exists and is in the offline list. Screens identical. 177 tests pass. Checklists keep their own `code`/`pdf` in part 3 (also checked). |
 | 8 | 12 Nov 2026 | Lock-in test `tests/step3a-lock-in.test.mjs`: fails if a clinical number with its unit, a guideline link/PDF/EAS number, or any rules-file sentence (wording, checklist item, cause prompt) is typed into `src/app` or `src/engine` (comments ignored); every `{gap}` must be filled from parts 1/5 or by the app where listed; spot checks that the filled wording reads exactly as v21. Shown to catch a planted "2 mg/kg". 182 tests pass. **Step 3a done; next is sub-step 9 (owner phone check, then approval to publish as v22).** |
-| 9 | 12 Nov 2026 | **Rule set file format: plain JSON** (Option B). `nz-eas.js` becomes `nz-eas.json` with no value or wording change, proved by the existing tests. Not started: waits for the revised plan (decision 10). |
+| 9 | 13 Nov 2026 | **Rule set file format: YAML** (owner, replacing plain JSON chosen 12 Nov 2026 and built in stage 1; also `CLAUDE.md` rule 10). `nz-eas.json` becomes `nz-eas.yaml` with no value or wording change (doc 19 step E1b). Cost accepted by the owner: a YAML reader is added to the app's loading step. |
 | 10 | 12 Nov 2026 | **Owner's editor scope:** one interface with separate tabs (or similar) for clinical rules and for visual settings, including pop-ups. The owner must be able to edit **any clinically relevant function** without touching code; build new functions where needed. Claude's review: the current plan only makes numbers, wording and lists editable; the logic (which card shows when, amiodarone gate, torsades → magnesium, child advice, pop-up triggers) and visual settings are still fixed in code. **The plan needs re-drafting in a new chat before building** (prompt in doc 07). |
 | 11 | 12 Nov 2026 | **Logic becomes editable through menus and rule tables** (Option A): "when" picked from a list of facts, "then" from a list of results, first match wins, last row "otherwise"; no typed formulas. Owner asked how new options get added: see "Adding options" below (decision 13 pending). |
 | 12 | 12 Nov 2026 | **Owner goals added.** (a) Long term, these building blocks should become a no-code program / website that turns flowcharts into apps. (b) **Two ways into the editor:** a technical "rules" view for people who like that, and editing from the front end: in an editing view, tap a card (e.g. adrenaline) and see every rule attached to it. (c) Guideline gaps should be added natively through the editor where possible, not typed into code. |
@@ -284,7 +284,7 @@ without the owner's yes. Model and effort are suggestions for an orchestrated bu
 | Stage | What | Model · effort |
 |---|---|---|
 | 0 | Wider safety net: record v22 Live screens and pop-ups step by step across thousands of generated cases | Opus · high |
-| 1 | Rule set becomes JSON (decision 9); loader; checker for the five existing parts | Sonnet · medium |
+| 1 | Rule set becomes a data file (decision 9: JSON then, YAML from step E1b); loader; checker for the five existing parts | Sonnet · medium |
 | 2 | Remaining wording, labels, lists, timer thresholds and form questions (inventory F, 31, 34, 37, 39) move to data | Sonnet · medium |
 | 3 | Facts, flags and rule tables; lower slot, amiodarone, torsades, child advice, special situation become tables (A, D) | Fable · high |
 | 4 | Drug definitions, dose-method menu, one general card builder (A, C) | Fable · high |
@@ -362,7 +362,7 @@ Three levels, cheapest first:
   button, status line, lock, pop-ups. Tap a line to change it. Best for people who would be lost in
   a big flowchart.
 - **Rules view (technical):** every table, drug, prompt and situation as lists and tables, with
-  search, "where is this used", and the raw JSON for those who want it.
+  search, "where is this used", and the raw rule-set file for those who want it.
 
 **First sketch of the platform ("flowchart to app")** (to brainstorm properly once stages 3 to 5 exist):
 - An app = **record** (what can be logged) + **facts** + **rule tables** + **screens made of cards**
@@ -393,7 +393,6 @@ build until the owner has confirmed it in a chat (doc 07 "Waiting for the owner"
 
 | Question | Owner's answer on `main` (13 Nov 2026) | Compared with the decisions above |
 |---|---|---|
-| File format for a rule set | "use YAML" (also new rule 10 in `CLAUDE.md`: values likely to change go in a single central YAML configuration file) | **Conflicts with decision 9** (plain JSON, built and proved in stage 1). Owner decision needed |
 | Where the editor runs and who can use it | "The editor will run as a standalone webpage. An organisation will decide who has access and those allocated people will use it" | Fits decisions 18 and 20 (separate page; any approved person is an "editor"). Access control by an organisation needs accounts, which decision 20 left for later |
 | How the "what changed" view is shown and how approval is recorded | "the user never needs to see previous versions or version history. They only need to see the current version number" | Changes the editor: no history screens. To confirm: the editor still shows what a draft will change before it is confirmed (a safety check, not history), and the previous rule set is still kept out of sight for rollback |
 | How a rule set goes live; how the app chooses a service's rule set | "Rule sets go live when confirmed in the editor after appropriate testing. Each service will have a different URL." | **Changes decision 20** (a saved file goes live through GitHub). Going live from the editor needs a way for the editor to publish (design note for step E3). One URL per service fits decision 21 |
