@@ -71,32 +71,54 @@ export function parseCaseList(text) {
   for (const piece of String(text).split(',').map((p) => p.trim()).filter(Boolean)) {
     const m = /^(\d+)(?:-(\d+))?$/.exec(piece);
     if (!m) throw new Error(`"${piece}" is not a case number or range such as 5 or 9-20`);
-    for (let id = +m[1]; id <= +(m[2] ?? m[1]); id++) ids.push(id);
+    const last = +(m[2] ?? m[1]);
+    if (last >= RECORDED_CASES) throw new Error(`case ${last} does not exist (the cases are numbered 0 to ${RECORDED_CASES - 1})`);
+    for (let id = +m[1]; id <= last; id++) ids.push(id);
   }
   return ids;
+}
+
+/* Check that the chosen case numbers are real cases (whole numbers from 0 up to the last generated case) and
+   drop repeats. A number that does not exist is an error, never silently ignored. */
+export function checkCaseIds(caseIds) {
+  if (!Array.isArray(caseIds)) throw new Error('the case numbers must be a list');
+  for (const id of caseIds) {
+    if (!Number.isInteger(id) || id < 0 || id >= RECORDED_CASES) throw new Error(`case ${id} does not exist (the cases are numbered 0 to ${RECORDED_CASES - 1})`);
+  }
+  return [...new Set(caseIds)];
 }
 
 /* Play the cases on both copies and compare them.
 
    compareRuleSets(before, after, options) -> {
-     casesChosen, casesCompared, casesIdentical,        counts
+     casesChosen, casesCompared, casesIdentical,        counts (casesIdentical = compared minus those that differ)
+     casesDifferent                                     how many compared cases differ (counted in the first pass)
      skipped:    [{ id, theme, reason }]                cases left out because they were over a limit
+     notPlayed:  [id, ...]                              chosen cases that one of the two plays returned nothing for
      differingCases: [id, ...]
      differences: [{ caseId, theme, step, tap, surface, part, before, after, changes }]
        one entry per screen that differs: the case, the step (1 = the app just opened), the tap made at that step
        (the "after" tap if the two differ), the screen name (header, main, sheet, toast, frame, export; or for the
        saved session: stored, jsonExport), what was on screen before and after (readable text) and `changes`, the
        lines that differ ("-" before, "+" after)
+     savedCompared: true if what the app saves on the phone was compared as well as the screens
+     trouble: [text, ...]                               anything that went wrong in the comparison itself
      problems: { before: [...], after: [...] }          what the rule-set checker says about each rule set
+     complete: true only if at least one case was compared and every chosen case that was not skipped was compared
+     nothingDiffers: true ONLY if complete, no trouble, and no screen (and, if compared, no saved session) differs.
+                     Only this may ever be reported to a person as "no differences".
      seconds
    }
-   options: caseIds (default: the fast set), includeSaved (also compare what the app saved; default false),
-   maxMinutes / maxAdrenalineDoses (default CASE_LIMITS), pool (a Pool to reuse), onProgress(text). */
+   options: caseIds (default: the fast set; every number must be a real case), includeSaved (also compare what the
+   app saves on the phone; default TRUE, because a change to what is saved, such as the wording of a log entry,
+   must not be missed; pass false to compare the screens only), maxMinutes / maxAdrenalineDoses (default
+   CASE_LIMITS), pool (a Pool to reuse), onProgress(text). */
 export async function compareRuleSets(before, after, {
-  caseIds = fastCaseIds(), includeSaved = false, maxMinutes = CASE_LIMITS.maxMinutes, maxAdrenalineDoses = CASE_LIMITS.maxAdrenalineDoses,
+  caseIds = fastCaseIds(), includeSaved = true, maxMinutes = CASE_LIMITS.maxMinutes, maxAdrenalineDoses = CASE_LIMITS.maxAdrenalineDoses,
   pool = null, onProgress = () => {},
 } = {}) {
   const started = Date.now();
+  caseIds = checkCaseIds(caseIds);
   const parts = includeSaved ? ['screens', 'saved'] : ['screens'];
   const A = appWithRules(before), B = appWithRules(after);
   const own = pool || new Pool();
@@ -107,9 +129,10 @@ export async function compareRuleSets(before, after, {
     onProgress(`playing ${caseIds.length} cases with the "after" rule set`);
     const playedB = new Map((await own.play(B.dir, caseIds)).map((enc) => [enc.id, enc]));
 
-    const skipped = [], differing = [];
+    const skipped = [], notPlayed = [], differing = [];
     for (const id of caseIds) {
       const a = playedA.get(id), b = playedB.get(id);
+      if (!a || !b) { notPlayed.push(id); continue; } // a play that returned nothing is NOT a comparison
       const tooLong = [a, b].find((enc) => enc.elapsedMs > maxMinutes * 60000);
       const tooManyDoses = [a, b].find((enc) => enc.adrenalineDoses > maxAdrenalineDoses);
       if (tooLong) skipped.push({ id, theme: a.theme, reason: `ran ${Math.round(tooLong.elapsedMs / 60000)} minutes (limit ${maxMinutes})` });
@@ -119,21 +142,34 @@ export async function compareRuleSets(before, after, {
 
     // Pass 2: only for the cases that differ, play them in full (a few at a time, to keep memory small) and list
     // every screen that differs.
+    const trouble = [];
     const differences = [];
     for (let from = 0; from < differing.length; from += PASS_TWO_BATCH) {
       const batch = differing.slice(from, from + PASS_TWO_BATCH);
       onProgress(`listing the screens that differ: cases ${from + 1} to ${from + batch.length} of ${differing.length} that differ`);
       const fullA = new Map((await own.play(A.dir, batch, { mode: 'full' })).map((enc) => [enc.id, enc]));
       const fullB = new Map((await own.play(B.dir, batch, { mode: 'full' })).map((enc) => [enc.id, enc]));
-      for (const id of batch) differences.push(...stepDifferences(fullA.get(id), fullB.get(id), parts));
+      for (const id of batch) {
+        if (!fullA.get(id) || !fullB.get(id)) { trouble.push(`case ${id} differs, but the second pass returned nothing for it, so its differences could not be listed`); continue; }
+        differences.push(...stepDifferences(fullA.get(id), fullB.get(id), parts));
+      }
     }
     differences.sort((x, y) => x.caseId - y.caseId || x.step - y.step);
     const differingCases = [...new Set(differences.map((d) => d.caseId))];
-    const compared = caseIds.length - skipped.length;
+    // A case found different in pass 1 stays "different", even if pass 2 lists nothing for it: that is reported as a problem.
+    for (const id of differing) {
+      if (!differingCases.includes(id) && !trouble.some((t) => t.startsWith(`case ${id} differs, but the second pass returned nothing`)))
+        trouble.push(`case ${id} was found different in the first pass, but the second pass lists no differing screen for it`);
+    }
+    const compared = caseIds.length - skipped.length - notPlayed.length;
+    if (notPlayed.length) trouble.push(`${notPlayed.length} chosen case(s) were not compared because a play returned nothing: ${notPlayed.slice(0, 20).join(', ')}${notPlayed.length > 20 ? ', ...' : ''}`);
+    const complete = compared > 0 && notPlayed.length === 0;
 
     return {
-      casesChosen: caseIds.length, casesCompared: compared, casesIdentical: compared - differingCases.length,
-      skipped, differingCases, differences,
+      casesChosen: caseIds.length, casesCompared: compared, casesDifferent: differing.length, casesIdentical: compared - differing.length,
+      skipped, notPlayed, differingCases: [...new Set([...differing, ...differingCases])].sort((x, y) => x - y), differences,
+      savedCompared: includeSaved, trouble, complete,
+      nothingDiffers: complete && trouble.length === 0 && differing.length === 0 && differences.length === 0,
       problems: { before: checkRuleSet(before), after: checkRuleSet(after) },
       seconds: Math.round((Date.now() - started) / 1000),
     };
@@ -162,18 +198,28 @@ function stepDifferences(a, b, parts) {
   return out;
 }
 
-/* The result as plain text for a person. `limit` = how many differing screens to print in full (default 30). */
+/* The result as plain text for a person. `limit` = how many differing screens to print in full (default 30).
+   "No screen differs" is printed ONLY when result.nothingDiffers is true (at least one case really compared on
+   both rule sets, none left unplayed, nothing wrong, nothing different). */
 export function formatReport(result, { limit = 30 } = {}) {
   const out = [];
   out.push(`Cases chosen: ${result.casesChosen}. Compared: ${result.casesCompared}` +
     (result.skipped.length ? ` (${result.skipped.length} left out because they ran over the testing limits)` : '') +
-    `. Identical: ${result.casesIdentical}. Different: ${result.differingCases.length}. Took ${result.seconds} s.`);
+    `. Identical: ${result.casesIdentical}. Different: ${result.casesDifferent}. Took ${result.seconds} s.`);
+  out.push(result.savedCompared ? 'Compared: the screens and the saved session (what the app keeps on the phone, and the export).'
+    : 'The saved session (what the app keeps on the phone, and the export) was NOT compared: only the screens were (--screens-only).');
   for (const side of ['before', 'after']) if (result.problems[side].length)
     out.push(`WARNING: the "${side}" rule set fails the rule-set checker (${result.problems[side].length} problem(s)); first: ${result.problems[side][0]}`);
-  if (!result.differences.length) {
-    out.push('', 'No screen differs: the two rule sets behave the same in every compared case.');
+  for (const t of result.trouble) out.push(`PROBLEM: ${t}.`);
+  if (result.casesCompared === 0) out.push('', 'NOTHING WAS COMPARED: no case was played on both rule sets' + (result.skipped.length ? ' (every chosen case was over the testing limits)' : '') + '. This says nothing about whether the rule sets differ.');
+  else if (!result.complete) out.push('', 'THE COMPARISON IS INCOMPLETE: not every chosen case was compared. This says nothing about the cases that were not.');
+  if (result.nothingDiffers) {
+    out.push('', result.savedCompared
+      ? 'No screen differs and the saved session does not differ: the two rule sets behave the same in every compared case.'
+      : 'No screen differs in the compared cases. The saved session was NOT compared, so a difference in what is saved would not have been found.');
     return out.join('\n');
   }
+  if (!result.differences.length) return out.join('\n'); // nothing to list; the lines above say why this is not "no differences"
   const bySurface = {};
   for (const d of result.differences) bySurface[d.surface] = (bySurface[d.surface] || 0) + 1;
   out.push(`${result.differences.length} screen(s) differ (${Object.entries(bySurface).map(([s, n]) => `${s} ${n}`).join(', ')}), in case(s) ${result.differingCases.slice(0, 30).join(', ')}${result.differingCases.length > 30 ? ', ...' : ''}.`);

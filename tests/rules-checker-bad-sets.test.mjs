@@ -63,6 +63,23 @@ const BAD = [
   ['a checklist item with a {gap} nobody fills', 'checklists', '"Initiate documentation.",', '"Initiate {documentation}.",', 'checklists.lists.0.items.', 'must not contain a {gap}'],
   ['a checklist PDF name that is not a PDF', 'checklists', '"pdf": "cpg-post-rosc.pdf#page=2"', '"pdf": "cpg-post-rosc#page=2"', 'checklists.lists.1.pdf', 'PDF file name'],
   ['a reversible cause with no id', 'checklists', '"id": "temperature",', '"idd": "temperature",', 'checklists.causes.', 'is missing'],
+  // Markup in part 3. The checklist items, labels and codes are put on screen as plain text, so they take no tag at all;
+  // the introduction and the cause texts are put on screen as HTML, so only bold, italic and a line break are allowed.
+  ['a script tag in a checklist item', 'checklists', '"Initiate documentation.",', '"Initiate documentation.<script>alert(1)</script>",', 'checklists.lists.0.items.10', 'must be plain text; <script> is not allowed'],
+  ['an image with a handler in a checklist item', 'checklists', '"Team leader identified.",', '"Team leader identified.<img src=x onerror=alert(1)>",', 'checklists.lists.0.items.0', 'must be plain text; <img'],
+  ['a link in a checklist item', 'checklists', '"Roles allocated and confirmed.",', '"Roles allocated and confirmed.<a href=\\"https://example.com\\">more</a>",', 'checklists.lists.0.items.1', 'must be plain text; <a href'],
+  ['a tag that is never closed (and has no end) in a checklist item', 'checklists', '"Oxygen flow and supply adequate.",', '"Oxygen flow and supply adequate.<b",', 'checklists.lists.0.items.6', 'must be plain text; <b'],
+  ['allowed bold in a checklist item (items take no markup)', 'checklists', '"12 lead ECG.",', '"<b>12 lead ECG.</b>",', 'checklists.lists.1.items.7', 'must be plain text; <b>'],
+  ['a stray > in a checklist item', 'checklists', '"Pre-oxygenate by mask.",', '"Pre-oxygenate by mask >",', 'checklists.lists.2.items.0', 'must be plain text; >'],
+  ['a script tag in a checklist label', 'checklists', '"label": "Post ROSC checklist",', '"label": "Post ROSC checklist<script>alert(1)</script>",', 'checklists.lists.1.label', 'must be plain text; <script>'],
+  ['a tag in a checklist code', 'checklists', '"code": "EAS 3.15",', '"code": "EAS 3.15<br>",', 'checklists.lists.1.code', 'must be plain text; <br>'],
+  ['a script tag in a checklist introduction', 'checklists', '"intro": "Prepare for RSI while awaiting CCP backup.",', '"intro": "Prepare for RSI while awaiting CCP backup.<script>alert(1)</script>",', 'checklists.lists.2.intro', 'uses <script>'],
+  ['a link in a checklist introduction', 'checklists', '"intro": "Prepare for RSI while awaiting CCP backup.",', '"intro": "Prepare for RSI <a href=\\"https://example.com\\">while</a> awaiting CCP backup.",', 'checklists.lists.2.intro', 'uses <a href'],
+  ['bold never closed in a checklist introduction', 'checklists', '"intro": "Prepare for RSI while awaiting CCP backup.",', '"intro": "<b>Prepare for RSI while awaiting CCP backup.",', 'checklists.lists.2.intro', 'needs its closing tag'],
+  ['an image with a handler in a reversible cause text', 'checklists', '"text": "Review airway patency, oxygen supply, ventilation and waveform capnography."', '"text": "Review airway patency.<img src=x onerror=alert(1)>"', 'checklists.causes.0.text', 'uses <img'],
+  ['a script tag in a reversible cause name', 'checklists', '"name": "Hypoxia",', '"name": "Hypoxia<script>alert(1)</script>",', 'checklists.causes.0.name', 'uses <script>'],
+  ['a tag that is never ended in a reversible cause short name', 'checklists', '"plain": "Low oxygen",', '"plain": "Low oxygen <b",', 'checklists.causes.0.plain', 'stray < or >'],
+  ['a checklist id that would break the page (a quote and a colon)', 'checklists', '"id": "arrest",', '"id": "arr\\"est:1",', 'checklists.lists.0.id', 'only letters, digits'],
   // ---------- part 4: equipment ----------
   ['hole d: markup in an equipment question', 'equipment', '"question": "Outcome"', '"question": "<b>Outcome</b>"', 'equipment.forms.outcome.question', 'plain text', 'd'],
   ['a gap in an equipment question', 'equipment', '"bladeQuestion": "Blade"', '"bladeQuestion": "Blade {size}"', 'equipment.forms.laryngoscopy.bladeQuestion', 'plain text'],
@@ -192,6 +209,26 @@ test('every kind of impossible value is blocked in every number setting: below t
       const c = JSON.parse(text); set(c, path, value);
       const problems = checkRuleSet(c);
       assert.ok(problems.some((p) => p.startsWith(path + ': ')), `${what} at ${path} was not reported at that place. Got:\n${problems.slice(0, 5).join('\n')}`);
+    }
+  }
+});
+
+/* ---------- Markup in part 3: every text of the checklists and causes, not only a few chosen ones ---------- */
+
+test('every single text in part 3 (checklists and causes) rejects a script tag, an image with a handler, a link and an unclosed tag, at its own place', () => {
+  const places = [];
+  (function walk(node, path) {
+    if (typeof node === 'string') places.push(path);
+    else if (node && typeof node === 'object') for (const [k, v] of Object.entries(node)) walk(v, `${path}.${k}`);
+  })(reference.checklists, 'checklists');
+  assert.ok(places.length > 100, 'expected well over 100 texts in part 3');
+  const set = (obj, path, value) => { const parts = path.split('.'); let node = obj; for (const p of parts.slice(0, -1)) node = node[p]; node[parts.at(-1)] = value; };
+  const get = (obj, path) => path.split('.').reduce((node, p) => node[p], obj);
+  for (const path of places) {
+    for (const tag of ['<script>alert(1)</script>', '<img src=x onerror=alert(1)>', '<a href="https://example.com">', '<b']) {
+      const c = JSON.parse(text); set(c, path, get(c, path) + tag);
+      const problems = checkRuleSet(c);
+      assert.ok(problems.some((p) => p.startsWith(path + ': ')), `${tag} added to ${path} was not reported at that place. Got:\n${problems.slice(0, 3).join('\n')}`);
     }
   }
 });
