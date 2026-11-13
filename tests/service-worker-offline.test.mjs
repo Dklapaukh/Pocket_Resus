@@ -1,27 +1,42 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { webcrypto } from 'node:crypto';
+import { computeName } from '../tools/cache-name.mjs';
 import vm from 'node:vm';
 import { ROOT } from './helpers/engines.mjs';
 const CURRENT_NAME = readFileSync(ROOT + '/sw.js', 'utf8').match(/const CACHE='([^']+)'/)[1];
 
 // Model only the service-worker APIs used here; this does not emulate a device browser.
+const listedFiles = [...readFileSync(ROOT + '/sw.js', 'utf8').match(/const FILES=\[(.*?)\];/s)[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
+
 // A "world" is the phone: its stores and its network. Two workers can share one world (old and new version).
-function world() { return { stores: new Map(), offline: false, unavailable: null, puts: 0, fetches: [] }; }
+// stale = paths served with old bytes; redirected = paths answered with a redirect; staleSw = old text for sw.js.
+function world() { return { stores: new Map(), offline: false, unavailable: null, puts: 0, fetches: [], stale: new Set(), redirected: new Set(), staleSw: false, claims: 0 }; }
 
 function worker(phone = world(), cacheName = null) {
   const scope = 'https://example.test/resus/';
   const handlers = new Map();
   const stores = phone.stores;
   const key = input => new URL(typeof input === 'string' ? input : input.url, scope).href;
-  const response = value => ({ ok: true, redirected: false, value, clone() { return response(value); } });
+  // Responses carry real bytes, so the worker's fingerprint can be calculated over the real files.
+  const response = (value, bytes = Buffer.from(String(value)), redirected = false) => ({
+    ok: true, redirected, value, bytes,
+    clone() { return response(value, bytes, redirected); },
+    async arrayBuffer() { return new Uint8Array(bytes).buffer; },
+    async text() { return Buffer.from(bytes).toString('utf8'); },
+  });
   const caches = {
     async open(name) {
       if (!stores.has(name)) stores.set(name, new Map());
       const store = stores.get(name);
       return {
         async put(input, value) { phone.puts++; store.set(key(input), value); },
-        async match(input) { return store.get(key(input)); },
+        async match(input, options) {
+          if (!options?.ignoreSearch) return store.get(key(input));
+          const bare = href => href.split('#')[0].split('?')[0];
+          for (const [k, v] of store) if (bare(k) === bare(key(input))) return v;
+        },
       };
     },
     async keys() { return [...stores.keys()]; },
@@ -30,18 +45,23 @@ function worker(phone = world(), cacheName = null) {
   const self = {
     location: new URL(scope),
     addEventListener(type, handler) { handlers.set(type, handler); },
-    clients: { async claim() {} },
+    clients: { async claim() { phone.claims++; } },
   };
   const fetch = async (input, options) => {
     phone.fetches.push({ url: key(input), options });
     if (phone.offline) throw new Error('network unavailable');
     if (input === phone.unavailable) return { ok: false, redirected: false };
-    return response(key(input));
+    const path = typeof input === 'string' ? input : input.url;
+    let bytes;
+    if (path === 'sw.js') bytes = phone.staleSw ? Buffer.from(readFileSync(ROOT + '/sw.js', 'utf8') + '\n// old') : readFileSync(ROOT + '/sw.js');
+    else if (path !== './' && listedFiles.includes(path)) bytes = readFileSync(ROOT + '/' + path);
+    if (bytes && phone.stale.has(path)) bytes = Buffer.concat([bytes, Buffer.from(' ')]);
+    return response(key(input), bytes, phone.redirected.has(path));
   };
   let source = readFileSync(ROOT + '/sw.js', 'utf8');
   if (cacheName) source = source.replace(/const CACHE='[^']+'/, `const CACHE='${cacheName}'`); // pretend to be another version
   vm.runInNewContext(source, {
-    self, caches, fetch, URL, Response: { error: () => ({ error: true }) },
+    self, caches, fetch, URL, TextEncoder, Uint8Array, crypto: webcrypto, Response: { error: () => ({ error: true }) },
   });
   return {
     async install() {
@@ -137,8 +157,7 @@ test('every file the page needs, found by following its imports and file referen
 
 // Safe-update tests (v23): the new version is built whole in its own store, or not at all.
 const BASE = 'https://example.test/resus/';
-const listedFiles = [...readFileSync(ROOT + '/sw.js', 'utf8').match(/const FILES=\[(.*?)\];/s)[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
-const OLD = 'resus-pocket-v22-old', NEW = readFileSync(ROOT + '/sw.js', 'utf8').match(/const CACHE='([^']+)'/)[1];
+const NEW = CURRENT_NAME, OLD = 'resus-pocket-v22-' + NEW.split('-').pop(); // the pretend old version has a valid fingerprint too
 
 test('(a) if the rules file fails during an update, the old version keeps its complete set offline', async () => {
   const phone = world();
@@ -211,4 +230,80 @@ test('listed files are answered from the store without touching the network', as
 
 test('the worker does not take over a running app (no skipWaiting)', () => {
   assert.doesNotMatch(readFileSync(ROOT + '/sw.js', 'utf8').replace(/\/\*.*?\*\//s, ''), /skipWaiting/);
+});
+
+// Integrity check: the worker works out the file fingerprint itself and must get the name written in sw.js.
+// This runs the worker's OWN calculation (inside the fake) over the real files, and compares with the shared tool.
+test('the worker\'s own fingerprint over the real files equals the name in sw.js and the shared calculation', async () => {
+  const sw = worker();
+  await sw.install(); // would throw if the worker's sums did not match its own name
+  assert.equal(computeName(ROOT), NEW);
+});
+
+test('integrity: one stale listed file makes the install fail, leaves no new store, and the old version still serves', async () => {
+  const phone = world();
+  const oldSw = worker(phone, OLD);
+  await oldSw.install();
+  const before = oldSw.storeKeys(OLD);
+  phone.stale.add('src/rules/nz-eas.json');
+  await assert.rejects(worker(phone).install(), /do not match this version/);
+  assert.deepEqual(await oldSw.cacheNames(), [OLD]);
+  assert.deepEqual(oldSw.storeKeys(OLD), before);
+  oldSw.goOffline();
+  for (const f of listedFiles) assert.ok((await oldSw.request(f)).ok, f);
+});
+
+test('integrity: a stale sw.js text makes the install fail', async () => {
+  const phone = world();
+  phone.staleSw = true;
+  const sw = worker(phone);
+  await assert.rejects(sw.install(), /do not match this version/);
+  assert.deepEqual(await sw.cacheNames(), []);
+});
+
+test('integrity: when every file is correct the install succeeds', async () => {
+  const sw = worker();
+  await sw.install();
+  assert.equal(sw.storeKeys(NEW).length, listedFiles.length);
+});
+
+test('a redirected answer fails the install', async () => {
+  const phone = world();
+  phone.redirected.add('src/app/state.js');
+  const sw = worker(phone);
+  await assert.rejects(sw.install(), /Offline asset unavailable/);
+  assert.deepEqual(await sw.cacheNames(), []);
+});
+
+test('activation claims the open pages (and only activation does)', async () => {
+  const sw = worker();
+  await sw.install();
+  assert.equal(sw.phone.claims, 0);
+  await sw.activate();
+  assert.equal(sw.phone.claims, 1);
+});
+
+test('page opens with a query or hash are answered from the store, offline too', async () => {
+  const sw = worker();
+  await sw.install();
+  sw.goOffline();
+  assert.equal((await sw.request('./?x=1', 'navigate')).value, BASE);
+  assert.equal((await sw.request('index.html?source=pwa', 'navigate')).value, BASE + 'index.html');
+  assert.equal((await sw.request('./#top', 'navigate')).value, BASE);
+  assert.equal((await sw.request('src/app/state.js?x=1')).error, true, 'the query is ignored for page opens only');
+});
+
+// Every picture, icon, page and PDF the app can ask for must be in the offline list.
+test('files referenced by the manifest, page, stylesheets, tutorial slides and rules are all in the offline list', () => {
+  const read = f => readFileSync(ROOT + '/' + f, 'utf8');
+  const found = new Set();
+  const add = ref => { if (ref && !/^(https?:|data:|#)/.test(ref)) found.add(ref.split(/[?#]/)[0]); };
+  for (const m of read('index.html').matchAll(/(?:href|src)="([^"]+)"/g)) add(m[1]);
+  for (const icon of JSON.parse(read('manifest.webmanifest')).icons) add(icon.src);
+  for (const css of readdirSync(ROOT).filter(f => f.endsWith('.css'))) for (const m of read(css).matchAll(/url\(\s*['"]?([^'")]+)/g)) add(m[1]);
+  for (const m of read('src/app/data.js').matchAll(/image:\s*'([^']+)'/g)) add(m[1]);
+  for (const f of readdirSync(ROOT + '/src/app')) for (const m of read('src/app/' + f).matchAll(/'((?:[\w-]+\/)*[\w-]+\.(?:png|svg|pdf|jpg|webp))'/g)) add(m[1]);
+  for (const m of read('src/rules/nz-eas.json').matchAll(/"((?:[\w-]+\/)*[\w-]+\.pdf)"/g)) add(m[1]);
+  assert.ok(found.has('icon-192.png') && found.has('tutorial/step-01.png') && found.has('cpg-rsi.pdf'), 'the scan must find the known references');
+  assert.deepEqual([...found].filter(f => !listedFiles.includes(f)), []);
 });
