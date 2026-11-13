@@ -1,4 +1,4 @@
-/* RULES LOADER: gives the engine and the app the rule set (RULES) read from nz-eas.json.
+/* RULES LOADER: gives the engine and the app the rule set (RULES) read from nz-eas.yaml.
 
    On a phone the file is fetched from the same folder as this module (and comes from the offline copy
    when there is no signal: see sw.js). The tests read it from disk. Either way the same reader
@@ -6,7 +6,7 @@
    the app does not start. This file holds no clinical numbers or wording. */
 import { parseRules, rulesProblemMessage } from './parse.js';
 
-const RULES_URL = new URL('./nz-eas.json', import.meta.url);
+const RULES_URL = new URL('./nz-eas.yaml', import.meta.url);
 
 async function readRulesText() {
   if (typeof document === 'undefined' && globalThis.process?.versions?.node) { // the Node tests

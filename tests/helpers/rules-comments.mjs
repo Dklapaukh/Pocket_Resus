@@ -1,6 +1,7 @@
 // Finds every comment in the frozen baseline rules file (tests/baseline/nz-eas-v22-a8.js) and works out
-// which value it explains, as a dotted path such as "numbers.timing.cprCycleMs". The JSON rules file
-// cannot hold comments, so each one is kept as a plain-English note under "notes" at that path.
+// which value it explains, as a dotted path such as "numbers.timing.cprCycleMs". The YAML rules file
+// keeps no comments of its own (it is plain data), so each one is kept as a plain-English note under
+// "notes" at that path.
 //
 // Rule: a comment after a value on the same line explains that value. A comment on its own line(s)
 // explains the next value that follows it. Comments before "export const RULES" are the file header.

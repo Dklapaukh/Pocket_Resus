@@ -1,17 +1,23 @@
 // Rules editor stage E1: the tightened rule-set checker (src/rules/check.js) against a LIBRARY OF BAD RULE SETS.
-// Each bad rule set is the reference rules file (src/rules/nz-eas.json) with ONE small, named text change, a
+// Each bad rule set is the reference rules file with ONE small, named text change, a
 // different kind of fault each time, across all five parts. Every one must be rejected, and a message must
 // start with the place the fault is at and say what is wrong. The reference itself must pass with no errors.
 //
 // A change is made by finding an exact piece of the file's text and replacing it. If that piece is not found
 // exactly once, the test FAILS (so a change that quietly does nothing, or hits the wrong place, can never
 // make a fault look "rejected"). The six holes found by an earlier review are tagged hole a to hole f.
+// The text edited is the frozen JSON copy of the reference (tests/baseline/nz-eas-before-yaml.json): the
+// checker works on values, and tests/rules-yaml-same-as-baseline.test.mjs proves src/rules/nz-eas.yaml holds
+// exactly the same values. Two tests below also send every bad rule set through the YAML writer and reader
+// to show a fault is not lost or changed on the way (for example text such as "500" stays text).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { checkRuleSet, RELATIONSHIP_RULES } from '../src/rules/check.js';
+import { readYamlStrict } from '../src/rules/parse.js';
+import { rulesFileText } from '../src/rules/write.js';
 
-const text = readFileSync(new URL('../src/rules/nz-eas.json', import.meta.url), 'utf8');
+const text = readFileSync(new URL('./baseline/nz-eas-before-yaml.json', import.meta.url), 'utf8');
 const reference = JSON.parse(text);
 const count = (haystack, needle) => haystack.split(needle).length - 1;
 
@@ -105,7 +111,7 @@ const BAD = [
 /* The bad rule set for one entry; throws unless its search text is in the file exactly once. */
 function badSet([name, , find, replace]) {
   const found = count(text, find);
-  assert.equal(found, 1, `"${name}": the text to change must be in nz-eas.json exactly once (found ${found} times): ${JSON.stringify(find)}`);
+  assert.equal(found, 1, `"${name}": the text to change must be in the reference file exactly once (found ${found} times): ${JSON.stringify(find)}`);
   assert.notEqual(find, replace, `"${name}": the change must change something`);
   return JSON.parse(text.replace(find, () => replace));
 }
@@ -136,6 +142,19 @@ for (const entry of BAD) {
     for (const p of problems) assert.match(p, /^[\w.-]+: |^the rule set: /, 'a message must start with its place: ' + p);
   });
 }
+
+test('the reference the bad sets are edited from has the same values as the real YAML rules file', () => {
+  assert.deepStrictEqual(readYamlStrict(readFileSync(new URL('../src/rules/nz-eas.yaml', import.meta.url), 'utf8')), reference);
+});
+
+test('every bad rule set gives the same checker messages after being written as YAML and read back', () => {
+  for (const entry of BAD) {
+    const set = badSet(entry);
+    const viaYaml = readYamlStrict(rulesFileText(set));
+    assert.deepStrictEqual(viaYaml, set, `"${entry[0]}" changed on the way through YAML`);
+    assert.deepEqual(checkRuleSet(viaYaml), checkRuleSet(set), `"${entry[0]}" is judged differently after YAML`);
+  }
+});
 
 test('the bad rule sets do not change the reference they are made from', () => {
   assert.deepEqual(checkRuleSet(JSON.parse(text)), []);

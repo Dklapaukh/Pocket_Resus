@@ -12,10 +12,10 @@ let servePreviousWorker = false;
 const currentName = fs.readFileSync(path.join(root, 'sw.js'), 'utf8').match(/const CACHE='([^']+)'/)[1];
 let copyNames = {};        // cache names (with correct fingerprints) for the two served copies; set at start
 let serveCopy = null;      // null (normal), 'old' or 'new'
-let failRules = false;     // make src/rules/nz-eas.json fail while true
+let failRules = false;     // make src/rules/nz-eas.yaml fail while true
 let rulesRequests = 0;
 const mime = {
-  '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+  '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.yaml': 'text/yaml',
   '.json': 'application/json', '.webmanifest': 'application/manifest+json',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.pdf': 'application/pdf',
 };
@@ -26,7 +26,7 @@ const server = http.createServer((request, response) => {
     response.writeHead(403).end();
     return;
   }
-  if (url.pathname === '/src/rules/nz-eas.json') {
+  if (url.pathname === '/src/rules/nz-eas.yaml') {
     rulesRequests++;
     if (failRules) return response.writeHead(503).end();
   }
