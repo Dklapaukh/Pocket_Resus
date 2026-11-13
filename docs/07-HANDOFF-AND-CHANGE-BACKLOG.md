@@ -92,8 +92,9 @@ so rules can be updated, and new rule sets made for other services, without touc
 90 minutes, and adrenaline is never given more than 10 times to one patient. Apply to every NEW
 generated or recorded test case (E1 difference report, later safety-net additions): at most 90 minutes
 of case time and at most 10 adrenaline doses. These are limits on testing, NOT app rules: the app's
-behaviour is unchanged. Existing recordings are not edited; whether any existing case goes beyond
-these limits, and whether to skip it when running, is being checked in the owner's chat.
+behaviour is unchanged (owner confirmed 13 Nov 2026: testing only). Existing recordings are not
+edited and none is skipped: the pretend clock means long cases take no longer to replay, and the
+owner said not to skip them if it saves no time.
 
 **Waiting for the owner:**
 - (Answered 13 Nov 2026: usage limits were reset; reviewer is Opus · high as before, and Fable · high
