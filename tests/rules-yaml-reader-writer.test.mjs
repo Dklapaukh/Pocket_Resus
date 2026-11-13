@@ -24,6 +24,7 @@ const TEXT_SLOT = 'noDoseRecorded: No dose recorded'; // a real setting that mus
 
 /* The real rules file with one line changed. */
 const withSlot = (value) => yamlText.replace(SLOT, 'cprCycleMs: ' + value);
+const END = '...\n'; // the end mark line every rules file ends with (small examples below add it to their end)
 const refusal = (text) => { try { readYamlStrict(text); } catch (error) { return error.message; } return null; };
 const problemsAtSlot = (file) => checkRuleSet(file).filter((p) => p.startsWith('numbers.timing.cprCycleMs: '));
 
@@ -71,17 +72,17 @@ const REFUSED = [
 ];
 for (const [what, text, says] of REFUSED) {
   test(`trap REFUSED with a plain message: ${what}`, () => {
-    const message = refusal(text);
+    const message = refusal(text + END);
     assert.ok(message, 'the reader accepted it');
     assert.match(message, /^the rules file cannot be read \(.+\)\.$/);
     assert.match(message, says);
     assert.doesNotMatch(message, /\n|<anonymous>|at .*\.m?js:\d/, 'one plain line, no code trace');
-    assert.throws(() => parseRules(text), /^Error: the rules file cannot be read \(/);
+    assert.throws(() => parseRules(text + END), /^Error: the rules file cannot be read \(/);
   });
 }
 
 test('trap REFUSED: a plain * & or ! or # inside ordinary wording is NOT mistaken for an anchor, alias, tag or comment', () => {
-  const file = readYamlStrict('a: Tom & Jerry * 2 ! 3 and "quoted"\nb: "x # y & *z !w"\nc: \'q # r\'\nd: x&y *z !w#v\n');
+  const file = readYamlStrict('a: Tom & Jerry * 2 ! 3 and "quoted"\nb: "x # y & *z !w"\nc: \'q # r\'\nd: x&y *z !w#v\n' + END);
   assert.deepEqual(file, { a: 'Tom & Jerry * 2 ! 3 and "quoted"', b: 'x # y & *z !w', c: 'q # r', d: 'x&y *z !w#v' });
 });
 
@@ -159,7 +160,7 @@ test('trap READ AS TYPED: a merge key << is an ordinary name "<<" (nothing is me
 });
 
 test('trap READ AS TYPED: a name __proto__ is an ordinary name; it changes nothing about other groups', () => {
-  const file = readYamlStrict('__proto__:\n  polluted: 1\nb: 2\n');
+  const file = readYamlStrict('__proto__:\n  polluted: 1\nb: 2\n' + END);
   assert.deepEqual(Object.keys(file), ['__proto__', 'b']);
   assert.equal(Object.getPrototypeOf(file), Object.prototype);
   assert.equal({}.polluted, undefined);
@@ -167,11 +168,11 @@ test('trap READ AS TYPED: a name __proto__ is an ordinary name; it changes nothi
 
 test('trap READ AS TYPED: a very long line (30 000 characters) is read whole, with no folding, and written back whole', () => {
   const long = 'dose '.repeat(6000).trim();
-  const file = readYamlStrict('a: ' + long + '\nb: "' + long + '"\n');
+  const file = readYamlStrict('a: ' + long + '\nb: "' + long + '"\n' + END);
   assert.equal(file.a, long);
   assert.equal(file.b, long);
   const written = rulesFileText({ a: long, b: long + ' 1:2' });
-  assert.equal(written.split('\n').length, 3, 'one line each, never wrapped');
+  assert.equal(written.split('\n').length, 4, 'one line each (and the end mark and the last line break), never wrapped');
   assert.deepStrictEqual(readYamlStrict(written), { a: long, b: long + ' 1:2' });
 });
 
@@ -182,8 +183,8 @@ test('trap READ AS TYPED: line endings of Windows (CR LF) and a byte-order mark 
 });
 
 test('trap READ AS TYPED: a multi-line quoted text keeps its line breaks; a plain text spread over two lines is joined with ONE space (the writer never writes it that way)', () => {
-  assert.equal(readYamlStrict('a: "one\\ntwo"\n').a, 'one\ntwo');
-  assert.equal(readYamlStrict('a: one\n  two\n').a, 'one two');
+  assert.equal(readYamlStrict('a: "one\\ntwo"\n' + END).a, 'one\ntwo');
+  assert.equal(readYamlStrict('a: one\n  two\n' + END).a, 'one two');
 });
 
 test('the value check refuses anything that is not a finite number, true/false, text, null, a list or a plain map', () => {
@@ -197,6 +198,94 @@ test('the value check refuses anything that is not a finite number, true/false, 
 
 test('the number of traps: at least 15 different kinds are covered by name', () => {
   assert.ok(REFUSED.length + READ_AS_TYPED.length >= 15);
+});
+
+/* ---------- 1b. A file cut short, the end mark and the names at the top ---------- */
+
+// Every rules file ends with the end mark line "...". A file that stops anywhere before it (a transfer that
+// stopped early, a half-saved file) is refused, wherever it was cut, even inside the last part (notes).
+const NO_MARK_MESSAGE = /^the rules file cannot be read \(it is incomplete: its last line, \.\.\., is missing, so the file may have been cut short\)\.$/;
+const BODY = yamlText.slice(0, -END.length); // the real file without its end mark
+
+const END_MARK_TRAPS = [
+  ['no end mark at all', BODY, NO_MARK_MESSAGE],
+  ['the end mark without its last line break', yamlText.slice(0, -1), NO_MARK_MESSAGE],
+  ['the end mark cut to two full stops', BODY + '..\n', NO_MARK_MESSAGE],
+  ['the end mark with a space after it', BODY + '... \n', NO_MARK_MESSAGE],
+  ['text after the end mark', yamlText + 'a: 1\n', NO_MARK_MESSAGE],
+  ['text after the end mark and a second end mark', yamlText + 'a: 1\n...\n', /end mark \.\.\. before the last line/],
+  ['the end mark twice', yamlText + END, /end mark \.\.\. before the last line/],
+  ['an end mark in the middle', yamlText.replace('\nnumbers:\n', '\n...\nnumbers:\n'), /end mark \.\.\. before the last line/],
+  ['a second document after an end mark', BODY + '...\n---\nb: 1\n...\n', /end mark \.\.\. before the last line/],
+  ['a blank line then the end mark with a second blank line after it', BODY + '...\n\n', NO_MARK_MESSAGE],
+  ['an empty file', '', NO_MARK_MESSAGE],
+];
+for (const [what, text, says] of END_MARK_TRAPS) {
+  test(`trap REFUSED (end mark): ${what}`, () => {
+    assert.match(refusal(text) ?? 'it was read', says);
+    assert.throws(() => parseRules(text), { message: says });
+  });
+}
+
+test('the real file cut at the end (the original cut test: its last 40 characters missing) is refused', () => {
+  assert.match(refusal(yamlText.slice(0, yamlText.length - 40)) ?? 'it was read', NO_MARK_MESSAGE);
+  assert.throws(() => parseRules(yamlText.slice(0, yamlText.length - 40)), { message: NO_MARK_MESSAGE });
+});
+
+test('the real file cut at EVERY character, and at every line break, is refused (nothing short of the whole file is read)', () => {
+  let cuts = 0;
+  for (let length = 0; length < yamlText.length; length++) {
+    const cut = yamlText.slice(0, length);
+    let read = false;
+    try { parseRules(cut); read = true; } catch (error) { assert.match(error.message, NO_MARK_MESSAGE, 'cut at ' + length); }
+    assert.equal(read, false, 'a file cut after ' + length + ' characters was read');
+    cuts++;
+  }
+  assert.equal(cuts, yamlText.length);
+  let lineCuts = 0;
+  for (let at = yamlText.indexOf('\n'); at !== -1 && at < yamlText.length - END.length; at = yamlText.indexOf('\n', at + 1)) {
+    assert.match(refusal(yamlText.slice(0, at + 1)) ?? 'it was read', NO_MARK_MESSAGE, 'cut after line break at ' + at);
+    lineCuts++;
+  }
+  assert.ok(lineCuts > 1000, 'the file has well over 1000 lines');
+  assert.ok(yamlText.length - yamlText.lastIndexOf('\nnotes:\n') > 300, 'the last 300 characters are inside notes, the last part');
+});
+
+test('the end mark is not data: the values read are exactly the values of the frozen JSON file, with nothing extra', () => {
+  const frozen = JSON.parse(readFileSync(at('tests/baseline/nz-eas-before-yaml.json'), 'utf8'));
+  assert.deepStrictEqual(readYamlStrict(yamlText), frozen);
+  assert.deepEqual(Object.keys(readYamlStrict(yamlText)), ['about', 'numbers', 'wording', 'checklists', 'equipment', 'sources', 'notes']);
+});
+
+// The top-level names must be exactly about, numbers, wording, checklists, equipment, sources, notes, in that order.
+const NAMES = ['about', 'numbers', 'wording', 'checklists', 'equipment', 'sources', 'notes'];
+const whole = () => readYamlStrict(yamlText);
+const NAME_TRAPS = [
+  ['a part missing: wording', () => { const f = whole(); delete f.wording; return f; }, /missing part: wording\./],
+  ['about missing', () => { const f = whole(); delete f.about; return f; }, /missing part: about\./],
+  ['notes missing', () => { const f = whole(); delete f.notes; return f; }, /missing part: notes\./],
+  ['everything missing but notes', () => ({ notes: whole().notes }), /missing part: about, numbers, wording, checklists, equipment, sources\./],
+  ['an extra name at the end', () => ({ ...whole(), extra: 1 }), /part it should not have: extra\./],
+  ['an extra name at the start', () => ({ extra: 1, ...whole() }), /part it should not have: extra\./],
+  ['a spelling mistake in a name (Numbers)', () => { const { numbers, ...rest } = whole(); return { ...rest, Numbers: numbers }; }, /missing part: numbers\./],
+  ['numbers and wording swapped', () => { const f = whole(); return { ...f, numbers: f.wording, wording: f.numbers }; }, null], // same names, same order: values are the checker's job
+  ['two parts in the other order', () => { const { numbers, wording, ...rest } = whole(); return { about: rest.about, wording, numbers, ...rest }; }, /wrong order/],
+  ['about moved to the end', () => { const { about, ...rest } = whole(); return { ...rest, about }; }, /wrong order/],
+  ['notes moved to the start', () => { const { notes, ...rest } = whole(); return { notes, ...rest }; }, /wrong order/],
+  ['the whole file reversed', () => Object.fromEntries(Object.entries(whole()).reverse()), /wrong order/],
+];
+for (const [what, make, says] of NAME_TRAPS) {
+  test(`trap REFUSED (top-level names): ${what}`, () => {
+    const text = rulesFileText(make());
+    if (says) assert.throws(() => parseRules(text), says);
+    else assert.doesNotThrow(() => parseRules(text));
+  });
+}
+
+test('the standard names are exactly about, numbers, wording, checklists, equipment, sources, notes and the real file has them in that order', () => {
+  assert.deepEqual(NAMES, Object.keys(JSON.parse(readFileSync(at('tests/baseline/nz-eas-before-yaml.json'), 'utf8'))), 'the same order as the frozen JSON file');
+  assert.deepEqual(Object.keys(whole()), NAMES);
+  assert.doesNotThrow(() => parseRules(yamlText));
 });
 
 /* ---------- 2. The writer ---------- */
@@ -241,22 +330,22 @@ test('the writer quotes text that could be mistaken for anything else, and leave
   const written = rulesFileText({ a: 'yes', b: '12', c: '', d: ' x', e: 'x ', f: 'a: b', g: 'a #b', h: 'x\ny', i: '2026-09-24', j: '~', k: 'null', l: 'Adrenaline 1 mg', m: 'Seek clinical advice', n: 5, o: true, p: null, q: 'true' });
   assert.equal(written, [
     'a: "yes"', 'b: "12"', 'c: ""', 'd: " x"', 'e: "x "', 'f: "a: b"', 'g: "a #b"', 'h: "x\\ny"', 'i: "2026-09-24"', 'j: "~"', 'k: "null"',
-    'l: Adrenaline 1 mg', 'm: Seek clinical advice', '"n": 5', 'o: true', 'p: null', 'q: "true"', ''].join('\n'));
+    'l: Adrenaline 1 mg', 'm: Seek clinical advice', '"n": 5', 'o: true', 'p: null', 'q: "true"', '...', ''].join('\n'));
   for (const text of ['Adrenaline 1 mg', 'Seek clinical advice', 'Cycle {number}']) assert.equal(isPlainlySafe(text), true, text);
   for (const text of ['yes', 'No', '12', '', ' x', 'x ', 'a: b', 'a #b', 'a#b', 'x\ny', '- x', '~', 'null', 'True', '.5']) assert.equal(isPlainlySafe(text), false, JSON.stringify(text));
 });
 
-test('the writer layout: 2-space indent, one value per line, lists with "- ", empty list [] and empty group {}, no wrapping, no anchors, no tags, ends with one line break', () => {
+test('the writer layout: 2-space indent, one value per line, lists with "- ", empty list [] and empty group {}, no wrapping, no anchors, no tags, ends with the end mark line and one line break', () => {
   const written = rulesFileText({ a: { b: [1, { c: 'x', d: [] }, 'z'], e: {} }, f: null });
-  assert.equal(written, 'a:\n  b:\n    - 1\n    - c: x\n      d: []\n    - z\n  e: {}\nf: null\n');
+  assert.equal(written, 'a:\n  b:\n    - 1\n    - c: x\n      d: []\n    - z\n  e: {}\nf: null\n...\n');
   const shared = { x: 1 };
-  assert.equal(rulesFileText({ a: shared, b: shared }), 'a:\n  x: 1\nb:\n  x: 1\n', 'the same object used twice is written out twice, never as an anchor');
+  assert.equal(rulesFileText({ a: shared, b: shared }), 'a:\n  x: 1\nb:\n  x: 1\n...\n', 'the same object used twice is written out twice, never as an anchor');
 });
 
 test('the real rules file is exactly what the writer writes, and writing what the reader reads gives it back byte for byte', () => {
   assert.equal(rulesFileText(readYamlStrict(yamlText)), yamlText);
   assert.equal(rulesFileText(readYamlStrict(rulesFileText(readYamlStrict(yamlText)))), yamlText);
-  assert.ok(yamlText.endsWith('\n') && !yamlText.endsWith('\n\n') && !yamlText.includes('\r') && !yamlText.includes('\t') && !yamlText.startsWith('\uFEFF'));
+  assert.ok(yamlText.endsWith('\n...\n') && !yamlText.endsWith('\n\n...\n') && !yamlText.includes('\r') && !yamlText.includes('\t') && !yamlText.startsWith('\uFEFF'));
 });
 
 test('a file with the same values written in another layout is read the same but is NOT the standard file (so the editor and tests can tell)', () => {

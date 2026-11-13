@@ -1141,3 +1141,4 @@ notes:
   wording.tutorial: Tutorial pop-up controls (the slides themselves are not part of the rules file).
   wording.toasts: Short messages shown at the bottom of the screen.
   wording.errors: Messages shown in red inside a pop-up.
+...

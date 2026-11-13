@@ -62,17 +62,26 @@ test('on a phone: the file is fetched next to the loader and gives exactly the r
 const FAILURES = [
   ['the file is not found (offline and not saved, or deleted)', null, () => ({ ok: false, status: 404, text: async () => 'Not found' }), /status 404/],
   ['the network fails', null, () => { throw new TypeError('Failed to fetch'); }, /Failed to fetch/],
-  ['the file is not valid YAML', (t) => t + 'broken: [unclosed\n', ok, /not valid YAML/],
-  ['the file is empty', () => '', ok, /not valid YAML/],
-  ['a name is used twice in the file', (t) => t + 'numbers:\n  timing: 1\n', ok, /not valid YAML: duplicated mapping key/],
-  ['the file holds two documents', (t) => t + '---\na: 1\n', ok, /not valid YAML: it must hold exactly one document/],
+  // The original test from the JSON days: the file loses its last 40 characters (a transfer that stopped early).
+  ['the file is cut short (its last 40 characters are missing)', (t) => t.slice(0, t.length - 40), ok, /incomplete: its last line, \.\.\., is missing/],
+  ['the file is cut short after line 1000 (inside sources)', (t) => t.split('\n').slice(0, 1000).join('\n') + '\n', ok, /incomplete: its last line/],
+  ['the file is cut short inside the last part, notes', (t) => t.slice(0, t.lastIndexOf('\n...\n') - 20), ok, /incomplete: its last line/],
+  ['the file is cut short at the very last character (the end mark loses its line break)', (t) => t.slice(0, -1), ok, /incomplete: its last line/],
+  ['the file is not valid YAML', (t) => t.replace(/\.\.\.\n$/, 'broken: [unclosed\n...\n'), ok, /not valid YAML/],
+  ['the file is empty', () => '', ok, /incomplete: its last line/],
+  ['the file is only the end mark', () => '...\n', ok, /not valid YAML/],
+  ['a name is used twice in the file', (t) => t.replace(/\.\.\.\n$/, 'numbers:\n  timing: 1\n...\n'), ok, /not valid YAML: duplicated mapping key/],
+  ['the file holds two documents', (t) => t.replace(/\.\.\.\n$/, '---\na: 1\n...\n'), ok, /not valid YAML: it must hold exactly one document/],
   ['the file uses an anchor', (t) => t.replace('\nnumbers:\n', '\nnumbers: &n\n'), ok, /uses a YAML anchor/],
   ['the file uses an alias', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs: *n'), ok, /uses a YAML alias/],
   ['the file uses a tag', (t) => t.replace('\nnumbers:\n', '\nnumbers: !!map\n'), ok, /uses a YAML tag/],
   ['the file holds a number written as 1e3', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs: 1e3'), ok, /looks like a number or date/],
   ['the file has a value left empty', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs:'), ok, /left empty/],
   ['the file has a # comment', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs: 120000 # two minutes'), ok, /# comment/],
-  ['the file holds a list, not the rules', () => '[]', ok, /wrong shape/],
+  ['the file holds a list, not the rules', () => '[]\n...\n', ok, /wrong shape/],
+  ['a part is missing from the file (cut out of the middle)', (t) => t.replace(/^wording:\n(?:[ \n].*\n)*/m, ''), ok, /missing part: wording/],
+  ['the parts are in another order', (t) => { const f = readYamlStrict(t); const { numbers, ...rest } = f; return rulesFileText({ ...rest, numbers }); }, ok, /wrong order/],
+  ['the file has an extra part', (t) => rulesFileText({ ...readYamlStrict(t), extra: 1 }), ok, /part it should not have: extra/],
   ['a part is missing', (t) => { const f = readYamlStrict(t); delete f.wording; return rulesFileText(f); }, ok, /missing part: wording/],
   ['two parts are not groups', (t) => { const f = readYamlStrict(t); f.numbers = 5; f.sources = null; return rulesFileText(f); }, ok, /missing part: numbers, sources/],
 ];
@@ -90,11 +99,15 @@ for (const [what, edit, behaviour, reason] of FAILURES) {
   });
 }
 
-test('the reader keeps only the five parts, in order, and ignores about and notes', async () => {
+test('the reader keeps only the five parts, in order, and ignores about and notes (which must be there, first and last)', async () => {
   const { parseRules, PARTS } = await import('../src/rules/parse.js');
   const rules = parseRules(readFileSync(path.join(SRC, 'rules/nz-eas.yaml'), 'utf8'));
   assert.deepEqual(Object.keys(rules), PARTS);
   assert.deepEqual(PARTS, ['numbers', 'wording', 'checklists', 'equipment', 'sources']);
-  const rearranged = parseRules(rulesFileText({ notes: { x: 'y' }, about: 'z', sources: {}, equipment: {}, checklists: {}, wording: {}, numbers: {}, extra: 1 }));
-  assert.deepEqual(Object.keys(rearranged), PARTS);
+  const small = parseRules(rulesFileText({ about: 'z', numbers: {}, wording: {}, checklists: {}, equipment: {}, sources: {}, notes: { x: 'y' } }));
+  assert.deepEqual(Object.keys(small), PARTS);
+  assert.deepEqual(small, { numbers: {}, wording: {}, checklists: {}, equipment: {}, sources: {} });
+  // The old version of this test also accepted other orders and an extra name; the reader now refuses both.
+  assert.throws(() => parseRules(rulesFileText({ notes: { x: 'y' }, about: 'z', sources: {}, equipment: {}, checklists: {}, wording: {}, numbers: {} })), /wrong order/);
+  assert.throws(() => parseRules(rulesFileText({ about: 'z', numbers: {}, wording: {}, checklists: {}, equipment: {}, sources: {}, notes: {}, extra: 1 })), /part it should not have: extra/);
 });
