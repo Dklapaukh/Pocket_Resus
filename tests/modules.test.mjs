@@ -23,7 +23,7 @@ test('sw.js: every module and stylesheet the page uses is in the offline list', 
   for (const f of need) assert.ok(files.includes(f), f + ' not cached for offline use');
 });
 test('sw.js: cache name changed so phones fetch the new files', () => {
-  assert.match(sw, /const CACHE='resus-pocket-v22-rules-file'/);
+  assert.match(sw, /const CACHE='resus-pocket-v23-safe-update'/);
 });
 test('every module only uses names that exist (no missing import)', () => {
   const browser = new Set('document window navigator localStorage Date Math Number String Array Object JSON Promise Set Map Intl URL Blob Error Boolean RegExp parseInt parseFloat isNaN isFinite setInterval setTimeout clearTimeout clearInterval console location NodeFilter FormData Event matchMedia undefined NaN Infinity encodeURIComponent decodeURIComponent'.split(' '));
