@@ -71,11 +71,18 @@ so rules can be updated, and new rule sets made for other services, without touc
 | Before 0: A8 merged | Done 12 Nov 2026 |
 | 0 Wider safety net | Done 13 Nov 2026. `tests/reference/` (read its README): 3,609 recorded cases from 91843ae; first 249 replayed by `npm test`, all by `npm run test:deep`; 51 planted faults caught; two independent reviews, no blocking findings. 246 tests pass |
 | 1 Rule set becomes JSON | Done 13 Nov 2026. `src/rules/nz-eas.json` (five parts + `about` + `notes`), `load.js`, `parse.js`, `check.js` (first checker, tests only); old file kept as `tests/baseline/nz-eas-v22-a8.js`. 425 values identical incl. order; real-browser start, offline, slow network and failure cases checked; review: no blocking findings. 318 tests pass |
-| 2 Remaining text and settings into data | Next (started 13 Nov 2026) |
-| 2b Safer update (`sw.js`), then publish v23 | After 2 (doc 19) |
+| 2 Remaining text and settings into data | Done 13 Nov 2026 (commit 097ee00). 506 values added to `nz-eas.json` (labels, messages, timer thresholds, rhythm button names, correction-form lists, resus-start choices, equipment form questions, log intervention list, export labels); additions frozen in `tests/baseline/stage2-additions.json`; all 425 earlier values identical. 359 tests and the deep run pass; real-browser check matched the reference on 21 screens and offline; 25 new planted faults caught; review: no blocking findings |
+| 2b Safer update (`sw.js`), then publish v23 | Next (doc 19) |
 | Then | Waiting for the owner's answer on "editor first" (below). Do not start stage 3 before it |
 
 **Go-live must do (found in stage 1 review, not yet built):** new cache name AND a safer `sw.js`: today a phone with a working offline copy can lose offline use if the rules file fails to download during the update visit (it fails safe: message, no app). Fix `sw.js` so new-version files are never saved into the old version's store and the old complete set is served until the new set is fully installed; add a test for "rules file fails during update, then offline".
+
+**Carried forward from the stage 2 review (not blocking; do before the editor is used):**
+- Checker (`src/rules/check.js`) is too lenient for the new wording groups: it does not notice an entry that drops its own `{gap}`, a rule-set gap in a log entry (would save the word "undefined"), "30" typed in place of `{warningSeconds}`, markup in equipment questions, an unknown event type in the interventions list, or "mg" removed from the medicine units. Today the frozen additions list catches these; the editor will rely on the checker. Tighten at the checker stage (7).
+- Add two narrower planted changes: warning at 31 s with the text unchanged; yellow panel alone at 10 s (both are caught today when planted by hand).
+- The 100 limit on the earlier-counts boxes is typed in code (three places) while its error text "0–100" is in the rule set: move the limit into the rule set (stage 3).
+- `index.html` still holds screen text ("Saving unavailable", tab names, header labels): move with appearance settings (stage 6) or earlier.
+- Changing a name in `wording.drugNames` does not change which hand-typed names count as that medicine (noted in the file).
 
 **Waiting for the owner:**
 - **Order of work (asked 13 Nov 2026; blocks stage 3 only).** Option A (recommended), "editor first":
