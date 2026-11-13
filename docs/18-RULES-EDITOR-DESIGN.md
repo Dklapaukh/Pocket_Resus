@@ -384,3 +384,18 @@ Three levels, cheapest first:
 
 ## Decisions
 All of 11 to 25 are made (table at the top). The build brief is `docs/19-ORCHESTRATION-BRIEF.md`.
+
+## Owner's answers written on `main`, 13 Nov 2026 (to be reconciled, one decision at a time)
+The owner answered the old "Editor decisions still to make (after 3a)" list in the copy of this page on
+`main`. That list had already been replaced on `rules-editor` by decisions 9 to 25 above, so the
+answers are kept here word for word and compared with those decisions. Nothing below changes the
+build until the owner has confirmed it in a chat (doc 07 "Waiting for the owner").
+
+| Question | Owner's answer on `main` (13 Nov 2026) | Compared with the decisions above |
+|---|---|---|
+| File format for a rule set | "use YAML" (also new rule 10 in `CLAUDE.md`: values likely to change go in a single central YAML configuration file) | **Conflicts with decision 9** (plain JSON, built and proved in stage 1). Owner decision needed |
+| Where the editor runs and who can use it | "The editor will run as a standalone webpage. An organisation will decide who has access and those allocated people will use it" | Fits decisions 18 and 20 (separate page; any approved person is an "editor"). Access control by an organisation needs accounts, which decision 20 left for later |
+| How the "what changed" view is shown and how approval is recorded | "the user never needs to see previous versions or version history. They only need to see the current version number" | Changes the editor: no history screens. To confirm: the editor still shows what a draft will change before it is confirmed (a safety check, not history), and the previous rule set is still kept out of sight for rollback |
+| How a rule set goes live; how the app chooses a service's rule set | "Rule sets go live when confirmed in the editor after appropriate testing. Each service will have a different URL." | **Changes decision 20** (a saved file goes live through GitHub). Going live from the editor needs a way for the editor to publish (design note for step E3). One URL per service fits decision 21 |
+| How the automatic tests apply to a new service's rule set | "We will need to identify tests which are purely functional and therefore applicable everywhere. Beyond that we will need to develop bespoke tests for each service's rule set as part of the creation/ editing process" | Fits section 3 above (general tests for every rule set; service-specific tests stay with their rule set) |
+

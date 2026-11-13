@@ -9,3 +9,4 @@
 7. Continue approved work without routine checkpoints. Update doc 07 (keep it short; history goes in doc 09). Commit freely to a branch. Every chat first runs `sh tools/build-progress.sh check` (doc 19 "Running unattended").
 8. Token efficiency: do not re-print large files; read files only when needed.
 9. When a chat gets long or inefficient, give the owner a ready-to-paste prompt for a new chat. Tell the owner if a task would be better in Claude Code (owner is not a developer).
+10. When writing code keep it as easy to read as possible, use common tools and frameworks, document expected behaviours of functions. Literal values and constants that are likely to change should be stored in a single central YAML configuration file.
