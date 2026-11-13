@@ -411,6 +411,20 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
     if (ok && unique && new Set(v).size !== v.length) return say(where, 'has the same item more than once');
     return ok ? v : undefined;
   }
+  // Text that is put on screen as HTML (so a tag would really act as a tag): only bold, italic and a line break
+  // are allowed, and each <b> or <em> must be closed. `pieces` is a list of texts that are checked as one entry.
+  // Used for the wording part and for the part 3 texts that the app puts on screen as HTML.
+  function allowedMarkupOnly(where, pieces) {
+    pieces.forEach((piece) => {
+      const withoutTags = piece.replace(/<[^>]*>/g, (tag) => (ALLOWED_TAGS.includes(tag) ? '' : (say(where, `uses ${tag}; only <b>, <em> and <br> are allowed`), '')));
+      if (/[<>]/.test(withoutTags)) say(where, 'has a stray < or >');
+    });
+    // Every opening <b> or <em> needs its closing tag.
+    for (const tag of ['b', 'em']) {
+      const opened = pieces.join(' ').split(`<${tag}>`).length - 1, closed = pieces.join(' ').split(`</${tag}>`).length - 1;
+      if (opened !== closed) say(where, `has ${opened} <${tag}> but ${closed} </${tag}>; each needs its closing tag`);
+    }
+  }
   // An object that must have exactly these settings (and may also have the optional ones).
   const unknownPlaces = []; // places reported as "not a setting the app knows"
   function group(where, v, required, optional = []) {
@@ -669,15 +683,9 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
         }
         const withoutGaps = piece.replace(/\{\w+\}/g, '');
         if (/[{}]/.test(withoutGaps)) say(where, 'has a curly bracket that is not a complete {gap}');
-        const withoutTags = withoutGaps.replace(/<[^>]*>/g, (tag) => (ALLOWED_TAGS.includes(tag) ? '' : (say(where, `uses ${tag}; only <b>, <em> and <br> are allowed`), '')));
-        if (/[<>]/.test(withoutTags)) say(where, 'has a stray < or >');
         if (/\b(undefined|NaN)\b/.test(piece)) say(where, 'contains the word "undefined" or "NaN", which would be shown to the person');
       });
-      // Every opening <b> or <em> needs its closing tag.
-      for (const tag of ['b', 'em']) {
-        const opened = pieces.join(' ').split(`<${tag}>`).length - 1, closed = pieces.join(' ').split(`</${tag}>`).length - 1;
-        if (opened !== closed) say(where, `has ${opened} <${tag}> but ${closed} </${tag}>; each needs its closing tag`);
-      }
+      allowedMarkupOnly(where, pieces.map((piece) => piece.replace(/\{\w+\}/g, ''))); // markup rule (the {gaps} are checked above)
       // Exactly its own gaps: a number the app fills in must not be typed in as text (or left out).
       for (const gap of gaps) if (!gapsUsed.has(gap)) say(where, `must contain {${gap}}, which the app fills in; typing the value in as text would stop it following the rule set (${allowed})`);
     };
@@ -693,6 +701,23 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
   if (isObject(C)) {
     // Checklist text is shown as it is: no {gap} is filled here.
     const noGaps = (where, v) => (text(where, v) && /[{}]/.test(v) ? say(where, 'must not contain a {gap}; checklist text is shown as it is') : v);
+    // HOW THE APP SHOWS THESE TEXTS (src/app/views.js, events.js):
+    //   - the checklist ITEMS are put on screen as plain text (escaped, so a tag would be shown as typed letters), and the
+    //     label and code are also used in places that are escaped (the Log, the source line), so these take NO markup at all;
+    //   - the checklist introduction and the cause name, group, short name and text are put on screen as HTML, so only
+    //     the wording markup (bold, italic, line break; each <b> and <em> closed) is allowed, as in the wording part.
+    const plainChecklistText = (where, v) => {
+      if (!noGaps(where, v)) return undefined;
+      const bad = /<[^>]*>?|[<>]/.exec(v);
+      return bad ? say(where, `must be plain text; ${bad[0]} is not allowed here (checklist items, labels and codes take no markup)`) : v;
+    };
+    const markupChecklistText = (where, v) => {
+      if (!noGaps(where, v)) return undefined;
+      allowedMarkupOnly(where, [v]);
+      return v;
+    };
+    // An id is put inside a page attribute and joined to an item number with ":", so it may use only letters, digits, "-" and "_".
+    const idText = (where, v) => (text(where, v) && !/^[A-Za-z0-9_-]+$/.test(v) ? say(where, `must use only letters, digits, - and _ (found ${show(v)})`) : v);
     group('checklists', C, [], ['lists', 'causes']);
     if (!Array.isArray(C.lists) || C.lists.length === 0) say('checklists.lists', 'must be a list of checklists');
     else {
@@ -701,11 +726,11 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
         const where = `checklists.lists.${i}`;
         const l = group(where, list, ['id', 'label', 'code', 'pdf', 'items'], ['intro']);
         if (!l) return;
-        if (text(`${where}.id`, l.id)) { if (ids.includes(l.id)) say(`${where}.id`, `"${l.id}" is used by another checklist`); ids.push(l.id); }
-        noGaps(`${where}.label`, l.label); noGaps(`${where}.code`, l.code);
+        if (idText(`${where}.id`, l.id) && typeof l.id === 'string') { if (ids.includes(l.id)) say(`${where}.id`, `"${l.id}" is used by another checklist`); ids.push(l.id); }
+        plainChecklistText(`${where}.label`, l.label); plainChecklistText(`${where}.code`, l.code);
         if (text(at(where, 'pdf'), l.pdf) && !PDF_NAME.test(l.pdf)) say(at(where, 'pdf'), `must be a PDF file name, optionally with #page=N (found ${show(l.pdf)})`);
-        if ('intro' in l) noGaps(`${where}.intro`, l.intro);
-        if (textList(`${where}.items`, l.items, { plain: false })) l.items.forEach((item, j) => noGaps(`${where}.items.${j}`, item));
+        if ('intro' in l) markupChecklistText(`${where}.intro`, l.intro);
+        if (textList(`${where}.items`, l.items, { plain: false })) l.items.forEach((item, j) => plainChecklistText(`${where}.items.${j}`, item));
       });
       for (const id of CHECKLIST_IDS_USED_BY_APP) if (!ids.includes(id)) say('checklists.lists', `has no checklist with id "${id}", which the app opens`);
     }
@@ -716,7 +741,7 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
         const where = `checklists.causes.${i}`;
         const x = group(where, cause, ['id', 'group', 'name', 'plain', 'text']);
         if (!x) return;
-        for (const k of Object.keys(x)) noGaps(`${where}.${k}`, x[k]);
+        for (const k of Object.keys(x)) (k === 'id' ? idText : markupChecklistText)(`${where}.${k}`, x[k]);
         if (typeof x.id === 'string') { if (ids.includes(x.id)) say(`${where}.id`, `"${x.id}" is used by another cause`); ids.push(x.id); }
       });
     }
