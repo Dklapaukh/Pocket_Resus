@@ -205,7 +205,10 @@ const GUIDELINES_USED_BY_APP = { // setting names each linked guideline must hav
   paediatric: ['code', 'label', 'pdf'], rsi: ['code', 'label', 'pdf'], adrenaline: ['code', 'pdf'],
   amiodarone: ['code', 'pdf'], magnesium: ['code', 'web'],
 };
-const PDF_NAME = /^[\w./-]+\.pdf(#page=\d+)?$/;
+// A PDF file name goes into a link: no ".." (it could leave the app's folder), no leading "/", no ":" (a web scheme), no quotes, spaces or < >.
+const PDF_NAME = /^(?!\/)(?!.*\.\.)[\w./-]+\.pdf(#page=\d+)?$/;
+// A web address goes into a link: secure (https) only, and no quotes, spaces, < > or backslash.
+const WEB_ADDRESS = /^https:\/\/[^\s"'<>\\]+$/;
 
 /* Every kind of log event the app can record. The "Interventions only" list may name only these. */
 const EVENT_TYPES_THE_APP_RECORDS = ['weight', 'resus-time', 'start', 'history', 'rearrest', 'end', 'checklist', 'context', 'equipment', 'note',
@@ -728,7 +731,7 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
         if (!l) return;
         if (idText(`${where}.id`, l.id) && typeof l.id === 'string') { if (ids.includes(l.id)) say(`${where}.id`, `"${l.id}" is used by another checklist`); ids.push(l.id); }
         plainChecklistText(`${where}.label`, l.label); plainChecklistText(`${where}.code`, l.code);
-        if (text(at(where, 'pdf'), l.pdf) && !PDF_NAME.test(l.pdf)) say(at(where, 'pdf'), `must be a PDF file name, optionally with #page=N (found ${show(l.pdf)})`);
+        if (text(at(where, 'pdf'), l.pdf) && !PDF_NAME.test(l.pdf)) say(at(where, 'pdf'), `must be a PDF file name, optionally with #page=N; no "..", no leading "/", no ":" (found ${show(l.pdf)})`);
         if ('intro' in l) markupChecklistText(`${where}.intro`, l.intro);
         if (textList(`${where}.items`, l.items, { plain: false })) l.items.forEach((item, j) => plainChecklistText(`${where}.items.${j}`, item));
       });
@@ -856,8 +859,8 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
         const where = `sources.guidelines.${id}.${k}`;
         if (k === 'offlinePage') number(where, g[k]);
         else if (!plainText(where, g[k])) continue;
-        else if (k === 'pdf' && !PDF_NAME.test(g[k])) say(where, `must be a PDF file name (found ${show(g[k])})`);
-        else if (k === 'web' && !/^https:\/\/\S+$/.test(g[k])) say(where, `must be a secure web address (starting with https) (found ${show(g[k])})`);
+        else if (k === 'pdf' && !PDF_NAME.test(g[k])) say(where, `must be a PDF file name with no "..", no leading "/", no ":" (found ${show(g[k])})`);
+        else if (k === 'web' && !WEB_ADDRESS.test(g[k])) say(where, `must be a secure web address starting with https and with no quotes, spaces, < > or backslash (found ${show(g[k])})`);
       }
     }
     const links = textList('sources.guidanceLinks', S.guidanceLinks);
@@ -880,6 +883,22 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
     if (v === null || typeof v !== 'object') return;
     for (const [k, item] of Object.entries(v)) sweep(item, where ? `${where}.${k}` : k);
   })({ numbers: file.numbers, wording: file.wording, checklists: file.checklists, equipment: file.equipment, sources: file.sources }, '');
+
+  /* ---------- Closing sweep: a double quote in any text could break out of a page attribute ---------- */
+  // The app puts some rule-set text inside HTML attributes written with double quotes (aria-label="...", href="...",
+  // data-...="..."), without escaping it. A " would end the attribute and what follows would become new attributes
+  // (for example an onclick). So no text, and no setting name, in the five parts may contain one.
+  // (Every attribute in src/app and src/engine is double-quoted, so ' and spaces need no rule.)
+  function noQuotes(v, where) {
+    const message = 'double quotes are not allowed here (the app would put the text inside a page attribute); use single quotes instead';
+    if (typeof v === 'string') { if (v.includes('"')) say(where, message); return; }
+    if (v === null || typeof v !== 'object') return;
+    for (const [k, item] of Object.entries(v)) {
+      if (k.includes('"')) say(`${where}.${k}`, 'a setting name must not contain a double quote');
+      noQuotes(item, `${where}.${k}`);
+    }
+  }
+  for (const part of PARTS) if (isObject(file[part])) noQuotes(file[part], part);
 
   /* ---------- Notes: each one must explain a value that exists ---------- */
   if ('notes' in file) {

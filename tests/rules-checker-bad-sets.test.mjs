@@ -232,3 +232,51 @@ test('every single text in part 3 (checklists and causes) rejects a script tag, 
     }
   }
 });
+
+/* ---------- A double quote (or a bad link) must not be able to add hidden code to a page attribute ---------- */
+
+const withChange = (path, value) => {
+  const c = JSON.parse(text); const parts = path.split('.'); let node = c;
+  for (const p of parts.slice(0, -1)) node = node[p];
+  node[parts.at(-1)] = value;
+  return c;
+};
+
+test('a double quote that would add an attribute to the page is rejected, with a message that says what to do (the reviewer\'s two examples)', () => {
+  const aria = checkRuleSet(withChange('wording.popups.closeAria', 'Close" data-injected="yes'));
+  assert.ok(aria.some((p) => p.startsWith('wording.popups.closeAria: ') && p.includes('double quotes are not allowed') && p.includes('use single quotes')), aria.join('\n'));
+  const web = checkRuleSet(withChange('sources.guidelines.magnesium.web', 'https://x"onclick="alert(1)'));
+  assert.ok(web.some((p) => p.startsWith('sources.guidelines.magnesium.web: ')), web.join('\n'));
+  assert.ok(web.some((p) => p.includes('no quotes')), web.join('\n'));
+});
+
+test('a double quote appended to EVERY string value in the five parts, one at a time, is rejected at that place', () => {
+  const places = []; // each place is the list of setting names leading to a text (a name may itself contain a dot, such as 1.5)
+  (function walk(node, keys) {
+    if (typeof node === 'string') places.push(keys);
+    else if (node && typeof node === 'object') for (const [k, v] of Object.entries(node)) walk(v, [...keys, k]);
+  })({ numbers: reference.numbers, wording: reference.wording, checklists: reference.checklists, equipment: reference.equipment, sources: reference.sources }, []);
+  assert.ok(places.length > 600, 'expected hundreds of texts, found ' + places.length);
+  for (const keys of places) {
+    const c = JSON.parse(text); let node = c;
+    for (const k of keys.slice(0, -1)) node = node[k];
+    node[keys.at(-1)] += '" x="1';
+    const path = keys.join('.');
+    assert.ok(checkRuleSet(c).some((p) => p.startsWith(path + ': ')), `a double quote added to ${path} was not reported at that place`);
+  }
+});
+
+test('web addresses: javascript: and http:// are refused; so are quotes, spaces, < > and a backslash', () => {
+  for (const bad of ['javascript:alert(1)', 'http://cpg.stjohn.org.nz/x', 'https://x y', 'https://x<b', 'https://x\\y', "https://x'y", 'data:text/html,hi']) {
+    const problems = checkRuleSet(withChange('sources.guidelines.cardiacArrest.web', bad));
+    assert.ok(problems.some((p) => p.startsWith('sources.guidelines.cardiacArrest.web: ')), `${bad} was accepted`);
+  }
+});
+
+test('PDF names: "../", a leading "/", a scheme, quotes and spaces are refused, in both places a PDF name is kept', () => {
+  for (const bad of ['../secret.pdf', 'files/../secret.pdf', '/etc/x.pdf', 'https://x.pdf', 'javascript:x.pdf', 'a b.pdf', 'a".pdf', 'a<b.pdf']) {
+    assert.ok(checkRuleSet(withChange('sources.guidelines.rsi.pdf', bad)).some((p) => p.startsWith('sources.guidelines.rsi.pdf: ')), `${bad} was accepted in sources`);
+    assert.ok(checkRuleSet(withChange('checklists.lists.0.pdf', bad)).some((p) => p.startsWith('checklists.lists.0.pdf: ')), `${bad} was accepted in checklists`);
+  }
+  assert.deepEqual(checkRuleSet(reference), []);
+});
