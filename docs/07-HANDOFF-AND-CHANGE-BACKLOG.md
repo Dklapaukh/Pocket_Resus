@@ -88,14 +88,17 @@ so rules can be updated, and new rule sets made for other services, without touc
 - `index.html` still holds screen text ("Saving unavailable", tab names, header labels): move with appearance settings (stage 6) or earlier.
 - Changing a name in `wording.drugNames` does not change which hand-typed names count as that medicine (noted in the file).
 
+**Owner's limits for test cases (13 Nov 2026):** do not run test cases that record a case longer than
+90 minutes, and adrenaline is never given more than 10 times to one patient. Apply to every NEW
+generated or recorded test case (E1 difference report, later safety-net additions): at most 90 minutes
+of case time and at most 10 adrenaline doses. These are limits on testing, NOT app rules: the app's
+behaviour is unchanged. Existing recordings are not edited; whether any existing case goes beyond
+these limits, and whether to skip it when running, is being checked in the owner's chat.
+
 **Waiting for the owner:**
-- **Who reviews while Opus is unavailable, until 17 Nov 4 pm (asked 13 Nov 2026; blocks the 2b
-  review, the v23 release and every later review).** Option A (recommended): Fable, the strongest
-  model, reviews at high effort until Opus is back; the 2b review runs at once and v23 can be published
-  and phone-checked several days before the owner leaves; cost: it uses the Fable allowance, which
-  the orchestrator also needs. Option B: wait for Opus; building continues, reviews queue up, v23 is
-  published on the evening of 17 Nov and phone-checked on 17 or 18 Nov. Option C: Sonnet reviews now;
-  cheapest, weakest check; not recommended for a release.
+- (Answered 13 Nov 2026: usage limits were reset; reviewer is Opus · high as before, and Fable · high
+  if Opus is stopped by a limit again, "Option A". The 2b review and v23 release are being done in the
+  owner's chat; unattended runs leave 2b alone and work on E1.)
 - **Store apps (told 13 Nov 2026).** Apple's review rule 1.4.2: dose calculators must come from a
   hospital, university, manufacturer or similar approved body, or have regulator approval. Google: a
   new personal developer account must run a closed test with 12 testers for 14 days before public
