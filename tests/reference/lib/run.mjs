@@ -4,12 +4,16 @@ import { Worker } from 'node:worker_threads';
 import os from 'node:os';
 import { Driver, SCREEN_SURFACES, SAVED_SURFACES } from './driver.mjs';
 import { playCase, caseInfo } from './cases.mjs';
+import { T0 } from '../../helpers/dom-app.mjs';
 import { encodeCase } from './format.mjs';
 
-/* Play one case and return every step in full (used by the show tool and by recording). */
+/* Play one case and return every step in full (used by the show tool and by recording), plus how big the
+   case was: elapsedMs = how much case time passed on the app's clock, and adrenalineDoses = the most
+   adrenaline doses the saved session held at any step (voided ones included, so this never under-counts). */
 export async function playFull(appDir, id) {
   let info = caseInfo(id);
   const D = new Driver(appDir, { startOffset: info.startOffset });
+  let elapsedMs = 0;
   try {
     info = await playCase(D, id);
   } catch (err) {
@@ -17,14 +21,24 @@ export async function playFull(appDir, id) {
     await D.capture('CASE STOPPED: ' + err.message);
     D.steps.at(-1).screens.frame += '|CASE STOPPED: ' + err.message;
   } finally {
+    elapsedMs = D.now - T0 - info.startOffset;
     D.close();
   }
-  return { info, steps: D.steps };
+  return { info, steps: D.steps, elapsedMs, adrenalineDoses: mostAdrenalineDoses(D.steps) };
+}
+
+/* The most adrenaline events the saved session held at any step of a case. */
+function mostAdrenalineDoses(steps) {
+  let most = 0;
+  for (const step of steps) {
+    try { most = Math.max(most, (JSON.parse(step.saved.stored)?.events || []).filter((e) => e.type === 'adrenaline').length); } catch { /* no saved session at this step */ }
+  }
+  return most;
 }
 
 export async function playEncoded(appDir, id) {
-  const { info, steps } = await playFull(appDir, id);
-  return encodeCase(info, steps, SCREEN_SURFACES, SAVED_SURFACES);
+  const { info, steps, elapsedMs, adrenalineDoses } = await playFull(appDir, id);
+  return { ...encodeCase(info, steps, SCREEN_SURFACES, SAVED_SURFACES), elapsedMs, adrenalineDoses };
 }
 
 /* A set of worker threads that stays open, so several replays (e.g. one per planted change) do not
