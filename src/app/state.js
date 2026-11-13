@@ -81,4 +81,4 @@ export function torsades() {
 }
 
 /* The drug-card rules (lower card, amiodarone gate, child second dose, A5 locks) now live in the
-   engine: src/engine/drug-cards.js, with their numbers and wording in src/rules/nz-eas.json. */
+   engine: src/engine/drug-cards.js, with their numbers and wording in src/rules/nz-eas.yaml. */

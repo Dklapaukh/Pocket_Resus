@@ -5,6 +5,7 @@ import { webcrypto } from 'node:crypto';
 import { computeName } from '../tools/cache-name.mjs';
 import vm from 'node:vm';
 import { ROOT } from './helpers/engines.mjs';
+import { readYamlStrict } from '../src/rules/parse.js';
 const CURRENT_NAME = readFileSync(ROOT + '/sw.js', 'utf8').match(/const CACHE='([^']+)'/)[1];
 
 // Model only the service-worker APIs used here; this does not emulate a device browser.
@@ -120,20 +121,32 @@ test('activation leaves unrelated caches alone and offline reads use the current
   assert.equal((await sw.request('src/app/state.js')).value, 'https://example.test/resus/src/app/state.js');
 });
 
-// Stage 1: the clinical rules are now a JSON file read by a loader module. If either is missing from the
-// offline list, the app would not start without signal, so these tests fail in that case.
+// Stage 1 (YAML since step E1b): the clinical rules are a YAML file read by a loader module and the vendored
+// YAML reader (src/vendor/js-yaml.mjs). If any of them is missing from the offline list, the app would not start without signal, so these tests fail in that case.
 test('the rules file and its loader are saved at install and served with no signal', async () => {
   const sw = worker();
   await sw.install();
   sw.goOffline();
-  for (const file of ['src/rules/nz-eas.json', 'src/rules/load.js', 'src/rules/parse.js', 'src/rules/check.js'])
+  for (const file of ['src/rules/nz-eas.yaml', 'src/rules/load.js', 'src/rules/parse.js', 'src/rules/check.js', 'src/vendor/js-yaml.mjs'])
     assert.equal((await sw.request(file)).value, 'https://example.test/resus/' + file, file + ' must be available offline');
 });
 
 test('installation fails if the rules file cannot be fetched', async () => {
   const sw = worker();
-  sw.failAsset('src/rules/nz-eas.json');
+  sw.failAsset('src/rules/nz-eas.yaml');
   await assert.rejects(sw.install(), /Offline asset unavailable/);
+});
+
+test('installation fails if the vendored YAML reader cannot be fetched', async () => {
+  const sw = worker();
+  sw.failAsset('src/vendor/js-yaml.mjs');
+  await assert.rejects(sw.install(), /Offline asset unavailable/);
+});
+
+test('the old JSON rules file is no longer in the offline list, and the editor-only writer is not either', () => {
+  assert.ok(!listedFiles.includes('src/rules/nz-eas.json'));
+  assert.ok(!listedFiles.includes('src/rules/write.js'), 'the writer is not needed on the phone yet');
+  assert.ok(listedFiles.includes('src/rules/nz-eas.yaml') && listedFiles.includes('src/vendor/js-yaml.mjs'));
 });
 
 test('every file the page needs, found by following its imports and file references, is in the offline list', async () => {
@@ -149,9 +162,9 @@ test('every file the page needs, found by following its imports and file referen
     const join = rel => new URL(rel, 'https://x.test/' + here + '/').pathname.slice(1);
     for (const node of parse(source, { ecmaVersion: 'latest', sourceType: 'module' }).body)
       if (node.type === 'ImportDeclaration' || (node.type === 'ExportNamedDeclaration' && node.source)) queue.push(join(node.source.value));
-    for (const m of source.matchAll(/new URL\('(\.[^']+)', import\.meta\.url\)/g)) needed.add(join(m[1])); // e.g. the rules JSON
+    for (const m of source.matchAll(/new URL\('(\.[^']+)', import\.meta\.url\)/g)) needed.add(join(m[1])); // e.g. the rules file
   }
-  assert.ok(needed.has('src/rules/nz-eas.json') && needed.has('src/rules/load.js'), 'the walk must reach the rules file');
+  assert.ok(needed.has('src/rules/nz-eas.yaml') && needed.has('src/rules/load.js') && needed.has('src/vendor/js-yaml.mjs'), 'the walk must reach the rules file and the YAML reader');
   assert.deepEqual([...needed].filter(f => !listed.includes(f)), []);
 });
 
@@ -167,7 +180,7 @@ test('(a) if the rules file fails during an update, the old version keeps its co
   const before = oldSw.storeKeys(OLD);
   assert.equal(before.length, listedFiles.length);
   const newSw = worker(phone);
-  newSw.failAsset('src/rules/nz-eas.json');
+  newSw.failAsset('src/rules/nz-eas.yaml');
   await assert.rejects(newSw.install(), /Offline asset unavailable/);
   phone.unavailable = null;
   oldSw.goOffline();
@@ -245,7 +258,7 @@ test('integrity: one stale listed file makes the install fail, leaves no new sto
   const oldSw = worker(phone, OLD);
   await oldSw.install();
   const before = oldSw.storeKeys(OLD);
-  phone.stale.add('src/rules/nz-eas.json');
+  phone.stale.add('src/rules/nz-eas.yaml');
   await assert.rejects(worker(phone).install(), /do not match this version/);
   assert.deepEqual(await oldSw.cacheNames(), [OLD]);
   assert.deepEqual(oldSw.storeKeys(OLD), before);
@@ -303,7 +316,9 @@ test('files referenced by the manifest, page, stylesheets, tutorial slides and r
   for (const css of readdirSync(ROOT).filter(f => f.endsWith('.css'))) for (const m of read(css).matchAll(/url\(\s*['"]?([^'")]+)/g)) add(m[1]);
   for (const m of read('src/app/data.js').matchAll(/image:\s*'([^']+)'/g)) add(m[1]);
   for (const f of readdirSync(ROOT + '/src/app')) for (const m of read('src/app/' + f).matchAll(/'((?:[\w-]+\/)*[\w-]+\.(?:png|svg|pdf|jpg|webp))'/g)) add(m[1]);
-  for (const m of read('src/rules/nz-eas.json').matchAll(/"((?:[\w-]+\/)*[\w-]+\.pdf)"/g)) add(m[1]);
+  const pdfNames = (value) => (typeof value === 'string' ? (/^(?:[\w-]+\/)*[\w-]+\.pdf(?:[#?].*)?$/.test(value) ? [value] : [])
+    : value && typeof value === 'object' ? Object.values(value).flatMap(pdfNames) : []);
+  for (const name of pdfNames(readYamlStrict(read('src/rules/nz-eas.yaml')))) add(name);
   assert.ok(found.has('icon-192.png') && found.has('tutorial/step-01.png') && found.has('cpg-rsi.pdf'), 'the scan must find the known references');
   assert.deepEqual([...found].filter(f => !listedFiles.includes(f)), []);
 });

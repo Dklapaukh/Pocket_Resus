@@ -37,7 +37,7 @@ export function openApp({ appDir, savedState = null, scriptLoader = defaultLoade
   if (savedState !== null) w.localStorage.setItem('resus-pocket-v1', savedState);
 
   const srcs = [...w.document.querySelectorAll('script[src]')].map(s => s.getAttribute('src'));
-  giveRulesToWindow(w, appDir); // the rule set, for app copies that read it from nz-eas.json
+  giveRulesToWindow(w, appDir); // the rule set, for app copies that read it from nz-eas.yaml
   scriptLoader(w, appDir, srcs, dom);
 
   const $ = sel => w.document.querySelector(sel);
