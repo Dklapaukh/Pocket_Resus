@@ -1,7 +1,9 @@
 /* RULES FILE READER: turns the text of nz-eas.yaml into the rule set the app uses.
 
    It keeps only the five parts (numbers, wording, checklists, equipment, sources) and ignores the
-   "about" and "notes" entries, which are explanations for people. If the text is not valid YAML, uses
+   "about" and "notes" entries, which are explanations for people. The file must hold exactly the names
+   about, numbers, wording, checklists, equipment, sources, notes in that order, and must end with the end
+   mark line "..." (so a file cut short is refused). If the text is not valid YAML, uses
    anything beyond plain values, or one of the five parts is missing, it stops with a plain-English
    message: the app must never start with a partial or surprising rule set. The full pre-publish checks
    are in check.js and run in the tests, not on the phone. This file holds no clinical numbers or wording.
@@ -19,6 +21,17 @@
 import { parseEvents, constructFromEvents, JSON_SCHEMA, EVENT_ID, SCALAR_STYLE_PLAIN } from '../vendor/js-yaml.mjs';
 
 export const PARTS = ['numbers', 'wording', 'checklists', 'equipment', 'sources'];
+
+// The names at the top of the rules file, in the one order the standard layout writes them. Anything
+// missing, extra or in another order is refused (see readRulesFile).
+export const FILE_NAMES = ['about', ...PARTS, 'notes'];
+
+/* THE END MARK. The standard layout ends with the YAML "end of document" line (three full stops on a line
+   of their own). A file that stops anywhere before it, even inside the last part, is a cut-short file and is
+   refused: a half-sent file must never start the app with half the rules. The mark is not data. */
+export const END_MARK = '...';
+const ENDS_WITH_MARK = /(?:^|\n)\.\.\.\r?\n$/;
+const A_MARK_LINE = /^\.\.\.(?:[ \t]|$)/;
 
 const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value) &&
   Object.getPrototypeOf(value) === Object.prototype;
@@ -67,9 +80,13 @@ export function checkPlainValues(value, where = 'the file') {
 }
 
 /* Reads the WHOLE text of a rules file, strictly (see the top of this file), and returns the file as
-   plain values in the order written. Throws one plain-English error if anything is wrong. */
+   plain values in the order written. The text must end with the end mark line (see END_MARK) and have it
+   nowhere else. Throws one plain-English error if anything is wrong. */
 export function readYamlStrict(text) {
   if (typeof text !== 'string') throw cannotRead('it is not valid YAML');
+  if (!ENDS_WITH_MARK.test(text)) throw cannotRead('it is incomplete: its last line, ' + END_MARK + ', is missing, so the file may have been cut short');
+  const lines = text.split('\n');
+  if (lines.slice(0, -2).some((line) => A_MARK_LINE.test(line))) throw cannotRead('it has the end mark ' + END_MARK + ' before the last line, which is not allowed');
   let documents;
   try {
     const events = parseEvents(text, {});
@@ -85,9 +102,22 @@ export function readYamlStrict(text) {
   return documents[0];
 }
 
-export function parseRules(text) {
+/* Reads a rules file and checks its top-level names: exactly FILE_NAMES, in that order. Returns the whole
+   file (about and notes too). Throws one plain-English error if anything is wrong. */
+export function readRulesFile(text) {
   const file = readYamlStrict(text);
   if (!isPlainObject(file)) throw new Error('the rules file is empty or has the wrong shape.');
+  const names = Object.keys(file);
+  const absent = FILE_NAMES.filter((name) => !names.includes(name));
+  if (absent.length) throw new Error('the rules file is missing part: ' + absent.join(', ') + '.');
+  const unknown = names.filter((name) => !FILE_NAMES.includes(name));
+  if (unknown.length) throw new Error('the rules file has a part it should not have: ' + unknown.join(', ') + '.');
+  if (names.join() !== FILE_NAMES.join()) throw new Error('the rules file has its parts in the wrong order (it must be: ' + FILE_NAMES.join(', ') + ').');
+  return file;
+}
+
+export function parseRules(text) {
+  const file = readRulesFile(text);
   const missing = PARTS.filter((part) => !isPlainObject(file[part]));
   if (missing.length) throw new Error('the rules file is missing part: ' + missing.join(', ') + '.');
   return Object.fromEntries(PARTS.map((part) => [part, file[part]]));
