@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { ROOT } from './helpers/engines.mjs';
+import { readYamlStrict } from '../src/rules/parse.js';
 
 const MARKER = '\n/* A4 (owner-approved)';
 const raw = readFileSync(`${ROOT}/rhythm-care.css`, 'utf8');
@@ -36,7 +37,7 @@ test('A4d (owner tweak): "shocks" word hidden; "+ Previous shock" is a compact b
 test('A4d: the button reads "+" then "Previous" / "shock" on two lines; accessible name unchanged', () => {
   // Stage 2: the words moved to the rules file (wording.liveScreen); the markup around them is still in views.js.
   const views = readFileSync(`${ROOT}/src/app/views.js`, 'utf8');
-  const rules = JSON.parse(readFileSync(`${ROOT}/src/rules/nz-eas.json`, 'utf8')).wording.liveScreen;
+  const rules = readYamlStrict(readFileSync(`${ROOT}/src/rules/nz-eas.yaml`, 'utf8')).wording.liveScreen;
   assert.match(views, /aria-label="\$\{T\('liveScreen\.previousShockAria'\)\}"><span class="ps-plus" aria-hidden="true">\+<\/span><span class="ps-words">\$\{T\('liveScreen\.previousShock'\)\}<\/span><\/button>/);
   assert.equal(rules.previousShockAria, 'Add a shock before app start'); // accessible name unchanged
   assert.equal(rules.previousShock, 'Previous<br>shock'); // "Previous" over "shock"
