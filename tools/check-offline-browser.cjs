@@ -8,6 +8,12 @@ const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
 const previousWorker = fs.readFileSync(path.join(root, 'tests/fixtures/sw-v18.js'));
 let servePreviousWorker = false;
+// Safe-update check: serve an "old" copy (own cache name, marker in base.js) then the real "new" copy.
+const currentName = fs.readFileSync(path.join(root, 'sw.js'), 'utf8').match(/const CACHE='([^']+)'/)[1];
+const OLD_NAME = 'resus-pocket-v22-old-copy';
+let serveCopy = null;      // null (normal), 'old' or 'new'
+let failRules = false;     // make src/rules/nz-eas.json fail while true
+let rulesRequests = 0;
 const mime = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.webmanifest': 'application/manifest+json',
@@ -20,8 +26,16 @@ const server = http.createServer((request, response) => {
     response.writeHead(403).end();
     return;
   }
+  if (url.pathname === '/src/rules/nz-eas.json') {
+    rulesRequests++;
+    if (failRules) return response.writeHead(503).end();
+  }
   fs.readFile(filename, (error, bytes) => {
     if (error) return response.writeHead(404).end();
+    if (serveCopy && url.pathname === '/sw.js' && serveCopy === 'old')
+      bytes = Buffer.from(bytes.toString().replace(/const CACHE='[^']+'/, `const CACHE='${OLD_NAME}'`));
+    if (serveCopy && url.pathname === '/src/app/base.js')
+      bytes = Buffer.concat([bytes, Buffer.from(`\n/* copy-marker-${serveCopy} */\n`)]);
     if (url.pathname === '/sw.js' && servePreviousWorker) {
       bytes = previousWorker;
     }
@@ -94,14 +108,24 @@ const server = http.createServer((request, response) => {
     await oldPage.evaluate(async () => (await navigator.serviceWorker.ready).update());
     await oldPage.waitForFunction(async () => (await navigator.serviceWorker.getRegistration()).waiting !== null);
     await oldPage.close();
-    const newPage = await upgradeContext.newPage();
+    let newPage = await upgradeContext.newPage();
     await newPage.goto(url, { waitUntil: 'networkidle' });
-    await newPage.waitForFunction(async () => {
-      const names = await caches.keys();
-      const registration = await navigator.serviceWorker.getRegistration();
-      return names.includes('resus-pocket-v20-a7') && registration?.active?.state === 'activated' &&
-        !registration.waiting && !registration.installing;
-    });
+    // The page opened just after the old tab closed may still be held by the old worker, so reopen once more.
+    await newPage.close();
+    newPage = await upgradeContext.newPage();
+    await newPage.goto(url, { waitUntil: 'networkidle' });
+    // (This used to return a promise, which is always "true"; now the page-side check is awaited properly.)
+    await newPage.evaluate(async expected => {
+      for (let i = 0; i < 300; i++) {
+        const names = await caches.keys();
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (names.includes(expected) && registration?.active?.state === 'activated' &&
+          !registration.waiting && !registration.installing) return;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      const r = await navigator.serviceWorker.getRegistration();
+      throw new Error('Previous-worker upgrade did not finish: ' + (await caches.keys()).join(',') + ' active=' + r.active?.state + ' waiting=' + !!r.waiting + ' installing=' + !!r.installing);
+    }, currentName);
     const recovered = await newPage.evaluate(() => JSON.parse(localStorage.getItem('resus-pocket-v1')));
     if (recovered.weight !== '42') throw new Error('Session changed during the offline cache update');
     await upgradeContext.setOffline(true);
@@ -111,6 +135,72 @@ const server = http.createServer((request, response) => {
     if (offlineModule.includes('previous-release-marker')) throw new Error('Offline fetch returned the previous module');
     console.log('Previous-worker upgrade, session recovery and offline reload passed in Chrome.');
     await upgradeContext.close();
+
+    // REAL-BROWSER SAFE-UPDATE CHECK: a failed update must leave the old version fully working offline,
+    // and a good update must take over only when the app is next opened fresh.
+    const check = (ok, message) => { if (!ok) throw new Error('Safe-update check: ' + message); };
+    const marker = page => page.evaluate(async () => (await (await fetch('src/app/base.js')).text()).match(/copy-marker-(\w+)/)?.[1]);
+    const cacheNames = page => page.evaluate(() => caches.keys());
+    serveCopy = 'old';
+    const safeContext = await browser.newContext();
+    let appPage = await safeContext.newPage();
+    const safeErrors = [];
+    appPage.on('pageerror', error => safeErrors.push(error.message));
+    await appPage.goto(url, { waitUntil: 'networkidle' });
+    await appPage.evaluate(() => navigator.serviceWorker.ready);
+    await appPage.reload({ waitUntil: 'networkidle' });
+    await appPage.click('[data-action="weight"]');
+    await appPage.fill('#weightInput', '33');
+    await appPage.click('[data-action="save-weight"]');
+    check((await cacheNames(appPage)).join() === OLD_NAME, 'old copy did not install alone: ' + (await cacheNames(appPage)));
+    check(await marker(appPage) === 'old', 'old copy not running');
+
+    // 1. The update visit, with the rules file failing.
+    serveCopy = 'new'; failRules = true; rulesRequests = 0;
+    await appPage.evaluate(async () => { try { await (await navigator.serviceWorker.getRegistration()).update(); } catch (e) {} });
+    await appPage.waitForFunction(() => navigator.serviceWorker.getRegistration().then(r => !r.installing)); // install has ended
+    await appPage.waitForTimeout(500);
+    check(rulesRequests > 0, 'the update never asked for the rules file');
+    check(await appPage.evaluate(async () => !(await navigator.serviceWorker.getRegistration()).waiting), 'a failed update must not be waiting');
+    check((await cacheNames(appPage)).join() === OLD_NAME, 'a failed update left something behind: ' + (await cacheNames(appPage)));
+    // Phone goes offline, app reopened: the old version must still start and work.
+    await safeContext.setOffline(true);
+    await appPage.close();
+    appPage = await safeContext.newPage();
+    appPage.on('pageerror', error => safeErrors.push(error.message));
+    await appPage.goto(url, { waitUntil: 'load' });
+    await appPage.locator('#headerWeight').getByText('33 kg').waitFor();
+    check(await marker(appPage) === 'old', 'offline after a failed update did not give the old version');
+    await appPage.click('[data-action="start"]');
+    check((await cacheNames(appPage)).join() === OLD_NAME, 'old store changed');
+    console.log('Failed update (rules file down) then offline: old version still starts and works, nothing of the new one kept.');
+
+    // 2. The update succeeds. It must wait while the app is open.
+    await safeContext.setOffline(false);
+    failRules = false;
+    await appPage.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
+    await appPage.waitForFunction(() => navigator.serviceWorker.getRegistration().then(r => r.waiting));
+    check(await marker(appPage) === 'old', 'new version took over a running app');
+    check((await cacheNames(appPage)).sort().join() === [currentName, OLD_NAME].sort().join(), 'new store should sit beside the old one until activation');
+    await appPage.close();
+    appPage = await safeContext.newPage();
+    appPage.on('pageerror', error => safeErrors.push(error.message));
+    await appPage.goto(url, { waitUntil: 'networkidle' });
+    // That page may still have been held by the old version; opening the app fresh once more lets the new one take over.
+    await appPage.close();
+    appPage = await safeContext.newPage();
+    appPage.on('pageerror', error => safeErrors.push(error.message));
+    await appPage.goto(url, { waitUntil: 'networkidle' });
+    await appPage.waitForFunction(() => navigator.serviceWorker.getRegistration().then(r => r.active && !r.waiting && !r.installing));
+    await appPage.waitForFunction(name => caches.keys().then(n => n.join() === name), currentName);
+    await safeContext.setOffline(true);
+    await appPage.reload({ waitUntil: 'load' });
+    await appPage.locator('#headerWeight').getByText('33 kg').waitFor();
+    const m = await marker(appPage);
+    check(m === 'new', 'new version is not in charge after reopening (saw ' + m + ', stores ' + (await cacheNames(appPage)) + ')');
+    check(safeErrors.length === 0, 'browser errors: ' + safeErrors.join('; '));
+    console.log('Good update: waited while the app was open, took over on fresh open, old store removed, works offline.');
+    await safeContext.close();
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));

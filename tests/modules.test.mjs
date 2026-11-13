@@ -6,6 +6,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { parse } from 'acorn';
 import * as eslintScope from 'eslint-scope';
 import { ROOT } from './helpers/engines.mjs';
+import { computeName } from '../tools/cache-name.mjs';
 
 const html = readFileSync(ROOT + '/index.html', 'utf8');
 const sw = readFileSync(ROOT + '/sw.js', 'utf8');
@@ -22,8 +23,16 @@ test('sw.js: every module and stylesheet the page uses is in the offline list', 
     ...[...html.matchAll(/href="([^"]+\.css)"/g)].map(m => m[1])];
   for (const f of need) assert.ok(files.includes(f), f + ' not cached for offline use');
 });
-test('sw.js: cache name changed so phones fetch the new files', () => {
-  assert.match(sw, /const CACHE='resus-pocket-v22-rules-file'/);
+test('sw.js: cache name matches the fingerprint of the shipped files', () => {
+  const expected = computeName(ROOT);
+  assert.ok(sw.includes(`const CACHE='${expected}'`),
+    'a shipped file changed since the cache name was set: run `node tools/set-cache-name.mjs` (expected ' + expected + ')');
+});
+test('sw.js: changing one byte of a listed file changes the cache name', () => {
+  const real = p => readFileSync(ROOT + '/' + p);
+  const changed = p => p === 'style.css' ? Buffer.concat([real(p), Buffer.from(' ')]) : real(p);
+  assert.notEqual(computeName(ROOT, null, sw, changed), computeName(ROOT, null, sw, real));
+  assert.notEqual(computeName(ROOT, null, sw + ' ', real), computeName(ROOT, null, sw, real));
 });
 test('every module only uses names that exist (no missing import)', () => {
   const browser = new Set('document window navigator localStorage Date Math Number String Array Object JSON Promise Set Map Intl URL Blob Error Boolean RegExp parseInt parseFloat isNaN isFinite setInterval setTimeout clearTimeout clearInterval console location NodeFilter FormData Event matchMedia undefined NaN Infinity encodeURIComponent decodeURIComponent'.split(' '));
