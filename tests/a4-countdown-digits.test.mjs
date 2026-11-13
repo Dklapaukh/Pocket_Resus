@@ -34,8 +34,12 @@ test('A4d (owner tweak): "shocks" word hidden; "+ Previous shock" is a compact b
 });
 
 test('A4d: the button reads "+" then "Previous" / "shock" on two lines; accessible name unchanged', () => {
+  // Stage 2: the words moved to the rules file (wording.liveScreen); the markup around them is still in views.js.
   const views = readFileSync(`${ROOT}/src/app/views.js`, 'utf8');
-  assert.match(views, /aria-label="Add a shock before app start"><span class="ps-plus" aria-hidden="true">\+<\/span><span class="ps-words">Previous<br>shock<\/span><\/button>/);
+  const rules = JSON.parse(readFileSync(`${ROOT}/src/rules/nz-eas.json`, 'utf8')).wording.liveScreen;
+  assert.match(views, /aria-label="\$\{T\('liveScreen\.previousShockAria'\)\}"><span class="ps-plus" aria-hidden="true">\+<\/span><span class="ps-words">\$\{T\('liveScreen\.previousShock'\)\}<\/span><\/button>/);
+  assert.equal(rules.previousShockAria, 'Add a shock before app start'); // accessible name unchanged
+  assert.equal(rules.previousShock, 'Previous<br>shock'); // "Previous" over "shock"
   assert.match(views, /data-action="previous-shock"/); // the tap handler hook is unchanged
 });
 

@@ -22,11 +22,12 @@ const ENGINE_GAPS = [
   'magOverMinMinutes', 'magOverMaxMinutes', 'magChildMmolPerMl', 'magAmpouleMmol', 'magAmpouleMl', 'magChildDiluteToMl',
   'adultFluidsMinL', 'adultFluidsMaxL', 'childFluidsMinPerKg', 'childFluidsMaxPerKg', 'fentanylMcgPerKg', 'fentanylMaxMcg',
   'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg',
-  'exportDate', 'reversibleCauses', 'igel',
+  'exportDate', 'reversibleCauses', 'igel', 'warningSeconds',
 ];
 
 /* Every wording entry the app uses: 'text' (one sentence) or 'list' (separate paragraphs), then the
-   {gaps} the APP itself fills when it shows that entry (everything else must be one of ENGINE_GAPS). */
+   {gaps} the APP itself fills when it shows that entry (everything else must be one of ENGINE_GAPS).
+   An entry that is a group of entries (screen text, labels, messages) is written as { name: [...], ... }. */
 const WORDING = {
   adultDoseBasis: ['text', 'adultAboveKg'], childDoseBasis: ['text', 'band'], adultMagnesiumBasis: ['text'],
   childMagnesiumBasis: ['text', 'band'], noMagnesiumDoseBasis: ['text', 'band'], invalidWeightMagnesiumBasis: ['text'],
@@ -46,6 +47,137 @@ const WORDING = {
   tubeNoAge: ['text'], tubeCaution: ['text'], igelSourceCaption: ['text'], tubeSizeUnderOne: ['text', 'minMm', 'maxMm'],
   tubeLengthUnderOne: ['text', 'timesSize'], tubeSizeFormula: ['text', 'mm'], tubeLengthFormula: ['text', 'cm'],
   weightSheetAgeEstimate: ['text'], tubeSheetAgeEstimate: ['text'],
+  // Stage 2: the screen text, labels and messages, in groups (a group has the same layout one level down).
+  drugNames: { adrenaline: ['text'], amiodarone: ['text'], magnesium: ['text'] },
+  weightSources: { entered: ['text'] },
+  rhythmCheckTitles: { shock: ['text'], noshock: ['text'], rosc: ['text'] },
+  eventDetails: {
+    shockWithEnergy: ['text', 'rhythm', 'energy'], shockNoEnergy: ['text', 'rhythm'], rhythmNotRecorded: ['text'], beforeAppOpened: ['text'],
+    weightUpdated: ['text', 'weight', 'source'], resusStartCorrected: ['text', 'before', 'after'],
+    earlierCounts: ['text', 'shocks', 'noShock', 'amiodarone'], cycleNumber: ['text', 'number'], checklistChecked: ['text', 'item'],
+    checklistUnmarked: ['text', 'item'], promptsDisabled: ['text'], promptsEnabled: ['text'], doseUnitRoute: ['text', 'dose', 'unit', 'route'],
+    doseUnitRouteNotes: ['text', 'dose', 'unit', 'route', 'notes'], equipmentField: ['text', 'key', 'value'], sizeNotRecorded: ['text'],
+    confirmedWith: ['text', 'methods'], confirmationNotRecorded: ['text'],
+  },
+  eventTitles: {
+    weightUpdated: ['text'], resusStartCorrected: ['text'], earlierCountsUpdated: ['text'], cycleStarted: ['text'], rearrest: ['text'],
+    sessionEnded: ['text'], specialSituation: ['text'], note: ['text'],
+  },
+  checklistSummary: {
+    title: ['text', 'label', 'kind'], started: ['text'], finished: ['text'], firstItemChecked: ['text'], reopened: ['text'],
+    allItemsChecked: ['text', 'count'],
+  },
+  shockRhythmButtons: { VF: ['text'], VT: ['text'], Torsades: ['text'] },
+  otherRhythmButtons: { VT: ['text'] },
+  references: {
+    guidelineName: ['text', 'issuer', 'number'], guidelineLink: ['text', 'code'], cpgSourceLabel: ['text', 'code'],
+    currentGuideline: ['text', 'code'], offlineGuideline: ['text', 'code'],
+  },
+  weightHeader: {
+    buttonLabel: ['text'], buttonAria: ['text'], buttonAriaWithValue: ['text', 'weight'], weightKg: ['text', 'weight'], enterKg: ['text'],
+    energy: ['text', 'energy'], energyEstimated: ['text', 'energy'], specialFlag: ['text'],
+  },
+  liveCards: {
+    enterWeight: ['text'], doseMgIv: ['text', 'dose'], doseMmolIv: ['text', 'dose'], volumeMlIv: ['text', 'min', 'max'],
+    recordDoseMgIv: ['text', 'dose'], recordMmolIv: ['text', 'dose'], recordFluid: ['text'], recordRepeat: ['text'], reviewDose: ['text'],
+    notYetDue: ['text'], manualReview: ['text'], roscRecorded: ['text'], sessionEnded: ['text'], weightNeeded: ['text'], selectDose: ['text'],
+    doseClinicalReview: ['text'], administrationAria: ['text', 'name'], administrationLink: ['text'], otherLink: ['text'],
+    otherAria: ['text', 'name'], emptyClock: ['text'], overdueClock: ['text', 'time'], reviewInactive: ['text'], noDoseRecorded: ['text'],
+    reviewFirstDose: ['text'], reviewSecondDose: ['text'], sinceLastDose: ['text'], fluidRecordedTotal: ['text', 'total'],
+    fluidReviewVolume: ['text', 'rhythm'],
+  },
+  liveScreen: {
+    readyForCpr: ['text'], cycleTitle: ['text', 'number'], shockOne: ['text'], shockMany: ['text'], cycleLogAria: ['text'], previousShock: ['text'],
+    previousShockAria: ['text'], timerAria: ['text'], unexpectedRosc: ['text'], unexpectedRoscAria: ['text'], startButton: ['text'],
+    rearrestButton: ['text'], exportButton: ['text'], rhythmCheckButton: ['text'], airwayCard: ['text'], accessCard: ['text'],
+    postRoscButton: ['text'], airwayAccessButton: ['text'], eventButton: ['text'], captionReady: ['text'], captionRunning: ['text'],
+    captionWarning: ['text'], captionPrepare: ['text'], captionDue: ['text'], captionDueLate: ['text', 'late'], captionPaused: ['text'],
+    captionRecordedAt: ['text', 'time'], clockRosc: ['text'], clockEnded: ['text'], titleRosc: ['text'], titleEnded: ['text'],
+    cycleCompleteAlert: ['text'],
+  },
+  cycleLog: {
+    title: ['text'], earlierCounts: ['text', 'count'], beforeApp: ['text'], cycleNumber: ['text', 'number'], timeNotSet: ['text'],
+    shockDelivered: ['text'], noShock: ['text'], rearrest: ['text'], cycleStarted: ['text'], none: ['text'],
+  },
+  checks: { back: ['text'], eachTick: ['text'], originalLink: ['text', 'source'], disclaimer: ['text'] },
+  log: {
+    heading: ['text'], exportButton: ['text'], exportAria: ['text'], showLabel: ['text'], allEvents: ['text'], interventionsOnly: ['text'],
+    checklistsLabel: ['text'], eachItem: ['text'], startAndFinish: ['text'], helpInterventions: ['text'], helpTimes: ['text'], helpAll: ['text'],
+    exportNote: ['text'], resusStartLine: ['text', 'time', 'note', 'phase'], beforeAppOpenedNote: ['text'], addEventButton: ['text'],
+    noEvents: ['text'], beforeApp: ['text'], timeNotSet: ['text'], timeNotSetAria: ['text'], sinceResusStart: ['text', 'sign', 'clock'],
+    addTimeButton: ['text'], corrected: ['text'], voided: ['text'], reviewAria: ['text', 'title'], editAria: ['text', 'title', 'time'],
+  },
+  guidance: {
+    heading: ['text'], sourcesTitle: ['text'], checklistButton: ['text', 'label'], rsiButton: ['text'], tubesButton: ['text'],
+    ageYears: ['text', 'age'], ageCriteria: ['text'], causesHeading: ['text'],
+  },
+  referenceSheets: {
+    rsiTitle: ['text'], fentanylName: ['text'], ketamineUsualName: ['text'], ketamineReducedName: ['text'], blockerName: ['text'],
+    doseMcgIv: ['text', 'dose'], enterWeightButton: ['text'], tubesTitle: ['text'], ageLabel: ['text'], useAgeButton: ['text'], cuffedEtt: ['text'],
+    lengthAtLips: ['text'], ageEstimateHeading: ['text'], igelHeading: ['text'], igelRange: ['text', 'size', 'min', 'max'],
+    igelRangeAndAbove: ['text', 'size', 'min'], igelRangesLine: ['text', 'ranges'],
+  },
+  popups: { closeAria: ['text'] },
+  forms: {
+    timeLabel: ['text'], eventTimeLabel: ['text'], givenAtLabel: ['text'], doseLabel: ['text'], unitLabel: ['text'], routeLabel: ['text'],
+    notesLabel: ['text'], optional: ['text'], timeSummary: ['text', 'time'], noteAdded: ['text'], addNote: ['text'],
+  },
+  rhythmSheet: { titles: { shock: ['text'], noshock: ['text'], rosc: ['text'] }, energyLabel: ['text'], energyPlaceholder: ['text'] },
+  weightSheet: {
+    title: ['text'], weightLabel: ['text'], deleteDigitAria: ['text'], estimateSummary: ['text'], ageLabel: ['text'], useAgeEstimateButton: ['text'],
+    useWeightButton: ['text'],
+  },
+  rhythmCheckSheet: { title: ['text'], prompt: ['text'], shock: ['text'], shockNote: ['text'], noShock: ['text'], rosc: ['text'] },
+  resusTime: {
+    title: ['text'], intro: ['text'], startedLabel: ['text'], choiceLabel: ['text', 'minutes'], choiceNote: ['text'], note: ['text'],
+    saveButton: ['text'],
+  },
+  settings: {
+    title: ['text'], tutorial: ['text'], undo: ['text'], largerText: ['text'], largerTextOn: ['text'], screenAwake: ['text'], screenAwakeOn: ['text'],
+    install: ['text'], history: ['text'], resusTime: ['text'], guidance: ['text'], export: ['text'], specialLabel: ['text'], specialNote: ['text'],
+    endButton: ['text'], newButton: ['text'], online: ['text'], offline: ['text'], storageNote: ['text', 'state'],
+  },
+  historySheet: {
+    title: ['text'], intro: ['text'], priorShocks: ['text'], priorNoShock: ['text'], priorStreak: ['text'], priorAmio: ['text'], saveButton: ['text'],
+    earlierAdrenalineButton: ['text'],
+  },
+  administration: { adrenalineTitle: ['text'], amiodaroneTitle: ['text'], fluidsTitle: ['text'], magnesiumTitle: ['text'] },
+  medicineForm: { title: ['text', 'name'], fallbackName: ['text'], medicineLabel: ['text'], dosePlaceholder: ['text'], submit: ['text'] },
+  selectDoseSheet: { title: ['text'], doseLabel: ['text'], dosePlaceholder: ['text'], submit: ['text'] },
+  interventions: { airway: ['text'], access: ['text'], both: ['text'] },
+  equipmentSheet: { recordButton: ['text', 'name'], recordAndAddIntubation: ['text'] },
+  noteSheet: { title: ['text'], eventLabel: ['text'], eventPlaceholder: ['text'], submit: ['text'], anotherMedicineButton: ['text'] },
+  correctionSheet: {
+    title: ['text'], detailsLabel: ['text'], rhythmLabel: ['text'], energyLabel: ['text'], saveButton: ['text'], note: ['text'],
+    stateChangeNote: ['text'], restoreButton: ['text'], voidButton: ['text'],
+  },
+  magnesiumRepeatSheet: { title: ['text'], recordButton: ['text', 'dose'], backButton: ['text'] },
+  torsadesConfirmSheet: { title: ['text'], confirmButton: ['text'], backButton: ['text'] },
+  fluidGuidanceSheet: { title: ['text'], continueButton: ['text'] },
+  endSheet: { title: ['text'], text: ['text'], confirmButton: ['text'], keepButton: ['text'] },
+  newPatientSheet: { title: ['text'], text: ['text'], exportButton: ['text'], clearButton: ['text'] },
+  installSheet: { title: ['text'], android: ['text'], iphone: ['text'], note: ['text'] },
+  exportSheet: { title: ['text'], intro: ['text'], downloadText: ['text'], downloadJson: ['text'], copyText: ['text'], note: ['text'] },
+  exportRecord: {
+    line: ['text', 'time', 'title'], lineWithDetails: ['text', 'time', 'title', 'details'], timeUnknown: ['text'],
+    fileName: ['text', 'start', 'extension'],
+  },
+  tutorial: {
+    title: ['text'], progressAria: ['text'], slidesAria: ['text'], endNote: ['text'], nextNote: ['text'], back: ['text'], next: ['text'],
+    done: ['text'],
+  },
+  toasts: {
+    weightUpdated: ['text'], resusDurationUpdated: ['text'], earlierCountsSaved: ['text'], cycleStarted: ['text'], rearrestRecorded: ['text'],
+    sessionEnded: ['text'], newPatient: ['text'], previousShockAdded: ['text'], undone: ['text'], recordedDose: ['text', 'dose'],
+    eventUpdated: ['text'], administrationRecorded: ['text'], interventionRecorded: ['text'], eventRecorded: ['text'], eventCorrected: ['text'],
+    otherTab: ['text'], recordCopied: ['text'], couldNotCopy: ['text'], sessionEndedUndo: ['text'], wakeLockUnavailable: ['text'],
+    keepAwakeFailed: ['text'], magnesiumRecorded: ['text'], roscRecorded: ['text'], rhythmRecorded: ['text'], recoveryBackedUp: ['text'],
+    recoveryNotBackedUp: ['text'],
+  },
+  errors: {
+    resusStartAfterApp: ['text'], earlierCounts: ['text'], medicineIncomplete: ['text'], tubeSize: ['text'], eventEmpty: ['text'],
+    timeBeforeApp: ['text'], stateChangeTime: ['text'], doseNotPositive: ['text'], age: ['text'], energy: ['text'], timeInFuture: ['text'],
+  },
 };
 
 const ALLOWED_TAGS = ['<b>', '</b>', '<em>', '</em>', '<br>']; // the only markup wording may use
@@ -116,14 +248,26 @@ export function checkRuleSet(file) {
   const N = file.numbers;
   if (isObject(N)) {
     group('numbers', N, [], ['timing', 'weight', 'ageEstimate', 'childBands', 'adult', 'child', 'shock', 'rhythms', 'lowerCard',
-      'amiodarone', 'magnesium', 'products', 'preparation', 'rsi', 'tubes', 'doubleTapLockMs']);
+      'amiodarone', 'magnesium', 'products', 'preparation', 'rsi', 'tubes', 'doubleTapLockMs',
+      'resusStart', 'correctionRhythms', 'log', 'medicineForm']);
 
-    const t = group('numbers.timing', N.timing, ['cprCycleMs', 'adrenalineIntervalMs', 'checklistPromptMinLeftMs']);
+    const t = group('numbers.timing', N.timing, ['cprCycleMs', 'adrenalineIntervalMs', 'checklistPromptMinLeftMs',
+      'overdueShownAfterMs', 'prepareAtMs', 'warningAtMs', 'adrenalineHighlightMs']);
     if (t) {
       const cycle = number('numbers.timing.cprCycleMs', t.cprCycleMs, { whole: true });
-      number('numbers.timing.adrenalineIntervalMs', t.adrenalineIntervalMs, { whole: true });
+      const adrenalineEvery = number('numbers.timing.adrenalineIntervalMs', t.adrenalineIntervalMs, { whole: true });
       const left = number('numbers.timing.checklistPromptMinLeftMs', t.checklistPromptMinLeftMs, { whole: true });
       lessOrEqual('numbers.timing.checklistPromptMinLeftMs', left, cycle, 'the time left', 'the CPR cycle');
+      // Timer messages (stage 2): how late a check must be before the lateness is shown, and when the warnings start.
+      const overdue = number('numbers.timing.overdueShownAfterMs', t.overdueShownAfterMs, { whole: true, orZero: true });
+      lessOrEqual('numbers.timing.overdueShownAfterMs', overdue, cycle, 'the lateness limit', 'the CPR cycle');
+      const prepare = number('numbers.timing.prepareAtMs', t.prepareAtMs, { whole: true });
+      const warning = number('numbers.timing.warningAtMs', t.warningAtMs, { whole: true });
+      lessOrEqual('numbers.timing.warningAtMs', warning, cycle, 'the warning time', 'the CPR cycle');
+      lessOrEqual('numbers.timing.prepareAtMs', prepare, warning, 'the "prepare" time', 'the warning time (the prepare message comes later in the cycle)');
+      if (warning !== undefined && warning % 1000 !== 0) say('numbers.timing.warningAtMs', `must be a whole number of seconds, because the message says the seconds (found ${warning})`);
+      const highlight = number('numbers.timing.adrenalineHighlightMs', t.adrenalineHighlightMs, { whole: true });
+      lessOrEqual('numbers.timing.adrenalineHighlightMs', highlight, adrenalineEvery, 'the highlight time', 'the adrenaline interval');
     }
 
     let adultAbove, weightMax;
@@ -262,20 +406,52 @@ export function checkRuleSet(file) {
 
     const lock = group('numbers.doubleTapLockMs', N.doubleTapLockMs, ['adrenaline', 'magnesium', 'fluids']);
     if (lock) for (const k of Object.keys(lock)) number(`numbers.doubleTapLockMs.${k}`, lock[k], { whole: true, orZero: true });
+
+    // Stage 2: quick choices, correction-form rhythm lists, log settings, medicine form choices.
+    const rs = group('numbers.resusStart', N.resusStart, ['quickChoicesMin']);
+    if (rs) {
+      const choices = Array.isArray(rs.quickChoicesMin) && rs.quickChoicesMin.length ? rs.quickChoicesMin : say('numbers.resusStart.quickChoicesMin', 'must be a list with at least one number of minutes');
+      let prev;
+      (choices || []).forEach((v, i) => {
+        const minutes = number(`numbers.resusStart.quickChoicesMin.${i}`, v, { whole: true, max: 1440 });
+        if (minutes !== undefined && prev !== undefined && minutes <= prev) say(`numbers.resusStart.quickChoicesMin.${i}`, `minutes must rise, each choice different (${minutes} follows ${prev})`);
+        if (minutes !== undefined) prev = minutes;
+      });
+    }
+    const cr = group('numbers.correctionRhythms', N.correctionRhythms, ['shock', 'noshock', 'rosc', 'rhythm']);
+    if (cr) for (const k of ['shock', 'noshock', 'rosc', 'rhythm']) {
+      const list = textList(`numbers.correctionRhythms.${k}`, cr[k]);
+      if (!list) continue;
+      const allRhythms = rh ? ['shock', 'noshock', 'rosc'].flatMap((x) => (Array.isArray(rh[x]) ? rh[x] : [])) : [];
+      list.forEach((name, i) => { if (allRhythms.length && !allRhythms.includes(name)) say(`numbers.correctionRhythms.${k}.${i}`, `"${name}" is not a rhythm in numbers.rhythms`); });
+      // the correction form must still offer every rhythm that can be recorded for that outcome
+      if (rh && Array.isArray(rh[k])) for (const name of rh[k]) if (!list.includes(name)) say(`numbers.correctionRhythms.${k}`, `must offer "${name}", which can be recorded (numbers.rhythms.${k})`);
+    }
+    const lg = group('numbers.log', N.log, ['interventionEventTypes']);
+    if (lg) textList('numbers.log.interventionEventTypes', lg.interventionEventTypes);
+    const mf = group('numbers.medicineForm', N.medicineForm, ['units', 'routes']);
+    if (mf) { textList('numbers.medicineForm.units', mf.units); textList('numbers.medicineForm.routes', mf.routes); }
   }
 
   /* ---------- Part 2: wording ---------- */
   const W = file.wording;
   if (isObject(W)) {
-    for (const key of Object.keys(WORDING)) if (!(key in W)) say(`wording.${key}`, 'is missing');
-    for (const [key, value] of Object.entries(W)) {
-      const where = `wording.${key}`;
-      if (!(key in WORDING)) { say(where, 'is not a wording entry the app knows'); continue; }
-      const [kind, ...own] = WORDING[key];
+    // One entry (text or list) with its gaps; or a group of entries, checked one level down.
+    const checkWording = (where, value, spec) => {
+      if (!Array.isArray(spec)) {
+        if (!isObject(value)) return say(where, 'must be a group of wording entries, and is missing or the wrong kind');
+        for (const key of Object.keys(spec)) if (!(key in value)) say(`${where}.${key}`, 'is missing');
+        for (const [key, item] of Object.entries(value)) {
+          if (!(key in spec)) say(`${where}.${key}`, 'is not a wording entry the app knows');
+          else checkWording(`${where}.${key}`, item, spec[key]);
+        }
+        return;
+      }
+      const [kind, ...own] = spec;
       let pieces;
       if (kind === 'list') pieces = textList(where, value, { unique: false });
       else pieces = text(where, value) ? [value] : undefined;
-      if (!pieces) continue;
+      if (!pieces) return;
       pieces.forEach((piece) => {
         for (const gap of new Set([...piece.matchAll(/\{(\w+)\}/g)].map((m) => m[1])))
           if (!ENGINE_GAPS.includes(gap) && !own.includes(gap)) say(where, `{${gap}} cannot be filled (it is not a number or name the app supplies)`);
@@ -284,6 +460,11 @@ export function checkRuleSet(file) {
         const withoutTags = withoutGaps.replace(/<[^>]*>/g, (tag) => (ALLOWED_TAGS.includes(tag) ? '' : (say(where, `uses ${tag}; only <b>, <em> and <br> are allowed`), '')));
         if (/[<>]/.test(withoutTags)) say(where, 'has a stray < or >');
       });
+    };
+    for (const key of Object.keys(WORDING)) if (!(key in W)) say(`wording.${key}`, 'is missing');
+    for (const [key, value] of Object.entries(W)) {
+      if (!(key in WORDING)) say(`wording.${key}`, 'is not a wording entry the app knows');
+      else checkWording(`wording.${key}`, value, WORDING[key]);
     }
   }
 
@@ -322,16 +503,51 @@ export function checkRuleSet(file) {
   /* ---------- Part 4: equipment ---------- */
   const E = file.equipment;
   if (isObject(E)) {
-    group('equipment', E, [], ['devices', 'blades', 'maxTubeSizeMm', 'sites', 'colours', 'igelRanges']);
+    group('equipment', E, [], ['devices', 'blades', 'maxTubeSizeMm', 'sites', 'colours', 'igelRanges', 'accessDevices', 'forms']);
     const sizes = {};
     const dv = group('equipment.devices', E.devices, DEVICE_TYPES_USED_BY_APP);
     if (dv) for (const type of DEVICE_TYPES_USED_BY_APP) {
       const d = group(`equipment.devices.${type}`, dv[type], ['name', 'sizes']);
       if (d) { text(`equipment.devices.${type}.name`, d.name); sizes[type] = textList(`equipment.devices.${type}.sizes`, d.sizes); }
     }
+    // Which devices are listed under Access (the rest are listed under Airway).
+    const access = textList('equipment.accessDevices', E.accessDevices);
+    if (access) {
+      access.forEach((type, i) => { if (!DEVICE_TYPES_USED_BY_APP.includes(type)) say(`equipment.accessDevices.${i}`, `"${type}" is not a device type in equipment.devices`); });
+      if (DEVICE_TYPES_USED_BY_APP.every((type) => access.includes(type))) say('equipment.accessDevices', 'leaves no device for the Airway list');
+    }
     const bl = group('equipment.blades', E.blades, ['Video', 'Direct']);
     if (bl) { textList('equipment.blades.Video', bl.Video); textList('equipment.blades.Direct', bl.Direct); }
     const maxTube = number('equipment.maxTubeSizeMm', E.maxTubeSizeMm);
+    // The questions and answer choices on the equipment forms.
+    const fm = group('equipment.forms', E.forms, ['laryngoscopy', 'intubation', 'outcome', 'access', 'sizes']);
+    if (fm) {
+      const lar = group('equipment.forms.laryngoscopy', fm.laryngoscopy, ['methodQuestion', 'methods', 'bladeHint', 'bladeQuestion', 'forcepsQuestion', 'forcepsChoices', 'viewQuestion', 'views']);
+      if (lar) {
+        for (const k of ['methodQuestion', 'bladeHint', 'bladeQuestion', 'forcepsQuestion', 'viewQuestion']) text(`equipment.forms.laryngoscopy.${k}`, lar[k]);
+        const methods = textList('equipment.forms.laryngoscopy.methods', lar.methods);
+        if (methods) {
+          if (methods.length !== 2) say('equipment.forms.laryngoscopy.methods', 'must have exactly two methods: the first uses the Video blade list and the second the Direct blade list');
+          else if (bl && (!(methods[0] in bl) || !(methods[1] in bl))) say('equipment.forms.laryngoscopy.methods', 'each method must be the name of a blade list in equipment.blades (Video, Direct)');
+        }
+        textList('equipment.forms.laryngoscopy.forcepsChoices', lar.forcepsChoices);
+        textList('equipment.forms.laryngoscopy.views', lar.views);
+      }
+      const inb = group('equipment.forms.intubation', fm.intubation, ['introducerQuestion', 'introducers', 'lipsQuestion', 'lipsMinCm', 'lipsMaxCm', 'confirmQuestion', 'confirmMethods', 'sizeLegend', 'sizeUnit']);
+      if (inb) {
+        for (const k of ['introducerQuestion', 'lipsQuestion', 'confirmQuestion', 'sizeLegend', 'sizeUnit']) text(`equipment.forms.intubation.${k}`, inb[k]);
+        textList('equipment.forms.intubation.introducers', inb.introducers);
+        textList('equipment.forms.intubation.confirmMethods', inb.confirmMethods);
+        const lo = number('equipment.forms.intubation.lipsMinCm', inb.lipsMinCm), hi = number('equipment.forms.intubation.lipsMaxCm', inb.lipsMaxCm);
+        lessOrEqual('equipment.forms.intubation.lipsMinCm', lo, hi, 'the smallest length', 'the largest length');
+      }
+      const oc = group('equipment.forms.outcome', fm.outcome, ['question', 'choices']);
+      if (oc) { text('equipment.forms.outcome.question', oc.question); textList('equipment.forms.outcome.choices', oc.choices); }
+      const ac = group('equipment.forms.access', fm.access, ['sideQuestion', 'sides', 'locationQuestion']);
+      if (ac) { text('equipment.forms.access.sideQuestion', ac.sideQuestion); textList('equipment.forms.access.sides', ac.sides); text('equipment.forms.access.locationQuestion', ac.locationQuestion); }
+      const sz = group('equipment.forms.sizes', fm.sizes, ['cannulaLegend', 'otherLegend', 'cannulaSuffix']);
+      if (sz) for (const k of Object.keys(sz)) text(`equipment.forms.sizes.${k}`, sz[k]);
+    }
     // Every intubation size offered must be one the app will accept when it is recorded.
     (sizes.intubation || []).forEach((size, i) => {
       const n = Number(size);
