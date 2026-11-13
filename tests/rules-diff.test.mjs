@@ -13,9 +13,11 @@ import path from 'node:path';
 import { CASE_LIMITS, compareRuleSets, fastCaseIds, formatReport, parseCaseList, readable } from './reference/lib/rules-diff.mjs';
 import { Pool } from './reference/lib/run.mjs';
 import { ROOT } from './reference/lib/reference-app.mjs';
+import { readYamlStrict } from '../src/rules/parse.js';
+import { rulesFileText } from '../src/rules/write.js';
 
-const rulesText = readFileSync(path.join(ROOT, 'src/rules/nz-eas.json'), 'utf8');
-const fresh = () => JSON.parse(rulesText); // a new copy of the reference rules each time
+const rulesText = readFileSync(path.join(ROOT, 'src/rules/nz-eas.yaml'), 'utf8');
+const fresh = () => readYamlStrict(rulesText); // a new copy of the reference rules each time
 const pool = new Pool(2);
 after(() => pool.close());
 
@@ -218,12 +220,12 @@ test('a case found different in the first pass is never counted as identical, ev
 test('the command line: identical files report no differences; a changed file gives the report; a saved-only change is found by default', () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-rules-diff-test-'));
   try {
-    const same = path.join(dir, 'same.json'), changed = path.join(dir, 'changed.json'), savedOnly = path.join(dir, 'saved-only.json');
+    const same = path.join(dir, 'same.yaml'), changed = path.join(dir, 'changed.yaml'), savedOnly = path.join(dir, 'saved-only.yaml');
     writeFileSync(same, rulesText);
     const edited = fresh(); edited.wording.liveCards.noDoseRecorded = 'No dose given';
-    writeFileSync(changed, JSON.stringify(edited));
+    writeFileSync(changed, rulesFileText(edited));
     const logOnly = fresh(); logOnly.wording.eventDetails.rhythmNotRecorded += ' (changed)';
-    writeFileSync(savedOnly, JSON.stringify(logOnly));
+    writeFileSync(savedOnly, rulesFileText(logOnly));
     assert.match(cli(same, same, '--cases', '1').stdout, /No screen differs and the saved session does not differ/);
     assert.equal(cli(same, same, '--cases', '1').status, 0);
     const report = cli(same, changed, '--cases', '1');
@@ -242,10 +244,31 @@ test('the command line: identical files report no differences; a changed file gi
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('the command line still reads a rules file in the older JSON layout, and git:<commit> falls back to nz-eas.json for a commit from before the YAML change', () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-rules-diff-test-'));
+  try {
+    const same = path.join(dir, 'same.yaml'), olderLayout = path.join(dir, 'older.json');
+    writeFileSync(same, rulesText);
+    writeFileSync(olderLayout, readFileSync(path.join(ROOT, 'tests/baseline/nz-eas-before-yaml.json'), 'utf8'));
+    const fromJson = cli(same, olderLayout, '--cases', '1');
+    assert.equal(fromJson.status, 0, fromJson.stderr);
+    assert.match(fromJson.stdout, /No screen differs and the saved session does not differ/);
+    const OLD_COMMIT = '8dc32e2'; // the last commit before the YAML change: its rules file is nz-eas.json
+    if (spawnSync('git', ['cat-file', '-e', OLD_COMMIT + '^{commit}'], { cwd: ROOT }).status === 0) {
+      const fromGit = cli('git:' + OLD_COMMIT, same, '--cases', '1');
+      assert.equal(fromGit.status, 0, fromGit.stderr);
+      assert.match(fromGit.stdout, /No screen differs and the saved session does not differ/);
+    }
+    const missing = cli('git:' + 'no-such-commit', same, '--cases', '1');
+    assert.notEqual(missing.status, 0);
+    assert.match(missing.stderr, /there is no rules file/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('the command line exits with a non-zero code when nothing (or not everything) was compared, and when a case number does not exist', () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-rules-diff-test-'));
   try {
-    const same = path.join(dir, 'same.json');
+    const same = path.join(dir, 'same.yaml');
     writeFileSync(same, rulesText);
     const tooLong = cli(same, same, '--cases', '16'); // case 16 is over the 90-minute testing limit, so nothing is compared
     assert.notEqual(tooLong.status, 0);

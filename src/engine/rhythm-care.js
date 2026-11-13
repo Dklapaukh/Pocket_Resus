@@ -1,7 +1,7 @@
 /* RHYTHM CARE: torsades, magnesium and fluid references, and two-step rhythm checks.
 
    Rewritten for readability on 11 Nov 2026 (owner-approved); results are identical to the original
-   (see tests/side-by-side.test.mjs). Clinical numbers come from src/rules/nz-eas.json.
+   (see tests/side-by-side.test.mjs). Clinical numbers come from src/rules/nz-eas.yaml.
    Everything is worked out from the recorded events, so corrections, voids and undo always win. */
 import { RULES } from '../rules/load.js';
 import * as R from './core.js';

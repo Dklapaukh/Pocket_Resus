@@ -1,5 +1,5 @@
 // Step 3a sub-step 8 (doc 18): lock the partition in. Clinical numbers, guideline sentences, guideline
-// links and PDFs live in the rules file (src/rules/nz-eas.json) only. These tests fail if any of them
+// links and PDFs live in the rules file (src/rules/nz-eas.yaml) only. These tests fail if any of them
 // reappears as text typed into the app or engine code, or if a {gap} in the wording is left unfilled.
 // Comments are ignored; only text the code can show (string and template pieces) is checked.
 import test from 'node:test';

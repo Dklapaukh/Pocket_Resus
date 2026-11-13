@@ -1,5 +1,5 @@
 // Stage 1: the rules loader (src/rules/load.js). The real loader is run the way a phone runs it (a page
-// with a document, and fetch reading nz-eas.json), using a temporary copy of src/ so a broken rules file
+// with a document, and fetch reading nz-eas.yaml), using a temporary copy of src/ so a broken rules file
 // can be tried. It must give the same rule set, and when the file cannot be loaded it must show ONE plain
 // message and the engine (so the app) must not start. (The Node tests and the fake browser read the file
 // without fetch; see tests/helpers/rules-for-fake-browser.mjs.)
@@ -10,16 +10,18 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { RULES as BASELINE } from './baseline/nz-eas-v22-a8.js';
+import { readYamlStrict } from '../src/rules/parse.js';
+import { rulesFileText } from '../src/rules/write.js';
 
 const SRC = fileURLToPath(new URL('../src', import.meta.url));
 
 // Run the engine's module graph in a copy of src/ as a phone would. fetchBehaviour(url, realText) returns the response.
-async function onAPhone(editJson, fetchBehaviour) {
+async function onAPhone(editText, fetchBehaviour) {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-loader-'));
   cpSync(SRC, path.join(dir, 'src'), { recursive: true });
-  const jsonFile = path.join(dir, 'src/rules/nz-eas.json');
-  const real = readFileSync(jsonFile, 'utf8');
-  if (editJson) writeFileSync(jsonFile, editJson(real));
+  const rulesFile = path.join(dir, 'src/rules/nz-eas.yaml');
+  const real = readFileSync(rulesFile, 'utf8');
+  if (editText) writeFileSync(rulesFile, editText(real));
   const page = { children: [] };
   const element = () => ({ style: {}, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, textContent: '' });
   const fetched = [], realFetch = globalThis.fetch;
@@ -37,7 +39,7 @@ async function onAPhone(editJson, fetchBehaviour) {
 const ok = (url, text) => ({ ok: true, status: 200, text: async () => text });
 
 // Stage 2 added values to the file (pinned in tests/baseline/stage2-additions.json and checked in
-// rules-json-same-as-baseline.test.mjs), so "the same rule set" now means: exactly the five parts of the file on
+// rules-yaml-same-as-baseline.test.mjs), so "the same rule set" now means: exactly the five parts of the file on
 // disk, and every value of the frozen baseline still in it, identical.
 function assertHolds(actual, baseline, where) {
   if (baseline !== null && typeof baseline === 'object') {
@@ -49,8 +51,8 @@ test('on a phone: the file is fetched next to the loader and gives exactly the r
   const r = await onAPhone(null, ok);
   assert.equal(r.error, undefined);
   assert.equal(r.fetched.length, 1);
-  assert.match(r.fetched[0], /\/src\/rules\/nz-eas\.json$/);
-  const onDisk = JSON.parse(readFileSync(new URL('../src/rules/nz-eas.json', import.meta.url), 'utf8'));
+  assert.match(r.fetched[0], /\/src\/rules\/nz-eas\.yaml$/);
+  const onDisk = readYamlStrict(readFileSync(new URL('../src/rules/nz-eas.yaml', import.meta.url), 'utf8'));
   assert.deepEqual(r.engine.Resus.RULES, Object.fromEntries(Object.keys(BASELINE).map((part) => [part, onDisk[part]])));
   assert.deepEqual(Object.keys(r.engine.Resus.RULES), Object.keys(BASELINE));
   assertHolds(r.engine.Resus.RULES, BASELINE, 'rules');
@@ -60,11 +62,19 @@ test('on a phone: the file is fetched next to the loader and gives exactly the r
 const FAILURES = [
   ['the file is not found (offline and not saved, or deleted)', null, () => ({ ok: false, status: 404, text: async () => 'Not found' }), /status 404/],
   ['the network fails', null, () => { throw new TypeError('Failed to fetch'); }, /Failed to fetch/],
-  ['the file is not valid JSON', (t) => t.slice(0, t.length - 40), ok, /not valid JSON/],
-  ['the file is empty', () => '', ok, /not valid JSON/],
+  ['the file is not valid YAML', (t) => t + 'broken: [unclosed\n', ok, /not valid YAML/],
+  ['the file is empty', () => '', ok, /not valid YAML/],
+  ['a name is used twice in the file', (t) => t + 'numbers:\n  timing: 1\n', ok, /not valid YAML: duplicated mapping key/],
+  ['the file holds two documents', (t) => t + '---\na: 1\n', ok, /not valid YAML: it must hold exactly one document/],
+  ['the file uses an anchor', (t) => t.replace('\nnumbers:\n', '\nnumbers: &n\n'), ok, /uses a YAML anchor/],
+  ['the file uses an alias', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs: *n'), ok, /uses a YAML alias/],
+  ['the file uses a tag', (t) => t.replace('\nnumbers:\n', '\nnumbers: !!map\n'), ok, /uses a YAML tag/],
+  ['the file holds a number written as 1e3', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs: 1e3'), ok, /looks like a number or date/],
+  ['the file has a value left empty', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs:'), ok, /left empty/],
+  ['the file has a # comment', (t) => t.replace('cprCycleMs: 120000', 'cprCycleMs: 120000 # two minutes'), ok, /# comment/],
   ['the file holds a list, not the rules', () => '[]', ok, /wrong shape/],
-  ['a part is missing', (t) => { const f = JSON.parse(t); delete f.wording; return JSON.stringify(f); }, ok, /missing part: wording/],
-  ['two parts are not groups', (t) => { const f = JSON.parse(t); f.numbers = 5; f.sources = null; return JSON.stringify(f); }, ok, /missing part: numbers, sources/],
+  ['a part is missing', (t) => { const f = readYamlStrict(t); delete f.wording; return rulesFileText(f); }, ok, /missing part: wording/],
+  ['two parts are not groups', (t) => { const f = readYamlStrict(t); f.numbers = 5; f.sources = null; return rulesFileText(f); }, ok, /missing part: numbers, sources/],
 ];
 for (const [what, edit, behaviour, reason] of FAILURES) {
   test('when ' + what + ': one plain message is shown and the app does not start', async () => {
@@ -82,9 +92,9 @@ for (const [what, edit, behaviour, reason] of FAILURES) {
 
 test('the reader keeps only the five parts, in order, and ignores about and notes', async () => {
   const { parseRules, PARTS } = await import('../src/rules/parse.js');
-  const rules = parseRules(readFileSync(path.join(SRC, 'rules/nz-eas.json'), 'utf8'));
+  const rules = parseRules(readFileSync(path.join(SRC, 'rules/nz-eas.yaml'), 'utf8'));
   assert.deepEqual(Object.keys(rules), PARTS);
   assert.deepEqual(PARTS, ['numbers', 'wording', 'checklists', 'equipment', 'sources']);
-  const rearranged = parseRules(JSON.stringify({ notes: { x: 'y' }, about: 'z', sources: {}, equipment: {}, checklists: {}, wording: {}, numbers: {}, extra: 1 }));
+  const rearranged = parseRules(rulesFileText({ notes: { x: 'y' }, about: 'z', sources: {}, equipment: {}, checklists: {}, wording: {}, numbers: {}, extra: 1 }));
   assert.deepEqual(Object.keys(rearranged), PARTS);
 });

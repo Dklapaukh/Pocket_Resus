@@ -1,4 +1,4 @@
-// The clinical rules file (src/rules/nz-eas.json) checked value by value against the bundled NZ EAS
+// The clinical rules file (src/rules/nz-eas.yaml) checked value by value against the bundled NZ EAS
 // guideline PDFs (exports dated 24 Sep 2026). If a guideline changes, update the rules file AND this
 // test together, with the owner's approval recorded in docs/07. Page references are for auditors.
 import test from 'node:test';
