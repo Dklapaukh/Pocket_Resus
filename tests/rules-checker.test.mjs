@@ -5,9 +5,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { checkRuleSet } from '../src/rules/check.js';
+import { readYamlStrict } from '../src/rules/parse.js';
 import { Resus as R } from '../src/engine/index.js';
 
-const original = JSON.parse(readFileSync(new URL('../src/rules/nz-eas.json', import.meta.url), 'utf8'));
+const original = readYamlStrict(readFileSync(new URL('../src/rules/nz-eas.yaml', import.meta.url), 'utf8'));
 const copy = () => JSON.parse(JSON.stringify(original));
 
 test('the real rules file passes the checker with no problems', () => {

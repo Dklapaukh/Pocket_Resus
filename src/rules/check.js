@@ -1,4 +1,4 @@
-/* RULE SET CHECKER: reads a whole rules file (as parsed from nz-eas.json) and lists every problem in
+/* RULE SET CHECKER: reads a whole rules file (as parsed from nz-eas.yaml) and lists every problem in
    plain English. An empty list means the file passed. Each problem starts with the place it is about,
    for example "numbers.childBands.2.shockJ: must be a number above 0 and no more than 1000 J (found -5)".
 
