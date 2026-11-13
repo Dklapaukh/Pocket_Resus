@@ -30,8 +30,10 @@ independent clinical review is deferred until the code and other key goals are r
   start a new chat (objective, state, next steps). Keep docs tidy so new chats start cheaply.
 
 ## Current state (12 Nov 2026)
-- **Live: v22** (cache `resus-pocket-v22-rules-file`, published 12 Nov 2026) = v21 plus step 3a
-  (all rules and guideline text in the rules file; screens identical). **v22 phone check passed (owner, 12 Nov 2026).**
+- **Live: v23** (store name `resus-pocket-v23-bbd0202f01`, published 13 Nov 2026) = v22 plus A8 (ROSC
+  "Other" fix), the rule set as a data file (stage 1), remaining screen text in the rule set (stage 2)
+  and the safer update step (stage 2b). Screens identical to v22 except A8. **Owner phone check of v23:
+  waiting.** v22 phone check passed (owner, 12 Nov 2026).
   v21 phone check passed (owner, 12 Nov 2026). The separate A7 check ("Other" triggers
   fluids, doc 09 11 Nov entry) has not been confirmed on its own.
 - **Step 2 done (12 Nov 2026):** every drug-card rule is now in the engine
@@ -73,13 +75,18 @@ so rules can be updated, and new rule sets made for other services, without touc
 | 0 Wider safety net | Done 13 Nov 2026. `tests/reference/` (read its README): 3,609 recorded cases from 91843ae; first 249 replayed by `npm test`, all by `npm run test:deep`; 51 planted faults caught; two independent reviews, no blocking findings. 246 tests pass |
 | 1 Rule set becomes JSON | Done 13 Nov 2026. `src/rules/nz-eas.json` (five parts + `about` + `notes`), `load.js`, `parse.js`, `check.js` (first checker, tests only); old file kept as `tests/baseline/nz-eas-v22-a8.js`. 425 values identical incl. order; real-browser start, offline, slow network and failure cases checked; review: no blocking findings. 318 tests pass |
 | 2 Remaining text and settings into data | Done 13 Nov 2026 (commit 097ee00). 506 values added to `nz-eas.json` (labels, messages, timer thresholds, rhythm button names, correction-form lists, resus-start choices, equipment form questions, log intervention list, export labels); additions frozen in `tests/baseline/stage2-additions.json`; all 425 earlier values identical. 359 tests and the deep run pass; real-browser check matched the reference on 21 screens and offline; 25 new planted faults caught; review: no blocking findings |
-| 2b Safer update (`sw.js`), then publish v23 | **Built 13 Nov 2026 (commit c770cb8), NOT yet independently reviewed, NOT published.** New `sw.js`: a complete new set is downloaded before anything changes, answers come from the version's own store, nothing is saved while the app runs, a new version takes over only at a fresh open; store name `resus-pocket-v23-…` carries a fingerprint of every shipped file (`tools/set-cache-name.mjs`; a test fails if a file changes without a new name). 367 tests and the deep run pass; worker's real-browser update check passed. The Opus reviewer stopped part-way on the weekly limit. **Next: independent review (reviewer per the owner's answer below), then publish to `main` in a chat the owner started, then owner phone check** |
-| E1 Checker for today's rule set + what-changed report | Next for unattended runs while 2b waits (doc 19, first-editor steps). Build, test, commit "awaiting independent review" |
-| E2 Editor page, Rules view | After E1 (worker Opus: not before 17 Nov 4 pm unless the owner says otherwise) |
+| 2b Safer update (`sw.js`), then publish v23 | Done and **published as v23 on 13 Nov 2026** (commits c770cb8, b028bdc; release d28f809 plus docs). New `sw.js`: a complete new set is downloaded and checked against the fingerprint in its store name before anything changes; answers come from the version's own store; nothing is saved while the app runs; a new version takes over only at a fresh open. `tools/set-cache-name.mjs` sets the name; a test fails if a shipped file changes without a new name. 375 tests and the deep run pass; review (Opus, high, two passes): no blocking findings, 31 planted faults caught after fixes, real-browser v22 → v23 update clean. **Waiting: owner phone check** |
+| E1 Checker for today's rule set + what-changed report | **Next** (doc 19, first-editor steps). Does not depend on the YAML question below |
+| E2 Editor page, Rules view | After E1, and after the owner has answered the YAML question and the two editor points below |
 | E3 Approve, publish, rollback | After E2; needs a short design note and one owner decision first |
 | 3 to 6, then full 7 to 10, 11 store apps | After the first editor is published (owner chose "editor first", 13 Nov 2026) |
 
-**Go-live must do (built as stage 2b, awaiting review):** new cache name AND a safer `sw.js`: today a phone with a working offline copy can lose offline use if the rules file fails to download during the update visit (it fails safe: message, no app). Fix `sw.js` so new-version files are never saved into the old version's store and the old complete set is served until the new set is fully installed; add a test for "rules file fails during update, then offline".
+**Carried forward from the stage 2b review (not blocking; do before the next release, v24):**
+- The start page entry `./` is not part of the install check (harmless for v23: `index.html` is unchanged since v22). Require the `./` download to equal `index.html`.
+- `tools/check-offline-browser.cjs` sometimes fails at "old store changed" because the test browser still checks for updates while "offline"; wait for that install to end.
+- Nothing runs the tests automatically on GitHub before a release (a GitHub Actions check would).
+- The one-off v22 → v23 update is unprotected (old v22 code on phones): if a download fails during that visit the app may not start offline until the phone next has signal; one open with signal repairs it.
+- Not checked anywhere: real phones, iPhone Safari, the bytes GitHub Pages actually serves.
 
 **Carried forward from the stage 2 review (not blocking; do before the editor is used):**
 - Checker (`src/rules/check.js`) is too lenient for the new wording groups: it does not notice an entry that drops its own `{gap}`, a rule-set gap in a log entry (would save the word "undefined"), "30" typed in place of `{warningSeconds}`, markup in equipment questions, an unknown event type in the interventions list, or "mg" removed from the medicine units. Today the frozen additions list catches these; the editor will rely on the checker. Tighten at the checker stage (7).
@@ -97,9 +104,23 @@ edited and none is skipped: the pretend clock means long cases take no longer to
 owner said not to skip them if it saves no time.
 
 **Waiting for the owner:**
-- (Answered 13 Nov 2026: usage limits were reset; reviewer is Opus · high as before, and Fable · high
-  if Opus is stopped by a limit again, "Option A". The 2b review and v23 release are being done in the
-  owner's chat; unattended runs leave 2b alone and work on E1.)
+- **Phone check of v23 (asked 13 Nov 2026).** With good signal: open the app, wait 30 seconds, close it
+  fully (swipe it away); open and close it twice more; turn on airplane mode and open it: it must start
+  and Start must work. Then check A8: record ROSC with rhythm "Other"; no "Continue CPR" pop-up should
+  follow. Do not rely on the app offline for a case until this has worked.
+- **Rule set file format (asked 13 Nov 2026; blocks E2, not E1).** The owner wrote "use YAML" on `main`
+  (doc 18, last section; `CLAUDE.md` rule 10), which conflicts with decision 9 (plain JSON, 12 Nov
+  2026, built in stage 1). Option A (recommended): keep JSON as the file the app loads; it is already
+  built and proved, it is strict (a typing slip cannot silently change a value), and people will change
+  rules through the editor, not by opening the file; the rule set already is the single central file
+  rule 10 asks for. Option B: switch the rule set to YAML now; costs about one stage, adds a YAML
+  reader to the app (a new package inside the safety-critical loading step) and the format tests are
+  redone. Option C: people and the editor work in YAML, and a publish step converts it to the strict
+  JSON the phone loads; needs a publish step (fits "go live from the editor" in step E3).
+- **Two editor points from the owner's answers on `main` to confirm next (doc 18, last section):** no
+  version-history screens (only the current version number), and rule sets go live when confirmed in
+  the editor (changes decision 20; needs a design note at E3).
+- Reviewer (answered 13 Nov 2026): Opus · high; Fable · high if Opus is stopped by a limit again.
 - **Store apps (told 13 Nov 2026).** Apple's review rule 1.4.2: dose calculators must come from a
   hospital, university, manufacturer or similar approved body, or have regulator approval. Google: a
   new personal developer account must run a closed test with 12 testers for 14 days before public
@@ -109,7 +130,7 @@ owner said not to skip them if it saves no time.
   that make it a "medical" app for the stores are the patient-specific calculations and prompts (drug
   doses from weight, shock energy, tube sizes, "amiodarone due"); timers, the log, checklists and
   guideline PDFs alone would not. Whether it is a medical device under NZ law is a question for Medsafe.
-- A8: confirm "Option A" meant updating the step 2 comparison test (doc 09); phone check after v23 is published (stage 2b).
+- A8: confirm "Option A" meant updating the step 2 comparison test (doc 09).
 - New start-up message if the rule set cannot be read (stage 1; wording in `src/rules/parse.js`): owner may reword.
 - Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit): confirm at stage 7.
 - Three existing app behaviours found while recording (unchanged, recorded as they are; each a possible A-table row, one decision at a time): (1) a manual entry timed later than now is saved as the previous day; (2) closing the rhythm pop-up with × leaves "Rhythm not recorded"; (3) Tube sizes "Use age" with an empty or non-number box saves age 0 and shows infant sizes.
