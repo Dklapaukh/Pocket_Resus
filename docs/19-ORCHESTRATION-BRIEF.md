@@ -35,12 +35,11 @@ You are the **orchestrator**. You do not write the stage code yourself. For each
    120 lines; one paragraph per stage in doc 09).
 7. The Agent tool now sets the effort level as well as the model: pass both from the stage table.
 
-## Running unattended (prepared 13 Nov 2026; the scheduled task is NOT switched on yet)
-Plan: a scheduled task ("Pocket Resus build", every 3 hours) starts a fresh chat with the prompt saved
-in `docs/20-UNATTENDED-PROMPT.md`, so work carries on after a usage limit resets and while the owner
-is away. Claude may not create it without the owner's clear yes in the chat (the app refused on
-13 Nov 2026); once the owner says yes, create it with that prompt and note it here. Every chat,
-attended or not:
+## Running unattended (scheduled task switched on 13 Nov 2026, owner's yes in chat)
+The scheduled task "Pocket Resus build" starts a fresh chat every 3 hours (at 11 minutes past, on the
+Fable model) with the prompt in `docs/20-UNATTENDED-PROMPT.md`, so work carries on after a usage limit
+resets and while the owner is away (18 Nov to 2 Dec 2026). The owner can pause it in the Claude app
+under scheduled tasks. Every chat, attended or not:
 1. **First** run `sh tools/build-progress.sh check`. If it says BUSY, another chat is working: stop at
    once and do nothing else. If it says unfinished work is saved, run `... restore` and carry on from
    the note instead of starting the stage again.
@@ -49,7 +48,12 @@ attended or not:
    a snapshot on the scratch branch `rules-editor-wip` only; half-finished work never goes on
    `rules-editor`.
 3. If doc 07 shows that everything left is waiting for the owner, stop at once (say so in one line).
-4. An unattended chat **never pushes to `main`** and never makes a clinical or design choice: it writes
+4. Before every push run `git pull --rebase origin rules-editor` (another chat may have pushed docs).
+5. **Usage limits.** If an agent fails with a limit error, do not retry in a loop and do not swap in a
+   different model on your own: note it in doc 07 (which model, when it resets), carry on with work
+   that does not need that model, or stop. Opus hit its weekly limit on 13 Nov 2026 (resets 17 Nov
+   4 pm NZ time); who reviews until then is an owner decision in doc 07.
+6. An unattended chat **never pushes to `main`** and never makes a clinical or design choice: it writes
    the question under "Waiting for the owner" in doc 07 (full text of every option, one recommended)
    and moves to other work that is not blocked, or stops.
 
@@ -75,6 +79,9 @@ ready to put the previous version back with one commit.
 - The rule set is plain JSON data: no code, no functions. Logic is rule tables read by the engine.
 - Name blocks generally where it costs nothing ("counted event", not "shock"): decision 24.
 - Comments in plain English; the owner is a clinician, not a programmer.
+- The offline store name in `sw.js` carries a fingerprint of every shipped file. After changing any
+  file the app ships (anything in the `sw.js` list, or `sw.js`), run `node tools/set-cache-name.mjs`
+  or the tests fail. For a release give the new label: `node tools/set-cache-name.mjs v24`.
 
 ## Stop conditions (tell the owner, wait)
 A failing test you cannot explain as a stage defect and fix within the rules; any clinical question;
@@ -110,10 +117,15 @@ the reference; reviewer has no blocking findings.
 
 Reviewer after every stage: Opus · high, fresh agent. Orchestrator: Fable · high.
 
-**Proposed order for a December editor (awaiting the owner, doc 07): "editor first".** After 2 and 2b,
-build a first editor for everything that is already data (7, 8 and 9 in reduced form: checker,
-what-changed report, Rules view, approve, publish, rollback), publish it, then do 3, 4, 5 and 6, each
-widening what the editor can change. Until the owner answers, do not start stage 3.
+**Order of work: "editor first" (owner chose Option A, 13 Nov 2026).** After 2 and 2b, build a first
+editor for everything that is already data, publish it, then do stages 3, 4, 5 and 6, each widening
+what the editor can change (the full stages 7, 8 and 9 are finished as those arrive). First-editor steps:
+
+| # | Goal | Extra proof | Worker |
+|---|---|---|---|
+| E1 | **Checker for today's rule set, and the what-changed report.** Tighten `src/rules/check.js` for all five parts as they are now (doc 07 "Carried forward" list; decision 18 limits: every number has a type, unit and allowed range, lists in order, wording uses exactly its own gaps and only bold, italic, line break). No rule tables or formulas yet. A tool that runs the generated cases through two rule sets and lists every screen that differs. Checker rules that encode a clinical relationship are listed for the owner, not switched on | Checker rejects a library of at least 30 deliberately bad rule sets and accepts the reference; the report finds planted changes and reports nothing for identical rule sets | Sonnet · high |
+| E2 | **Editor page, Rules view** (decisions 20, 23, 24; doc 18 lines 250 to 277): a separate offline page of the same site; tabs Rules, Tests, Publish (App view and Appearance come later); edit every value of the five parts with its plain-English note; checker runs as you type and blocks saving an invalid rule set; a large change needs a typed confirmation; what-changed view; saves a rule-set file. Read the `frontend-design` guidance. **Owner tries it after this step** | Round trip: open the reference rule set, save without edits, file identical; every value in the five parts reachable; the live app unchanged | Opus · high |
+| E3 | **Approve, publish, rollback** (decisions 18, 21): approval record (editor's name, date, reason, source), rule-set version name on screen, previous rule set kept, one-step rollback, publish steps a non-programmer can follow (needs a short design note and an owner decision first: how the saved file reaches GitHub) | Rollback restores the previous rule set exactly; the difference report is part of the approval record | Opus · high |
 
 ## Going live
 Nothing reaches `main` during stages 0 to 9 unless the owner asks. When the owner says yes: new cache

@@ -18,10 +18,11 @@ independent clinical review is deferred until the code and other key goals are r
   approval, or an owner action (e.g. a phone check).
 - **`main` (owner 13 Nov 2026):** standing permission to publish without asking each time, used for
   complete releases only (doc 19 "Publishing to `main`"). Git history is the rollback.
-- **Unattended running (prepared 13 Nov 2026, not switched on):** every chat first runs
-  `sh tools/build-progress.sh check` (doc 19 "Running unattended"). A scheduled task that restarts the
-  build every 3 hours needs the owner's clear yes in the chat before Claude may create it (prompt in
-  doc 20); the owner can pause it any time in the Claude app under scheduled tasks.
+- **Unattended running (on since 13 Nov 2026):** the scheduled task "Pocket Resus build" restarts the
+  build every 3 hours; every chat first runs `sh tools/build-progress.sh check` (doc 19 "Running
+  unattended"). The owner can pause it any time in the Claude app under scheduled tasks.
+- **Usage:** Opus reached its weekly limit on 13 Nov 2026 (resets 17 Nov, 4 pm NZ time). The plan's
+  weekly allowance, not the work, sets the pace.
 - **Owner goal (13 Nov 2026):** secure Android and iPhone apps with the editor in place, by December.
   Owner is away 18 Nov to 2 Dec 2026 with a phone only (can answer questions and do phone checks).
 - Explain simply, recommend one option, show the full text of any options, one decision at a time.
@@ -72,10 +73,13 @@ so rules can be updated, and new rule sets made for other services, without touc
 | 0 Wider safety net | Done 13 Nov 2026. `tests/reference/` (read its README): 3,609 recorded cases from 91843ae; first 249 replayed by `npm test`, all by `npm run test:deep`; 51 planted faults caught; two independent reviews, no blocking findings. 246 tests pass |
 | 1 Rule set becomes JSON | Done 13 Nov 2026. `src/rules/nz-eas.json` (five parts + `about` + `notes`), `load.js`, `parse.js`, `check.js` (first checker, tests only); old file kept as `tests/baseline/nz-eas-v22-a8.js`. 425 values identical incl. order; real-browser start, offline, slow network and failure cases checked; review: no blocking findings. 318 tests pass |
 | 2 Remaining text and settings into data | Done 13 Nov 2026 (commit 097ee00). 506 values added to `nz-eas.json` (labels, messages, timer thresholds, rhythm button names, correction-form lists, resus-start choices, equipment form questions, log intervention list, export labels); additions frozen in `tests/baseline/stage2-additions.json`; all 425 earlier values identical. 359 tests and the deep run pass; real-browser check matched the reference on 21 screens and offline; 25 new planted faults caught; review: no blocking findings |
-| 2b Safer update (`sw.js`), then publish v23 | Next (doc 19) |
-| Then | Waiting for the owner's answer on "editor first" (below). Do not start stage 3 before it |
+| 2b Safer update (`sw.js`), then publish v23 | **Built 13 Nov 2026 (commit c770cb8), NOT yet independently reviewed, NOT published.** New `sw.js`: a complete new set is downloaded before anything changes, answers come from the version's own store, nothing is saved while the app runs, a new version takes over only at a fresh open; store name `resus-pocket-v23-…` carries a fingerprint of every shipped file (`tools/set-cache-name.mjs`; a test fails if a file changes without a new name). 367 tests and the deep run pass; worker's real-browser update check passed. The Opus reviewer stopped part-way on the weekly limit. **Next: independent review (reviewer per the owner's answer below), then publish to `main` in a chat the owner started, then owner phone check** |
+| E1 Checker for today's rule set + what-changed report | Next for unattended runs while 2b waits (doc 19, first-editor steps). Build, test, commit "awaiting independent review" |
+| E2 Editor page, Rules view | After E1 (worker Opus: not before 17 Nov 4 pm unless the owner says otherwise) |
+| E3 Approve, publish, rollback | After E2; needs a short design note and one owner decision first |
+| 3 to 6, then full 7 to 10, 11 store apps | After the first editor is published (owner chose "editor first", 13 Nov 2026) |
 
-**Go-live must do (found in stage 1 review, not yet built):** new cache name AND a safer `sw.js`: today a phone with a working offline copy can lose offline use if the rules file fails to download during the update visit (it fails safe: message, no app). Fix `sw.js` so new-version files are never saved into the old version's store and the old complete set is served until the new set is fully installed; add a test for "rules file fails during update, then offline".
+**Go-live must do (built as stage 2b, awaiting review):** new cache name AND a safer `sw.js`: today a phone with a working offline copy can lose offline use if the rules file fails to download during the update visit (it fails safe: message, no app). Fix `sw.js` so new-version files are never saved into the old version's store and the old complete set is served until the new set is fully installed; add a test for "rules file fails during update, then offline".
 
 **Carried forward from the stage 2 review (not blocking; do before the editor is used):**
 - Checker (`src/rules/check.js`) is too lenient for the new wording groups: it does not notice an entry that drops its own `{gap}`, a rule-set gap in a log entry (would save the word "undefined"), "30" typed in place of `{warningSeconds}`, markup in equipment questions, an unknown event type in the interventions list, or "mg" removed from the medicine units. Today the frozen additions list catches these; the editor will rely on the checker. Tighten at the checker stage (7).
@@ -85,20 +89,22 @@ so rules can be updated, and new rule sets made for other services, without touc
 - Changing a name in `wording.drugNames` does not change which hand-typed names count as that medicine (noted in the file).
 
 **Waiting for the owner:**
-- **Order of work (asked 13 Nov 2026; blocks stage 3 only).** Option A (recommended), "editor first":
-  after stages 2 and 2b build a first editor for everything that is already data (every dose, energy,
-  timing, sentence, checklist, equipment list, source and label), with the checker, a what-changed
-  report, approval record, publish and rollback; publish it; then do stages 3 to 6, each widening what
-  the editor can change (which card shows when, new medicines and cards, pop-ups, appearance). Cost:
-  some editor screens are revisited at stage 4. Option B, "current order": stages 3 to 9 in sequence;
-  no rework, but the editor probably arrives in January rather than December.
-- **Scheduled task (asked 13 Nov 2026):** say "yes, create the scheduled task" to switch on unattended running.
+- **Who reviews while Opus is unavailable, until 17 Nov 4 pm (asked 13 Nov 2026; blocks the 2b
+  review, the v23 release and every later review).** Option A (recommended): Fable, the strongest
+  model, reviews at high effort until Opus is back; the 2b review runs at once and v23 can be published
+  and phone-checked several days before the owner leaves; cost: it uses the Fable allowance, which
+  the orchestrator also needs. Option B: wait for Opus; building continues, reviews queue up, v23 is
+  published on the evening of 17 Nov and phone-checked on 17 or 18 Nov. Option C: Sonnet reviews now;
+  cheapest, weakest check; not recommended for a release.
 - **Store apps (told 13 Nov 2026).** Apple's review rule 1.4.2: dose calculators must come from a
   hospital, university, manufacturer or similar approved body, or have regulator approval. Google: a
   new personal developer account must run a closed test with 12 testers for 14 days before public
   release; organisation accounts are exempt. Both need a paid developer account in the owner's or a
   service's name. Owner to decide whose name the apps go under (asked next, one decision at a time).
-  The app already installs from the web link on both kinds of phone.
+  The app already installs from the web link on both kinds of phone. Told 13 Nov 2026: the features
+  that make it a "medical" app for the stores are the patient-specific calculations and prompts (drug
+  doses from weight, shock energy, tube sizes, "amiodarone due"); timers, the log, checklists and
+  guideline PDFs alone would not. Whether it is a medical device under NZ law is a question for Medsafe.
 - A8: confirm "Option A" meant updating the step 2 comparison test (doc 09); phone check after v23 is published (stage 2b).
 - New start-up message if the rule set cannot be read (stage 1; wording in `src/rules/parse.js`): owner may reword.
 - Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit): confirm at stage 7.
