@@ -10,7 +10,7 @@ const previousWorker = fs.readFileSync(path.join(root, 'tests/fixtures/sw-v18.js
 let servePreviousWorker = false;
 // Safe-update check: serve an "old" copy (own cache name, marker in base.js) then the real "new" copy.
 const currentName = fs.readFileSync(path.join(root, 'sw.js'), 'utf8').match(/const CACHE='([^']+)'/)[1];
-const OLD_NAME = 'resus-pocket-v22-old-copy';
+let copyNames = {};        // cache names (with correct fingerprints) for the two served copies; set at start
 let serveCopy = null;      // null (normal), 'old' or 'new'
 let failRules = false;     // make src/rules/nz-eas.json fail while true
 let rulesRequests = 0;
@@ -32,8 +32,8 @@ const server = http.createServer((request, response) => {
   }
   fs.readFile(filename, (error, bytes) => {
     if (error) return response.writeHead(404).end();
-    if (serveCopy && url.pathname === '/sw.js' && serveCopy === 'old')
-      bytes = Buffer.from(bytes.toString().replace(/const CACHE='[^']+'/, `const CACHE='${OLD_NAME}'`));
+    if (serveCopy && url.pathname === '/sw.js')
+      bytes = Buffer.from(bytes.toString().replace(/const CACHE='[^']+'/, `const CACHE='${copyNames[serveCopy]}'`));
     if (serveCopy && url.pathname === '/src/app/base.js')
       bytes = Buffer.concat([bytes, Buffer.from(`\n/* copy-marker-${serveCopy} */\n`)]);
     if (url.pathname === '/sw.js' && servePreviousWorker) {
@@ -46,7 +46,27 @@ const server = http.createServer((request, response) => {
   });
 });
 
+// Really waits (Playwright's waitForFunction does NOT wait on a function that returns a promise).
+// Runs the test in the page every 100 ms for up to 15 s, and throws if it never becomes true.
+async function until(page, test, arg, what) {
+  const ok = await page.evaluate(async ([source, argument]) => {
+    const fn = (0, eval)('(' + source + ')');
+    for (let i = 0; i < 150; i++) {
+      if (await fn(argument)) return true;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return false;
+  }, [test.toString(), arg]);
+  if (!ok) throw new Error('Timed out waiting for: ' + what);
+}
+
 (async () => {
+  const { computeName } = await import('./cache-name.mjs');
+  const swText = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const forCopy = (label, copy) => computeName(root, label, swText,
+    file => file === 'src/app/base.js' ? Buffer.concat([fs.readFileSync(path.join(root, file)), Buffer.from(`\n/* copy-marker-${copy} */\n`)]) : fs.readFileSync(path.join(root, file)));
+  copyNames = { old: forCopy('v22', 'old'), new: forCopy(currentName.split('-')[2], 'new') };
+  const OLD_NAME = copyNames.old, NEW_NAME = copyNames.new;
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   let browser;
   try {
@@ -106,7 +126,7 @@ const server = http.createServer((request, response) => {
     if (!beforeCaches.includes('resus-pocket-v18-readable')) throw new Error('Previous cache was not installed');
     servePreviousWorker = false;
     await oldPage.evaluate(async () => (await navigator.serviceWorker.ready).update());
-    await oldPage.waitForFunction(async () => (await navigator.serviceWorker.getRegistration()).waiting !== null);
+    await until(oldPage, async () => (await navigator.serviceWorker.getRegistration()).waiting !== null, null, 'previous-worker update to be waiting');
     await oldPage.close();
     let newPage = await upgradeContext.newPage();
     await newPage.goto(url, { waitUntil: 'networkidle' });
@@ -114,18 +134,11 @@ const server = http.createServer((request, response) => {
     await newPage.close();
     newPage = await upgradeContext.newPage();
     await newPage.goto(url, { waitUntil: 'networkidle' });
-    // (This used to return a promise, which is always "true"; now the page-side check is awaited properly.)
-    await newPage.evaluate(async expected => {
-      for (let i = 0; i < 300; i++) {
-        const names = await caches.keys();
-        const registration = await navigator.serviceWorker.getRegistration();
-        if (names.includes(expected) && registration?.active?.state === 'activated' &&
-          !registration.waiting && !registration.installing) return;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      const r = await navigator.serviceWorker.getRegistration();
-      throw new Error('Previous-worker upgrade did not finish: ' + (await caches.keys()).join(',') + ' active=' + r.active?.state + ' waiting=' + !!r.waiting + ' installing=' + !!r.installing);
-    }, currentName);
+    await until(newPage, async expected => {
+      const names = await caches.keys();
+      const registration = await navigator.serviceWorker.getRegistration();
+      return names.join() === expected && registration?.active?.state === 'activated' && !registration.waiting && !registration.installing;
+    }, currentName, 'previous-worker upgrade to finish');
     const recovered = await newPage.evaluate(() => JSON.parse(localStorage.getItem('resus-pocket-v1')));
     if (recovered.weight !== '42') throw new Error('Session changed during the offline cache update');
     await upgradeContext.setOffline(true);
@@ -158,7 +171,7 @@ const server = http.createServer((request, response) => {
     // 1. The update visit, with the rules file failing.
     serveCopy = 'new'; failRules = true; rulesRequests = 0;
     await appPage.evaluate(async () => { try { await (await navigator.serviceWorker.getRegistration()).update(); } catch (e) {} });
-    await appPage.waitForFunction(() => navigator.serviceWorker.getRegistration().then(r => !r.installing)); // install has ended
+    await until(appPage, async () => !(await navigator.serviceWorker.getRegistration()).installing, null, 'the failed install to end');
     await appPage.waitForTimeout(500);
     check(rulesRequests > 0, 'the update never asked for the rules file');
     check(await appPage.evaluate(async () => !(await navigator.serviceWorker.getRegistration()).waiting), 'a failed update must not be waiting');
@@ -179,9 +192,9 @@ const server = http.createServer((request, response) => {
     await safeContext.setOffline(false);
     failRules = false;
     await appPage.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-    await appPage.waitForFunction(() => navigator.serviceWorker.getRegistration().then(r => r.waiting));
+    await until(appPage, async () => !!(await navigator.serviceWorker.getRegistration()).waiting, null, 'the new version to be waiting');
     check(await marker(appPage) === 'old', 'new version took over a running app');
-    check((await cacheNames(appPage)).sort().join() === [currentName, OLD_NAME].sort().join(), 'new store should sit beside the old one until activation');
+    check((await cacheNames(appPage)).sort().join() === [NEW_NAME, OLD_NAME].sort().join(), 'new store should sit beside the old one until activation');
     await appPage.close();
     appPage = await safeContext.newPage();
     appPage.on('pageerror', error => safeErrors.push(error.message));
@@ -191,8 +204,10 @@ const server = http.createServer((request, response) => {
     appPage = await safeContext.newPage();
     appPage.on('pageerror', error => safeErrors.push(error.message));
     await appPage.goto(url, { waitUntil: 'networkidle' });
-    await appPage.waitForFunction(() => navigator.serviceWorker.getRegistration().then(r => r.active && !r.waiting && !r.installing));
-    await appPage.waitForFunction(name => caches.keys().then(n => n.join() === name), currentName);
+    await until(appPage, async name => {
+      const r = await navigator.serviceWorker.getRegistration();
+      return !!r.active && !r.waiting && !r.installing && (await caches.keys()).join() === name;
+    }, NEW_NAME, 'the new version to take over');
     await safeContext.setOffline(true);
     await appPage.reload({ waitUntil: 'load' });
     await appPage.locator('#headerWeight').getByText('33 kg').waitFor();
