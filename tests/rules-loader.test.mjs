@@ -37,7 +37,7 @@ async function onAPhone(editJson, fetchBehaviour) {
 const ok = (url, text) => ({ ok: true, status: 200, text: async () => text });
 
 // Stage 2 added values to the file (pinned in tests/baseline/stage2-additions.json and checked in
-// rules-json-same-as-baseline.test.mjs), so "the same rule set" now means: exactly the five parts of the file on
+// rules-yaml-same-as-baseline.test.mjs), so "the same rule set" now means: exactly the five parts of the file on
 // disk, and every value of the frozen baseline still in it, identical.
 function assertHolds(actual, baseline, where) {
   if (baseline !== null && typeof baseline === 'object') {

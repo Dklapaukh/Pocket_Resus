@@ -1,7 +1,8 @@
-// Stage 1 (doc 19, owner decision 9): the rules became JSON (src/rules/nz-eas.json). Proof that NOTHING
-// changed: every value of the frozen v22 + A8 baseline (tests/baseline/nz-eas-v22-a8.js, never loaded by
-// the app, never edited) is still in the rule set, with the same value and type, in the same relative order.
-// Every comment in the baseline is kept as a plain-English note, and the file is laid out in the one agreed way.
+// Stage 1 (doc 19, owner decision 9): the rules became a data file (first JSON, since step E1b YAML:
+// src/rules/nz-eas.yaml). Proof that NOTHING changed: every value of the frozen v22 + A8 baseline
+// (tests/baseline/nz-eas-v22-a8.js, never loaded by the app, never edited) is still in the rule set, with the
+// same value and type, in the same relative order. Every comment in the baseline is kept as a plain-English
+// note, and the file is laid out in the one standard way (exactly what src/rules/write.js produces).
 //
 // Stage 2 (doc 18, items F, 31, 34, 37, 39, 40): screen text, timer thresholds and choice lists moved out of
 // the code into the rule set, so the rule set is now "baseline + additions". The additions are pinned
@@ -14,10 +15,11 @@ import { readFileSync } from 'node:fs';
 import { RULES } from '../src/rules/load.js';
 import { RULES as BASELINE } from './baseline/nz-eas-v22-a8.js';
 import { baselineComments } from './helpers/rules-comments.mjs';
-import { formatRulesJson } from './helpers/rules-json-format.mjs';
+import { readYamlStrict } from '../src/rules/parse.js';
+import { rulesFileText } from '../src/rules/write.js';
 
-const jsonText = readFileSync(new URL('../src/rules/nz-eas.json', import.meta.url), 'utf8');
-const file = JSON.parse(jsonText);
+const yamlText = readFileSync(new URL('../src/rules/nz-eas.yaml', import.meta.url), 'utf8');
+const file = readYamlStrict(yamlText); // the whole file, read the strict way
 const baselineSource = readFileSync(new URL('./baseline/nz-eas-v22-a8.js', import.meta.url), 'utf8');
 const ADDITIONS = JSON.parse(readFileSync(new URL('./baseline/stage2-additions.json', import.meta.url), 'utf8'));
 const PARTS = ['numbers', 'wording', 'checklists', 'equipment', 'sources'];
@@ -103,9 +105,9 @@ test('the comparison itself can see a changed value, a changed type, a swapped o
   assert.notDeepEqual(additionsOf(c, BASELINE).map(([path]) => path), pinnedParts.map(([path]) => path));
 });
 
-test('the JSON file is laid out the one agreed way (so a one-value change is a one-line difference) and has no repeated keys', () => {
-  assert.equal(formatRulesJson(file), jsonText);
-  assert.ok(jsonText.endsWith('}\n'));
+test('the YAML file is laid out the one standard way (so a one-value change is a one-line difference); the strict reader refuses repeated keys', () => {
+  assert.equal(rulesFileText(file), yamlText);
+  assert.ok(yamlText.endsWith('\n') && !yamlText.endsWith('\n\n'));
   assert.deepEqual(Object.keys(file), ['about', ...PARTS, 'notes']);
 });
 
