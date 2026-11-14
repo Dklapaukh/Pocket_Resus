@@ -39,6 +39,16 @@ const OLD_AGE_EVENT = "  if (w === null) return error(R.guideText('estimateAgeEr
 const NEW_AGE_EVENT = "  if (w === null) {\n    const adult = R.adultAge($('ageInput').value); // A16: age 14 = adult, no weight is filled\n    return error(adult === null ? R.guideText('estimateAgeError') : R.guideText('estimateAgeAdult', { age: adult }));\n  }\n";
 const OLD_AGE_ESTIMATE = {"underOneYearKg": 5, "oneToTenYears": {"maxAge": 10, "addYears": 4, "multiplyBy": 2}, "elevenToFourteenYears": {"maxAge": 14, "multiplyBy": 3}};
 const NEW_AGE_ESTIMATE = {"underOneYearKg": 5, "bands": [{"maxAge": 1, "weightKg": 10}, {"maxAge": 5, "weightKg": 20}, {"maxAge": 10, "weightKg": 30}, {"maxAge": 13, "weightKg": 40}], "adultUpToAge": 14};
+/* A18: tube size and length from the EAS 7.2 band tables (code before and after). */
+const OLD_TUBE_CODE = "/* Tube size and length-at-lips wording for an age in years, or null when not shown (no age, or above\n   showUpToAge). */\nexport function tubeReference(age) {\n  const t = RULES.numbers.tubes;\n  if (age === null || !(age <= t.showUpToAge)) return null;\n  if (age < 1) {\n    return {\n      size: wording('tubeSizeUnderOne', { minMm: t.underOneSizeMinMm, maxMm: t.underOneSizeMaxMm }),\n      length: wording('tubeLengthUnderOne', { timesSize: t.underOneLengthTimesSize }),\n    };\n  }\n  return {\n    size: wording('tubeSizeFormula', { mm: roundTo(age / t.sizeAgeDivisor + t.sizeAddMm, t.displayDecimals) }),\n    length: wording('tubeLengthFormula', { cm: roundTo(age / t.lengthAgeDivisor + t.lengthAddCm, t.displayDecimals) }),\n  };\n}\n\n";
+const NEW_TUBE_CODE = "/* Cuffed ETT size and length at lips from the EAS 7.2 band tables (change A18). The band comes from the saved\n   weight, rounded up; with no valid weight, from the saved age (weight from age, A16). A saved weight wins.\n   Returns { size, length } for a child band, { adult: true } for a weight over adultAboveKg or an age above the\n   age rows (14 years or more), or null when neither weight nor age gives a band. */\nexport function tubeReference(weight, age) {\n  const kg = validWeight(weight) ? weightNumber(weight) : estimate(age);\n  if (kg === null) return adultAge(age) !== null || Number(age) > RULES.numbers.ageEstimate.adultUpToAge ? { adult: true } : null;\n  const band = childBand(kg);\n  if (!band) return { adult: true };\n  const [first, second] = band.ettSizesMm;\n  const sizes = second === undefined ? first : wording('tubeSizeOr', { first, second });\n  return { size: wording('tubeSizeBand', { sizes }), length: wording('tubeLengthBand', { cm: band.ettLengthCm }) };\n}\n\n";
+const OLD_TUBE_SECTION = "/* ---------- Guidance-tab references (RSI doses, tube formulae) ---------- */\n\nconst roundTo = (value, decimals) => Math.round(value * 10 ** decimals) / 10 ** decimals;\n\n";
+const NEW_TUBE_SECTION = "/* ---------- Guidance-tab references (RSI doses, tube sizes) ---------- */\n\n";
+const OLD_TUBE_SHEET_TOP = "/* Reference pop-up opened from Guidance (RSI doses, tube sizes), calculated from weight or age. */\nexport function referenceSheet(type) {\n  const w = Number(st.s.weight),\n    age = st.s.age === '' ? null : Number(st.s.age);\n";
+const NEW_TUBE_SHEET_TOP = "/* Reference pop-up opened from Guidance (RSI doses, tube sizes), looked up from weight or age. */\nexport function referenceSheet(type) {\n  const w = Number(st.s.weight);\n";
+const OLD_TUBE_SHEET = "  const tube = R.tubeReference(age); // rule: engine tubeReference\n  const igelRanges = R.RULES.equipment.igelRanges\n    .map((r) => (r.maxKg === null\n      ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })\n      : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');\n  const tubeReference = tube\n    ? `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`\n    : paras('tubeNoAge');\n";
+const NEW_TUBE_SHEET = "  const tube = R.tubeReference(st.s.weight, st.s.age); // rule: engine tubeReference (A18: band table, weight first)\n  const igelRanges = R.RULES.equipment.igelRanges\n    .map((r) => (r.maxKg === null\n      ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })\n      : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');\n  const tubeReference = !tube\n    ? paras('tubeNoAge')\n    : tube.adult\n      ? paras('tubeAdult')\n      : `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`;\n";
+const OLD_TUBE_FORMULAE = {"showUpToAge": 14, "underOneSizeMinMm": 3, "underOneSizeMaxMm": 4, "underOneLengthTimesSize": 3, "sizeAgeDivisor": 4, "sizeAddMm": 3.5, "lengthAgeDivisor": 2, "lengthAddCm": 12, "displayDecimals": 1};
 /* A12: the EAS 9.3 dose summary tables (cpg-rsi.pdf page 2), one row per column. */
 const column = (columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg) => ({ columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg });
 const RSI_TABLES = {
@@ -80,8 +90,29 @@ export const APPROVED_CHANGES = [
   { row: 'A16', path: ['notes', 'numbers.ageEstimate'], before: "Paediatric weight estimate from age, in years (EAS 7.2). Ages outside these rules give no estimate.", after: "Paediatric weight estimate from age, in years, from the EAS 7.2 band table headings (cpg-paediatric-equipment.pdf pages 5-15; change A16, owner-approved 14 Nov 2026). An age of 1 year or more is ROUNDED UP to the next whole year first. Ages of 0 or less, or above adultUpToAge, give no estimate." },
   { row: 'A16', path: ['notes', 'numbers.ageEstimate.bands'], before: REMOVED, after: "Rounded-up age up to maxAge (and above the previous row) gives weightKg, the band weight: 1 year 10 kg, 2-5 years 20 kg, 6-10 years 30 kg, 11-13 years 40 kg", follows: 'numbers.ageEstimate.elevenToFourteenYears' },
   { row: 'A16', path: ['notes', 'numbers.ageEstimate.adultUpToAge'], before: REMOVED, after: "a rounded-up age above the last band and up to this age is treated as adult (owner decision 8: age 14 = adult): no weight is filled and the weight must be entered", follows: 'numbers.ageEstimate.bands' },
-  { row: 'A16', path: ['notes', 'numbers.ageEstimate.oneToTenYears'], before: "(age + 4) x 2, whole years only", after: REMOVED, follows: 'numbers.ageEstimate.underOneYearKg' },
   { row: 'A16', path: ['notes', 'numbers.ageEstimate.elevenToFourteenYears'], before: "age x 3, whole years only", after: REMOVED, follows: 'numbers.ageEstimate.oneToTenYears' },
+  { row: 'A16', path: ['notes', 'numbers.ageEstimate.oneToTenYears'], before: "(age + 4) x 2, whole years only", after: REMOVED, follows: 'numbers.ageEstimate.underOneYearKg' },
+  // A18 (approved 14 Nov 2026, decision 8): ETT size and length at lips from the EAS 7.2 band tables (weight band,
+  // or the band from age); the page 1 age formula (numbers.tubes) and its wording are deleted.
+  ...[[[3], 9], [[3, 4], 12], [[4, 5], 15], [[5, 6], 17], [[6, 7], 19]].map(([sizes, cm], band) => [
+    { row: 'A18', path: `numbers.childBands.${band}.ettSizesMm`, before: REMOVED, after: sizes, follows: 'fluidsTableMl' },
+    { row: 'A18', path: `numbers.childBands.${band}.ettLengthCm`, before: REMOVED, after: cm, follows: 'ettSizesMm' },
+  ]).flat(),
+  { row: 'A18', path: 'numbers.tubes', before: OLD_TUBE_FORMULAE, after: REMOVED, follows: 'rsi' },
+  { row: 'A18', path: 'wording.tubeAdult', before: REMOVED, after: 'Not shown for adults (over {adultAboveKg} kg or {adultAges}).', follows: 'tubeNoAge' },
+  { row: 'A18', path: 'wording.tubeNoAge', before: "Enter age to show the paediatric ETT and length-at-lips formula results.", after: 'Enter weight or age to show the paediatric ETT size and length at lips.' },
+  { row: 'A18', path: 'wording.tubeCaution', before: "Paediatric formulae are guides; confirm actual fit. Not a weight-only adult tube-size recommendation.", after: 'Children may need a different ETT size or length at lips than the table shows; confirm actual fit.' },
+  { row: 'A18', path: 'wording.tubeSizeBand', before: REMOVED, after: '{sizes} mm', follows: 'tubeCaution' },
+  { row: 'A18', path: 'wording.tubeSizeOr', before: REMOVED, after: '{first} or {second}', follows: 'tubeSizeBand' },
+  { row: 'A18', path: 'wording.tubeLengthBand', before: REMOVED, after: '{cm} cm', follows: 'tubeSizeOr' },
+  { row: 'A18', path: 'wording.tubeLengthFormula', before: "{cm} cm (formula)", after: REMOVED, follows: 'tubeSizeFormula' },
+  { row: 'A18', path: 'wording.tubeSizeFormula', before: "{mm} mm (formula)", after: REMOVED, follows: 'tubeLengthUnderOne' },
+  { row: 'A18', path: 'wording.tubeLengthUnderOne', before: "ETT size × {timesSize} cm", after: REMOVED, follows: 'tubeSizeUnderOne' },
+  { row: 'A18', path: 'wording.tubeSizeUnderOne', before: "{minMm}–{maxMm} mm", after: REMOVED, follows: 'igelSourceCaption' },
+  { row: 'A18', path: ['notes', 'numbers.childBands'], before: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026).", after: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026). ettSizesMm and ettLengthCm = the cuffed ETT size(s) and length at lips from the EAS 7.2 band table (change A18, owner-approved 14 Nov 2026), shown in the Tube sizes pop-up." },
+  { row: 'A18', path: ['notes', 'numbers.tubes'], before: "Paediatric tube formulae (shown on the Guidance tab from age in years, up to showUpToAge). Under 1 year: a fixed size range, length = size x underOneLengthTimesSize. Otherwise: size = age / sizeAgeDivisor + sizeAddMm; length = age / lengthAgeDivisor + lengthAddCm.", after: REMOVED, follows: "numbers.rsi.blocker" },
+  { row: 'A18', path: ['notes', 'wording.tubeSizeBand'], before: REMOVED, after: "Tube sheet results (change A18): sizes and length come from the band row (numbers.childBands, ettSizesMm and ettLengthCm); two sizes are joined by tubeSizeOr", follows: 'wording.tubeSizeUnderOne' },
+  { row: 'A18', path: ['notes', 'wording.tubeSizeUnderOne'], before: "Tube sheet results; gaps come from numbers.tubes", after: REMOVED, follows: "wording.rsiNotRecorded" },
 ];
 
 /* The exact code edits of approved rows: file, code before, code after (each "after" must occur once). */
@@ -94,6 +125,10 @@ export const CODE_CHANGES = [
   { row: 'A16', file: 'src/engine/core.js', before: OLD_AGE_CODE, after: NEW_AGE_CODE },
   { row: 'A16', file: 'src/app/events.js', before: OLD_AGE_EVENT, after: NEW_AGE_EVENT },
   { row: 'A16', file: 'src/app/sheets.js', before: 'max="${R.RULES.numbers.ageEstimate.elevenToFourteenYears.maxAge}"', after: 'max="${R.RULES.numbers.ageEstimate.adultUpToAge}"' },
+  { row: 'A18', file: 'src/engine/core.js', before: OLD_TUBE_CODE, after: NEW_TUBE_CODE },
+  { row: 'A18', file: 'src/engine/core.js', before: OLD_TUBE_SECTION, after: NEW_TUBE_SECTION },
+  { row: 'A18', file: 'src/app/views.js', before: OLD_TUBE_SHEET_TOP, after: NEW_TUBE_SHEET_TOP },
+  { row: 'A18', file: 'src/app/views.js', before: OLD_TUBE_SHEET, after: NEW_TUBE_SHEET },
 ];
 
 /* Put a value back into a group directly after the name it followed (keeps the order of names). */
@@ -129,7 +164,9 @@ function placeIn(tree, dotted, mustHoldName = true) {
    fingerprints of screens). Fails if a place holds an unexpected value. */
 export function withApprovedChanges(tree, direction = 'forward') {
   const copy = structuredClone(tree);
-  for (const change of APPROVED_CHANGES) {
+  // Undo goes newest first (A18 changes a note A11 changed). So a chain of deletions is listed last-deleted
+  // first: undoing puts the first one back first, and each later one finds the name it follows.
+  for (const change of direction === 'undo' ? [...APPROVED_CHANGES].reverse() : APPROVED_CHANGES) {
     const [from, to] = direction === 'undo' ? [change.after, change.before] : [change.before, change.after];
     const place = placeIn(copy, change.path, from !== REMOVED);
     if (!place) continue;
@@ -197,6 +234,15 @@ export function withApprovedChangesInJsonText(text) {
       result = result.slice(0, start) + pretty(change.after, m[1]) + result.slice(start + pretty(change.before, m[1]).length);
       continue;
     }
+    if (isObject(change.before) && change.after === REMOVED) {
+      // a whole group deleted (A18): its lines and comma go; the group is never the last in its own group here
+      const at = [...result.matchAll(new RegExp(`\\n( *)"${escape(key)}": `, 'g'))]
+        .filter((m) => result.startsWith(pretty(change.before, m[1]) + ',', m.index + m[0].length));
+      assert.equal(at.length, 1, `${change.row} ${shown(change.path)}: the group must appear exactly once`);
+      const [m] = at;
+      result = result.slice(0, m.index) + result.slice(m.index + m[0].length + pretty(change.before, m[1]).length + 1);
+      continue;
+    }
     const find = `"${key}": ${JSON.stringify(change.before)}`;
     if (change.after === REMOVED) {
       // delete the whole line (with its comma); the value is never the last in its group here
@@ -224,7 +270,7 @@ export function appWithApprovedChangesUndone(root) {
   const file = path.join(dir, 'src', 'rules', 'nz-eas.yaml');
   const undone = withApprovedChanges(readYamlStrict(readFileSync(file, 'utf8')), 'undo');
   writeFileSync(file, rulesFileText(undone));
-  for (const change of CODE_CHANGES) {
+  for (const change of [...CODE_CHANGES].reverse()) { // newest first, as for the values
     const where = path.join(dir, change.file), code = readFileSync(where, 'utf8');
     const find = change.after;
     assert.equal(code.split(find).length - 1, 1, `${change.row} ${change.file}: the approved code must appear exactly once`);

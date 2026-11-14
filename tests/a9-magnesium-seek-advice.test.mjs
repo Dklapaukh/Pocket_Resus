@@ -59,13 +59,21 @@ test('approved changes list: each "after" is in the rules file and each "before"
   const at = (tree, place) => (Array.isArray(place) ? place : place.split('.')).reduce((node, name) => (node && typeof node === 'object' ? node[name] : undefined), tree);
   const value = (v) => (v === REMOVED ? undefined : v);
   assert.ok(APPROVED_CHANGES.length > 0);
-  for (const c of APPROVED_CHANGES) {
-    assert.deepStrictEqual(at(file, c.path), value(c.after), `${c.row} ${c.path} in the rules file`); // deep: A12 adds whole tables
+  // A place changed by two rows (A11 then A18: the band note) is a chain: the first "before" is in the frozen copy,
+  // each "after" is the next row's "before", and the last "after" is in the rules file.
+  const key = (place) => JSON.stringify(place);
+  const laterOf = (i) => APPROVED_CHANGES.slice(i + 1).find((d) => key(d.path) === key(APPROVED_CHANGES[i].path));
+  const earlierOf = (i) => APPROVED_CHANGES.slice(0, i).findLast((d) => key(d.path) === key(APPROVED_CHANGES[i].path));
+  for (const [i, c] of APPROVED_CHANGES.entries()) {
+    const later = laterOf(i), earlier = earlierOf(i);
+    if (later) assert.deepStrictEqual(later.before, c.after, `${c.row} ${c.path}: the later row ${later.row} starts from this value`);
+    else assert.deepStrictEqual(at(file, c.path), value(c.after), `${c.row} ${c.path} in the rules file`); // deep: A12 adds whole tables
+    if (earlier) continue; // its "before" was checked as the earlier row's "after"
     assert.deepStrictEqual(at(frozenJson, c.path), value(c.before), `${c.row} ${c.path} in the frozen JSON copy`);
     if (Array.isArray(c.path)) continue; // notes are not in the v22 baseline (its comments became notes)
     const inBaseline = at(FROZEN_BASELINE, c.path);
     assert.ok(isDeepStrictEqual(inBaseline, value(c.before)) || (inBaseline === undefined && additions[c.path] === c.before), // deep: A16 swaps a whole group
       `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
   }
-  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11', 'A12', 'A16'], 'only approved rows (doc 07): add a row here only after the owner approves it');
+  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11', 'A12', 'A16', 'A18'], 'only approved rows (doc 07): add a row here only after the owner approves it');
 });

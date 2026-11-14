@@ -62,7 +62,8 @@ const BROKEN = [
   ['a lower-card rhythm that does not exist', (c) => { c.numbers.lowerCard.fluidRhythms.push('Wobbly'); }, 'numbers.lowerCard.fluidRhythms.3: "Wobbly" is not a rhythm'],
   ['a rhythm claimed by two cards', (c) => { c.numbers.lowerCard.fluidRhythms.push('VF'); }, 'numbers.lowerCard: "VF" is in both lists'],
   ['an empty rhythm list', (c) => { c.numbers.rhythms.shock = []; }, 'numbers.rhythms.shock: must be a list with at least one item'],
-  ['a divisor of zero', (c) => { c.numbers.tubes.sizeAgeDivisor = 0; }, 'numbers.tubes.sizeAgeDivisor: must be a number above 0'],
+  // A18 (14 Nov 2026): the tube formula became band-table sizes; same kind of fault (a zero that must be above 0), re-pointed
+  ['a tube size of zero', (c) => { c.numbers.childBands[2].ettSizesMm[0] = 0; }, 'numbers.childBands.2.ettSizesMm.0: must be a number above 0'],
   ['a function in the rule set', (c) => { c.numbers.weight.maxKg = () => 500; }, 'numbers.weight.maxKg'],
   ['a value that is not data (undefined)', (c) => { c.numbers.timing.cprCycleMs = undefined; }, 'numbers.timing.cprCycleMs'],
   ['a {gap} that cannot be filled', (c) => { c.wording.padsPrompt = 'Use pads up to {nobodySuppliesThis} J'; }, 'wording.padsPrompt: {nobodySuppliesThis} cannot be filled'],

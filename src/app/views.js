@@ -521,10 +521,9 @@ export function guidanceGrid() {
     `<section class="causes-board"><h3>${T('guidance.causesHeading')}</h3><div>${causeButtons}</div></section>`;
 }
 
-/* Reference pop-up opened from Guidance (RSI doses, tube sizes), calculated from weight or age. */
+/* Reference pop-up opened from Guidance (RSI doses, tube sizes), looked up from weight or age. */
 export function referenceSheet(type) {
-  const w = Number(st.s.weight),
-    age = st.s.age === '' ? null : Number(st.s.age);
+  const w = Number(st.s.weight);
   if (type === 'rsi') {
     // These are reference values only; opening this sheet records no medicine (rule: engine rsiDoses).
     const d = R.rsiDoses(w);
@@ -544,14 +543,16 @@ export function referenceSheet(type) {
     );
     return;
   }
-  const tube = R.tubeReference(age); // rule: engine tubeReference
+  const tube = R.tubeReference(st.s.weight, st.s.age); // rule: engine tubeReference (A18: band table, weight first)
   const igelRanges = R.RULES.equipment.igelRanges
     .map((r) => (r.maxKg === null
       ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })
       : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');
-  const tubeReference = tube
-    ? `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`
-    : paras('tubeNoAge');
+  const tubeReference = !tube
+    ? paras('tubeNoAge')
+    : tube.adult
+      ? paras('tubeAdult')
+      : `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`;
   sheet(
     T('referenceSheets.tubesTitle'),
     `<label>${T('referenceSheets.ageLabel')}<input id="referenceAge" type="number" min="0" max="120" step="any" value="${esc(st.s.age)}"></label>` +

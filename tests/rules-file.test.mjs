@@ -67,7 +67,7 @@ test('reference wording is plain text, and every {gap} is one the app fills', ()
   const gaps = { adultDoseBasis: ['adultAboveKg'], childDoseBasis: ['band'], childMagnesiumBasis: ['band'], noMagnesiumDoseBasis: ['band'],
     childFluidBasis: ['band', 'min', 'maxPerKg', 'band', 'max'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'],
     weightSheetAgeEstimate: AGE_GAPS, tubeSheetAgeEstimate: AGE_GAPS,
-    tubeSizeUnderOne: ['minMm', 'maxMm'], tubeLengthUnderOne: ['timesSize'], tubeSizeFormula: ['mm'], tubeLengthFormula: ['cm'],
+    tubeAdult: ['adultAboveKg', 'adultAges'], tubeSizeBand: ['sizes'], tubeSizeOr: ['first', 'second'], tubeLengthBand: ['cm'], // A18
     // step 3a sub-step 4: wording moved from the app; gaps filled from part 1 by the engine (wordingGaps)
     headerEnergyTitle: ['joulesPerKg', 'adultShockJ'], padsPromptWithLimit: ['padsUpToJ'], estimateAgeError: ['ageMaxYears'], estimateAgeAdult: ['age'],
     ageBandWeight: ['ages', 'kg'], ageOneYear: ['age'], ageManyYears: ['age'], ageYearRange: ['from', 'to'], // A16

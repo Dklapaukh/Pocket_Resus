@@ -37,10 +37,12 @@ test('RSI doses: engine (approved changes undone) matches v21 for every weight 0
   for (const w of weights) assert.deepEqual(UNDONE.rsiDoses(w), v21Rsi(w), `${w} kg`);
 });
 
-test('tube formulae: engine matches v21 for no age and ages 0 to 120 (0.01 year steps)', () => {
+// Since A18 (owner-approved 14 Nov 2026) tube sizes come from the EAS 7.2 band tables (tests/a18-tube-sizes-band-table.test.mjs);
+// the step 3a move is still proved exact on the copy with the approved changes undone.
+test('tube formulae: engine (approved changes undone) matches v21 for no age and ages 0 to 120 (0.01 year steps)', () => {
   const ages = [null, -1, 0.001, 0.999, 13.999, 14.001];
   for (let i = 0; i <= 12000; i++) ages.push(i / 100);
-  for (const a of ages) assert.deepEqual(R.tubeReference(a), v21Tube(a), `age ${a}`);
+  for (const a of ages) assert.deepEqual(UNDONE.tubeReference(a), v21Tube(a), `age ${a}`);
 });
 
 test('RSI and tube numbers are pinned (EAS 9.3; paediatric formulae)', () => {
@@ -48,7 +50,7 @@ test('RSI and tube numbers are pinned (EAS 9.3; paediatric formulae)', () => {
     fentanyl: { mcgPerKg: 2, maxMcg: 200 }, ketamine: { mgPerKg: 2, maxMg: 200 }, reducedKetamine: { mgPerKg: 1, maxMg: 200 },
     blocker: { mgPerKg: 2, maxMg: 200, roundAdultToMg: 50 }, displayDecimals: 1,
   });
-  assert.deepEqual(R.RULES.numbers.tubes, {
+  assert.deepEqual(withApprovedChanges(R.RULES, 'undo').numbers.tubes, { // as before A18, which deleted them
     showUpToAge: 14, underOneSizeMinMm: 3, underOneSizeMaxMm: 4, underOneLengthTimesSize: 3,
     sizeAgeDivisor: 4, sizeAddMm: 3.5, lengthAgeDivisor: 2, lengthAddCm: 12, displayDecimals: 1,
   });

@@ -65,8 +65,8 @@ const WORDING = {
   guidanceRsiTitle: ['text'],
   guidanceRsi: ['list', 'fentanylMcgPerKg', 'fentanylMaxMcg', 'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg'],
   guidanceCaption: ['text', 'exportDate', 'reversibleCauses'], rsiNotRecorded: ['text'], rsiConditions: ['text'], rsiNoDose: ['text'], tubeNoAge: ['text'],
-  tubeCaution: ['text'], igelSourceCaption: ['text', 'igel'], tubeSizeUnderOne: ['text', 'minMm', 'maxMm'], tubeLengthUnderOne: ['text', 'timesSize'],
-  tubeSizeFormula: ['text', 'mm'], tubeLengthFormula: ['text', 'cm'],
+  tubeCaution: ['text'], igelSourceCaption: ['text', 'igel'], tubeAdult: ['text', 'adultAboveKg', 'adultAges'],
+  tubeSizeBand: ['text', 'sizes'], tubeSizeOr: ['text', 'first', 'second'], tubeLengthBand: ['text', 'cm'],
   weightSheetAgeEstimate: ['text', 'underOneYearKg', 'ageBandList', 'adultAges'],
   tubeSheetAgeEstimate: ['text', 'underOneYearKg', 'ageBandList', 'adultAges'],
   ageBandWeight: ['text', 'ages', 'kg'], ageOneYear: ['text', 'age'], ageManyYears: ['text', 'age'], ageYearRange: ['text', 'from', 'to'],
@@ -257,6 +257,8 @@ const NUMBER_LIMITS = [
   // no child second amiodarone dose: EAS 7.2 gives none (A10, 14 Nov 2026); a band row holding one is refused
   { path: 'numbers.childBands.*.magnesiumMmol', type: 'number', unit: 'mmol', above: 0, max: 1000, orEmpty: true }, // a child magnesium dose (empty = no dose for this band)
   { path: 'numbers.childBands.*.shockJ', type: 'number', unit: 'J', above: 0, max: 2000 }, // a child shock energy (5000 J is impossible)
+  { path: 'numbers.childBands.*.ettSizesMm.*', type: 'number', unit: 'mm', above: 0, max: 30 }, // a cuffed ETT size for the band (A18)
+  { path: 'numbers.childBands.*.ettLengthCm', type: 'number', unit: 'cm', above: 0, max: 100 }, // ETT length at lips for the band (A18)
   { path: 'numbers.childBands.*.fluidsTableMl', type: 'number', unit: 'mL', above: 0, max: 5000 }, // the band's 20 mL/kg fluid volume from the EAS 7.2 table (A11)
   // ---- doses and energies, adults ----
   { path: 'numbers.adult.adrenalineMg', type: 'number', unit: 'mg', above: 0, max: 100 }, // adult adrenaline dose
@@ -301,16 +303,6 @@ const NUMBER_LIMITS = [
   { path: 'numbers.rsi.tables.*.*.ketamineMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // usual ketamine dose in that column
   { path: 'numbers.rsi.tables.*.*.reducedKetamineMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // reduced ketamine dose in that column
   { path: 'numbers.rsi.tables.*.*.blockerMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // rocuronium or suxamethonium dose in that column
-  // ---- airway tubes ----
-  { path: 'numbers.tubes.showUpToAge', type: 'whole', unit: 'years', above: 0, max: 120 }, // oldest age the tube table is shown for
-  { path: 'numbers.tubes.underOneSizeMinMm', type: 'number', unit: 'mm', above: 0, max: 30 }, // smallest tube size under one year
-  { path: 'numbers.tubes.underOneSizeMaxMm', type: 'number', unit: 'mm', above: 0, max: 30 }, // largest tube size under one year
-  { path: 'numbers.tubes.underOneLengthTimesSize', type: 'number', unit: 'times the tube size', above: 0, max: 100 }, // length at lips under one year, as a multiple of the size
-  { path: 'numbers.tubes.sizeAgeDivisor', type: 'number', unit: 'years per mm', above: 0, max: 1000 }, // age is divided by this (so never 0) for the tube size
-  { path: 'numbers.tubes.sizeAddMm', type: 'number', unit: 'mm', atLeast: 0, max: 30 }, // added to the tube size
-  { path: 'numbers.tubes.lengthAgeDivisor', type: 'number', unit: 'years per cm', above: 0, max: 1000 }, // age is divided by this (so never 0) for the length at lips
-  { path: 'numbers.tubes.lengthAddCm', type: 'number', unit: 'cm', atLeast: 0, max: 100 }, // added to the length at lips
-  { path: 'numbers.tubes.displayDecimals', type: 'whole', unit: 'decimal places', atLeast: 0, max: 4 }, // decimal places shown for tube sizes
   // ---- equipment ----
   { path: 'equipment.maxTubeSizeMm', type: 'number', unit: 'mm', above: 0, max: 30 }, // largest tube size that can be recorded
   { path: 'equipment.forms.intubation.lipsMinCm', type: 'number', unit: 'cm', above: 0, max: 100 }, // shortest length at lips that can be recorded
@@ -464,7 +456,7 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
   const N = file.numbers;
   if (isObject(N)) {
     group('numbers', N, [], ['timing', 'weight', 'ageEstimate', 'childBands', 'adult', 'child', 'shock', 'rhythms', 'lowerCard',
-      'amiodarone', 'magnesium', 'products', 'preparation', 'rsi', 'tubes', 'doubleTapLockMs',
+      'amiodarone', 'magnesium', 'products', 'preparation', 'rsi', 'doubleTapLockMs',
       'resusStart', 'correctionRhythms', 'log', 'medicineForm']);
 
     const t = group('numbers.timing', N.timing, ['cprCycleMs', 'adrenalineIntervalMs', 'checklistPromptMinLeftMs',
@@ -539,7 +531,7 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
       let previous, previousRow;
       N.childBands.forEach((row, i) => {
         const where = `numbers.childBands.${i}`;
-        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'magnesiumMmol', 'shockJ', 'fluidsTableMl']);
+        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'magnesiumMmol', 'shockJ', 'fluidsTableMl', 'ettSizesMm', 'ettLengthCm']);
         if (!r) return;
         const maxKg = number(`${where}.maxKg`, r.maxKg);
         if (maxKg !== undefined && previous !== undefined && maxKg <= previous) say(`${where}.maxKg`, `bands must go in rising order, one row per band (${maxKg} follows ${previous})`);
@@ -550,6 +542,13 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
           if (on('childNotAboveAdult')) lessOrEqual(`${where}.${key}`, values[key], adult[key], 'the child value', 'the adult value');
           if (on('bandDosesRiseWithWeight') && previousRow) lessOrEqual(`${where}.${key}`, previousRow[key], values[key], 'the previous band value', 'this band value');
         }
+        // A18: one ETT size, or two ("3 or 4"), smaller first; and the length at lips
+        if (!Array.isArray(r.ettSizesMm) || r.ettSizesMm.length < 1 || r.ettSizesMm.length > 2) say(`${where}.ettSizesMm`, 'must be a list of one or two tube sizes');
+        else {
+          const sizes = r.ettSizesMm.map((v, k) => number(`${where}.ettSizesMm.${k}`, v));
+          if (sizes.length === 2 && sizes.every((v) => v !== undefined) && sizes[1] <= sizes[0]) say(`${where}.ettSizesMm.1`, `the second size must be larger than the first (${sizes[0]})`);
+        }
+        number(`${where}.ettLengthCm`, r.ettLengthCm);
         previousRow = { ...previousRow, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)) };
         if (on('bandEnergyIsWeightTimesJoulesPerKg') && maxKg !== undefined && joulesPerKg !== undefined && typeof r.shockJ === 'number' && r.shockJ !== maxKg * joulesPerKg)
           say(`${where}.shockJ`, `must be the band weight (${maxKg}) times the joules per kg (${joulesPerKg}) = ${maxKg * joulesPerKg} (found ${r.shockJ})`);
@@ -627,14 +626,6 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
           previous = r.columnKg;
         });
       }
-    }
-
-    const tu = group('numbers.tubes', N.tubes, ['showUpToAge', 'underOneSizeMinMm', 'underOneSizeMaxMm', 'underOneLengthTimesSize', 'sizeAgeDivisor', 'sizeAddMm', 'lengthAgeDivisor', 'lengthAddCm', 'displayDecimals']);
-    if (tu) {
-      number('numbers.tubes.showUpToAge', tu.showUpToAge);
-      const lo = number('numbers.tubes.underOneSizeMinMm', tu.underOneSizeMinMm), hi = number('numbers.tubes.underOneSizeMaxMm', tu.underOneSizeMaxMm);
-      lessOrEqual('numbers.tubes.underOneSizeMinMm', lo, hi, 'the smallest size', 'the largest size');
-      for (const k of ['underOneLengthTimesSize', 'sizeAgeDivisor', 'sizeAddMm', 'lengthAgeDivisor', 'lengthAddCm', 'displayDecimals']) number(`numbers.tubes.${k}`, tu[k]);
     }
 
     const lock = group('numbers.doubleTapLockMs', N.doubleTapLockMs, ['adrenaline', 'magnesium', 'fluids']);

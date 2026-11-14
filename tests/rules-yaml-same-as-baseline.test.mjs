@@ -66,7 +66,7 @@ test('the baseline has 425 values and every one is still in the rule set, identi
   assert.deepEqual(Object.keys(RULES), PARTS, 'the app gets the five parts only (about and notes are not passed on)');
   assert.deepEqual(Object.keys(BASELINE), PARTS);
   assert.equal(flatten(FROZEN_BASELINE).length, 425, 'the frozen baseline has 425 values');
-  assert.equal(flatten(BASELINE).length, 425 - 5 + 5 - 1 + 50 + 1 - 6 + 10 + 5, 'less the five child second amiodarone doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the 50 EAS 9.3 table doses and the "Seek clinical advice" wording; A16: the 6 age-formula values become 10 age-row values, plus 5 new wording entries');
+  assert.equal(flatten(BASELINE).length, 425 - 5 + 5 - 1 + 50 + 1 - 6 + 10 + 5 + 14 - 9, 'less the five child second amiodarone doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the 50 EAS 9.3 table doses and the "Seek clinical advice" wording; A16: the 6 age-formula values become 10 age-row values, plus 5 new wording entries; A18: plus 14 band ETT values (9 sizes, 5 lengths), less the 9 tube-formula values (4 tube wording entries replaced by 4)');
   assert.deepEqual(baselineProblems(RULES, BASELINE), []);
   for (const part of PARTS) assert.deepEqual(baselineProblems({ [part]: file[part] }, { [part]: BASELINE[part] }), [], part);
 });
@@ -134,7 +134,7 @@ test('the YAML file read the strict way equals the frozen JSON file from before 
   assert.deepEqual(Object.keys(file), ['about', ...PARTS, 'notes']);
   const places = everyPlace(frozenJson);
   assert.equal(everyPlace(JSON.parse(frozenJsonText)).length, 1168, 'the comparison covers every value and group of the frozen file');
-  assert.equal(places.length, 1168 - 5 + 5 - 1 + 63 + 1 - 8 + 15 + 5, 'less the five child second doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the tables (2 lists, 10 columns, 50 doses, their 13 groups and lists = 63 places) and one wording; A16: the 8 age-formula places (2 groups, 6 values) become 15 (the rows list, 4 rows, 8 values, the oldest age, the first value kept), plus 5 new wording entries; 2 notes replaced by 2');
+  assert.equal(places.length, 1168 - 5 + 5 - 1 + 63 + 1 - 8 + 15 + 5 + 19 - 10 - 1, 'less the five child second doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the tables (2 lists, 10 columns, 50 doses, their 13 groups and lists = 63 places) and one wording; A16: the 8 age-formula places (2 groups, 6 values) become 15 (the rows list, 4 rows, 8 values, the oldest age, the first value kept), plus 5 new wording entries; 2 notes replaced by 2; A18: plus 19 (5 size lists, 9 sizes, 5 lengths), less the tube-formula group and its 9 values, less 1 note (2 deleted, 1 added)');
   assert.deepEqual(everyPlace(file), places);
 });
 

@@ -220,9 +220,7 @@ export function guideText(key, values = {}) {
   return Array.isArray(entry) ? entry.map(fill) : fill(entry);
 }
 
-/* ---------- Guidance-tab references (RSI doses, tube formulae) ---------- */
-
-const roundTo = (value, decimals) => Math.round(value * 10 ** decimals) / 10 ** decimals;
+/* ---------- Guidance-tab references (RSI doses, tube sizes) ---------- */
 
 /* RSI dose references looked up in the EAS 9.3 dose summary tables (change A12). Reference only; records nothing.
    A child (weight.adultAboveKg or less) uses the column of its weight band, rounded up (decision 2). The 5 kg band
@@ -237,21 +235,18 @@ export function rsiDoses(weightKg) {
   return column ? { ...column } : null;
 }
 
-/* Tube size and length-at-lips wording for an age in years, or null when not shown (no age, or above
-   showUpToAge). */
-export function tubeReference(age) {
-  const t = RULES.numbers.tubes;
-  if (age === null || !(age <= t.showUpToAge)) return null;
-  if (age < 1) {
-    return {
-      size: wording('tubeSizeUnderOne', { minMm: t.underOneSizeMinMm, maxMm: t.underOneSizeMaxMm }),
-      length: wording('tubeLengthUnderOne', { timesSize: t.underOneLengthTimesSize }),
-    };
-  }
-  return {
-    size: wording('tubeSizeFormula', { mm: roundTo(age / t.sizeAgeDivisor + t.sizeAddMm, t.displayDecimals) }),
-    length: wording('tubeLengthFormula', { cm: roundTo(age / t.lengthAgeDivisor + t.lengthAddCm, t.displayDecimals) }),
-  };
+/* Cuffed ETT size and length at lips from the EAS 7.2 band tables (change A18). The band comes from the saved
+   weight, rounded up; with no valid weight, from the saved age (weight from age, A16). A saved weight wins.
+   Returns { size, length } for a child band, { adult: true } for a weight over adultAboveKg or an age above the
+   age rows (14 years or more), or null when neither weight nor age gives a band. */
+export function tubeReference(weight, age) {
+  const kg = validWeight(weight) ? weightNumber(weight) : estimate(age);
+  if (kg === null) return adultAge(age) !== null || Number(age) > RULES.numbers.ageEstimate.adultUpToAge ? { adult: true } : null;
+  const band = childBand(kg);
+  if (!band) return { adult: true };
+  const [first, second] = band.ettSizesMm;
+  const sizes = second === undefined ? first : wording('tubeSizeOr', { first, second });
+  return { size: wording('tubeSizeBand', { sizes }), length: wording('tubeLengthBand', { cm: band.ettLengthCm }) };
 }
 
 /* ---------- Shock energy ---------- */

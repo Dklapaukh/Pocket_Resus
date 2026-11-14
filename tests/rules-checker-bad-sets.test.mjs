@@ -34,8 +34,10 @@ const BAD = [
   ['a fraction where a count belongs (magnesium doses)', 'numbers', '"maxDoses": 2\n', '"maxDoses": 2.5\n', 'numbers.magnesium.maxDoses', 'whole number'],
   ['a fraction in the amiodarone shock counts', 'numbers', '"dueAtShocks": [3, 6]', '"dueAtShocks": [3, 6.5]', 'numbers.amiodarone.dueAtShocks.1', 'whole number'],
   ['a dose far beyond any plausible dose', 'numbers', '"amiodaroneFirstMg": 300,', '"amiodaroneFirstMg": 30000,', 'numbers.adult.amiodaroneFirstMg', 'no more than'],
-  ['a divisor of zero in the tube formula', 'numbers', '"sizeAgeDivisor": 4,', '"sizeAgeDivisor": 0,', 'numbers.tubes.sizeAgeDivisor', 'above 0'],
-  ['a negative number added in the tube formula', 'numbers', '"sizeAddMm": 3.5,', '"sizeAddMm": -3.5,', 'numbers.tubes.sizeAddMm', 'of 0 or more'],
+  // A18 (14 Nov 2026): the tube formula became band-table sizes; same kinds of fault, re-pointed
+  ['a tube size of zero', 'numbers', '"ettSizesMm": [4,5]', '"ettSizesMm": [0,5]', 'numbers.childBands.2.ettSizesMm.0', 'above 0'],
+  ['a negative length at lips', 'numbers', '"ettLengthCm": 15', '"ettLengthCm": -15', 'numbers.childBands.2.ettLengthCm', 'above 0'],
+  ['two tube sizes in the wrong order', 'numbers', '"ettSizesMm": [5,6]', '"ettSizesMm": [6,5]', 'numbers.childBands.3.ettSizesMm.1', 'larger than the first'],
   ['a time given in words', 'numbers', '"cprCycleMs": 120000,', '"cprCycleMs": "two minutes",', 'numbers.timing.cprCycleMs', 'must be a whole number'],
   ['an RSI dose per kg of zero', 'numbers', '"mcgPerKg": 2,', '"mcgPerKg": 0,', 'numbers.rsi.fentanyl.mcgPerKg', 'above 0'],
   ['a double-tap lock that is negative', 'numbers', '"magnesium": 5000,', '"magnesium": -5000,', 'numbers.doubleTapLockMs.magnesium', 'of 0 or more'],

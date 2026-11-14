@@ -14,7 +14,7 @@
    file run: node tools/set-cache-name.mjs
    Limit that cannot be fixed from here: the v22 worker already on phones still saves files the old way during
    the one v22 to v23 update visit. The protection applies from v23 onwards. */
-const CACHE='resus-pocket-v23-915e6ccca9';
+const CACHE='resus-pocket-v23-36dfe9c29d';
 const FILES=['src/app/base.js','src/app/data.js','src/app/events.js','src/app/format.js','src/app/main.js','src/app/session.js','src/app/sheets.js','src/app/state.js','src/app/views.js','src/engine/core.js','src/engine/drug-cards.js','src/engine/index.js','src/engine/log-view.js','src/engine/rhythm-care.js','src/rules/check.js','src/rules/load.js','src/rules/nz-eas.yaml','src/rules/parse.js','src/rules/write.js','src/vendor/js-yaml.mjs','rhythm-care.css','explain-me.css','tutorial/step-01.png','tutorial/step-02.png','tutorial/step-03.png','tutorial/step-04.png','tutorial/step-05.png','tutorial/step-06.png','tutorial/step-07.png','tutorial/step-08.png','tutorial/step-09.png','tutorial/step-10.png','./','index.html','style.css','phone.css','precision.css','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','cpg-cardiac-arrest.pdf','cpg-post-rosc.pdf','cpg-paediatric-equipment.pdf','cpg-preparation-rsi.pdf','cpg-rsi-checklist.pdf','cpg-rsi.pdf','cpg-drugs/eas-14-3.pdf','cpg-drugs/eas-14-4.pdf'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{
   await caches.delete(CACHE);const cache=await caches.open(CACHE);
