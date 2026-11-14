@@ -66,7 +66,7 @@ test('the baseline has 425 values and every one is still in the rule set, identi
   assert.deepEqual(Object.keys(RULES), PARTS, 'the app gets the five parts only (about and notes are not passed on)');
   assert.deepEqual(Object.keys(BASELINE), PARTS);
   assert.equal(flatten(FROZEN_BASELINE).length, 425, 'the frozen baseline has 425 values');
-  assert.equal(flatten(BASELINE).length, 425 - 5 + 5, 'less the five child second amiodarone doses deleted by A10, plus the five band fluid volumes added by A11');
+  assert.equal(flatten(BASELINE).length, 425 - 5 + 5 - 1 + 50 + 1, 'less the five child second amiodarone doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the 50 EAS 9.3 table doses and the "Seek clinical advice" wording');
   assert.deepEqual(baselineProblems(RULES, BASELINE), []);
   for (const part of PARTS) assert.deepEqual(baselineProblems({ [part]: file[part] }, { [part]: BASELINE[part] }), [], part);
 });
@@ -130,7 +130,7 @@ test('the YAML file read the strict way equals the frozen JSON file from before 
   assert.deepEqual(Object.keys(file), ['about', ...PARTS, 'notes']);
   const places = everyPlace(frozenJson);
   assert.equal(everyPlace(JSON.parse(frozenJsonText)).length, 1168, 'the comparison covers every value and group of the frozen file');
-  assert.equal(places.length, 1168 - 5 + 5, 'less the five child second doses deleted by A10, plus the five band fluid volumes added by A11');
+  assert.equal(places.length, 1168 - 5 + 5 - 1 + 63 + 1, 'less the five child second doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the tables (2 lists, 10 columns, 50 doses, their 13 groups and lists = 63 places) and one wording');
   assert.deepEqual(everyPlace(file), places);
 });
 

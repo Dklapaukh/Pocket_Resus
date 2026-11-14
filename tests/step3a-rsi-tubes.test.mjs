@@ -3,7 +3,19 @@
 // result for every weight and age tried.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { rmSync } from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { Resus as R } from '../src/engine/index.js';
+import { appWithApprovedChangesUndone, withApprovedChanges } from './helpers/approved-changes.mjs';
+import { ROOT } from './helpers/engines.mjs';
+
+// Since A12 (owner-approved 14 Nov 2026) the RSI doses come from the EAS 9.3 tables (tests/a12-rsi-table-doses.test.mjs).
+// The move in step 3a is still proved exact: the engine of a copy of the app with the approved changes undone
+// must give the v21 result for every weight.
+const undoneDir = appWithApprovedChangesUndone(ROOT);
+const { Resus: UNDONE } = await import(pathToFileURL(path.join(undoneDir, 'src/engine/index.js')).href);
+rmSync(undoneDir, { recursive: true, force: true });
 
 // ---- v21 code (src/app/views.js referenceSheet), unchanged ----
 const fmt = (n) => Math.round(n * 10) / 10;
@@ -19,10 +31,10 @@ function v21Tube(age) {
   return age !== null && age <= 14 ? { size: tubeSize, length: tubeLength } : null;
 }
 
-test('RSI doses: engine matches v21 for every weight 0.1 to 500 kg (0.1 kg steps) and edge values', () => {
+test('RSI doses: engine (approved changes undone) matches v21 for every weight 0.1 to 500 kg (0.1 kg steps) and edge values', () => {
   const weights = [0, NaN, 12.25, 40.0001, 62.5, 87.5, 112.5];
   for (let i = 1; i <= 5000; i++) weights.push(i / 10);
-  for (const w of weights) assert.deepEqual(R.rsiDoses(w), v21Rsi(w), `${w} kg`);
+  for (const w of weights) assert.deepEqual(UNDONE.rsiDoses(w), v21Rsi(w), `${w} kg`);
 });
 
 test('tube formulae: engine matches v21 for no age and ages 0 to 120 (0.01 year steps)', () => {
@@ -32,7 +44,7 @@ test('tube formulae: engine matches v21 for no age and ages 0 to 120 (0.01 year 
 });
 
 test('RSI and tube numbers are pinned (EAS 9.3; paediatric formulae)', () => {
-  assert.deepEqual(R.RULES.numbers.rsi, {
+  assert.deepEqual(withApprovedChanges(R.RULES, 'undo').numbers.rsi, { // as before A12; its tables are pinned in the A12 test
     fentanyl: { mcgPerKg: 2, maxMcg: 200 }, ketamine: { mgPerKg: 2, maxMg: 200 }, reducedKetamine: { mgPerKg: 1, maxMg: 200 },
     blocker: { mgPerKg: 2, maxMg: 200, roundAdultToMg: 50 }, displayDecimals: 1,
   });

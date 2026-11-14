@@ -15,6 +15,7 @@ import { Pool } from './reference/lib/run.mjs';
 import { ROOT } from './reference/lib/reference-app.mjs';
 import { readYamlStrict } from '../src/rules/parse.js';
 import { rulesFileText } from '../src/rules/write.js';
+import { withApprovedChangesInJsonText } from './helpers/approved-changes.mjs';
 
 const rulesText = readFileSync(path.join(ROOT, 'src/rules/nz-eas.yaml'), 'utf8');
 const fresh = () => readYamlStrict(rulesText); // a new copy of the reference rules each time
@@ -247,15 +248,19 @@ test('the command line: identical files report no differences; a changed file gi
 test('the command line still reads a rules file in the older JSON layout, and git:<commit> falls back to nz-eas.json for a commit from before the YAML change', () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pocket-resus-rules-diff-test-'));
   try {
-    const same = path.join(dir, 'same.yaml'), olderLayout = path.join(dir, 'older.json');
+    const same = path.join(dir, 'same.yaml'), olderLayout = path.join(dir, 'older.json'), frozen = path.join(dir, 'frozen.json');
+    const frozenText = readFileSync(path.join(ROOT, 'tests/baseline/nz-eas-before-yaml.json'), 'utf8');
     writeFileSync(same, rulesText);
-    writeFileSync(olderLayout, readFileSync(path.join(ROOT, 'tests/baseline/nz-eas-before-yaml.json'), 'utf8'));
+    // the frozen JSON file plus exactly the approved changes (A12 added tables today's app needs), layout kept
+    writeFileSync(olderLayout, withApprovedChangesInJsonText(frozenText));
+    writeFileSync(frozen, frozenText);
     const fromJson = cli(same, olderLayout, '--cases', '1');
     assert.equal(fromJson.status, 0, fromJson.stderr);
     assert.match(fromJson.stdout, /No screen differs and the saved session does not differ/);
     const OLD_COMMIT = '8dc32e2'; // the last commit before the YAML change: its rules file is nz-eas.json
     if (spawnSync('git', ['cat-file', '-e', OLD_COMMIT + '^{commit}'], { cwd: ROOT }).status === 0) {
-      const fromGit = cli('git:' + OLD_COMMIT, same, '--cases', '1');
+      // that commit's nz-eas.json is the frozen JSON copy (before any approved change), so the two read the same
+      const fromGit = cli('git:' + OLD_COMMIT, frozen, '--cases', '1');
       assert.equal(fromGit.status, 0, fromGit.stderr);
       assert.match(fromGit.stdout, /No screen differs and the saved session does not differ/);
     }

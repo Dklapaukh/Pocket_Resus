@@ -64,7 +64,7 @@ const WORDING = {
   guidanceIntro: ['list', 'cprCycleMinWord', 'adrenalineEveryMin', 'amiodaroneFirstShocks', 'amiodaroneSecondShocks', 'bandList', 'joulesPerKg', 'adultShockJ'],
   guidanceRsiTitle: ['text'],
   guidanceRsi: ['list', 'fentanylMcgPerKg', 'fentanylMaxMcg', 'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg'],
-  guidanceCaption: ['text', 'exportDate', 'reversibleCauses'], rsiNotRecorded: ['text'], rsiConditions: ['text'], tubeNoAge: ['text'],
+  guidanceCaption: ['text', 'exportDate', 'reversibleCauses'], rsiNotRecorded: ['text'], rsiConditions: ['text'], rsiNoDose: ['text'], tubeNoAge: ['text'],
   tubeCaution: ['text'], igelSourceCaption: ['text', 'igel'], tubeSizeUnderOne: ['text', 'minMm', 'maxMm'], tubeLengthUnderOne: ['text', 'timesSize'],
   tubeSizeFormula: ['text', 'mm'], tubeLengthFormula: ['text', 'cm'],
   weightSheetAgeEstimate: ['text', 'underOneYearKg', 'tenMaxAge', 'tenAddYears', 'tenMultiplyBy', 'fourteenFromAge', 'fourteenMaxAge', 'fourteenMultiplyBy'],
@@ -296,7 +296,12 @@ const NUMBER_LIMITS = [
   { path: 'numbers.rsi.blocker.mgPerKg', type: 'number', unit: 'mg per kg', above: 0, max: 1000 }, // neuromuscular blocker per kg
   { path: 'numbers.rsi.blocker.maxMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // neuromuscular blocker cap
   { path: 'numbers.rsi.blocker.roundAdultToMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // adult blocker dose is rounded to this
-  { path: 'numbers.rsi.displayDecimals', type: 'whole', unit: 'decimal places', atLeast: 0, max: 4 }, // decimal places shown for RSI doses
+  // EAS 9.3 dose summary table columns (A12): the column weight and the four doses shown for it
+  { path: 'numbers.rsi.tables.*.*.columnKg', type: 'number', unit: 'kg', above: 0, max: 1000 }, // weight of one table column
+  { path: 'numbers.rsi.tables.*.*.fentanylMcg', type: 'number', unit: 'mcg', above: 0, max: 100000 }, // fentanyl dose in that column
+  { path: 'numbers.rsi.tables.*.*.ketamineMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // usual ketamine dose in that column
+  { path: 'numbers.rsi.tables.*.*.reducedKetamineMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // reduced ketamine dose in that column
+  { path: 'numbers.rsi.tables.*.*.blockerMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // rocuronium or suxamethonium dose in that column
   // ---- airway tubes ----
   { path: 'numbers.tubes.showUpToAge', type: 'whole', unit: 'years', above: 0, max: 120 }, // oldest age the tube table is shown for
   { path: 'numbers.tubes.underOneSizeMinMm', type: 'number', unit: 'mm', above: 0, max: 30 }, // smallest tube size under one year
@@ -601,13 +606,27 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
       }
     }
 
-    const rsi = group('numbers.rsi', N.rsi, ['fentanyl', 'ketamine', 'reducedKetamine', 'blocker', 'displayDecimals']);
+    const rsi = group('numbers.rsi', N.rsi, ['fentanyl', 'ketamine', 'reducedKetamine', 'blocker', 'tables']);
     if (rsi) {
       for (const [drug, keys] of [['fentanyl', ['mcgPerKg', 'maxMcg']], ['ketamine', ['mgPerKg', 'maxMg']], ['reducedKetamine', ['mgPerKg', 'maxMg']], ['blocker', ['mgPerKg', 'maxMg', 'roundAdultToMg']]]) {
         const d = group(`numbers.rsi.${drug}`, rsi[drug], keys);
         if (d) for (const k of keys) number(`numbers.rsi.${drug}.${k}`, d[k]);
       }
-      number('numbers.rsi.displayDecimals', rsi.displayDecimals);
+      // A12: the EAS 9.3 tables. Each is a list of columns, lightest first (the app takes the first column at or above
+      // an adult weight, and the column equal to a child's band).
+      const tables = group('numbers.rsi.tables', rsi.tables, ['paediatric', 'adult']);
+      if (tables) for (const name of ['paediatric', 'adult']) {
+        const where = `numbers.rsi.tables.${name}`, list = tables[name];
+        if (!Array.isArray(list) || list.length === 0) { say(where, 'must be a list with one row for each table column'); continue; }
+        let previous;
+        list.forEach((row, i) => {
+          const r = group(`${where}.${i}`, row, ['columnKg', 'fentanylMcg', 'ketamineMg', 'reducedKetamineMg', 'blockerMg']);
+          if (!r) return;
+          for (const k of Object.keys(r)) number(`${where}.${i}.${k}`, r[k]);
+          if (previous !== undefined && r.columnKg <= previous) say(`${where}.${i}.columnKg`, `columns must go in rising order (${r.columnKg} follows ${previous})`);
+          previous = r.columnKg;
+        });
+      }
     }
 
     const tu = group('numbers.tubes', N.tubes, ['showUpToAge', 'underOneSizeMinMm', 'underOneSizeMaxMm', 'underOneLengthTimesSize', 'sizeAgeDivisor', 'sizeAddMm', 'lengthAgeDivisor', 'lengthAddCm', 'displayDecimals']);

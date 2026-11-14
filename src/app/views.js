@@ -528,12 +528,14 @@ export function referenceSheet(type) {
   if (type === 'rsi') {
     // These are reference values only; opening this sheet records no medicine (rule: engine rsiDoses).
     const d = R.rsiDoses(w);
+    // A12: no table column for this weight (5 kg band) shows "Seek clinical advice" and no number
+    const dose = (phrase, value) => (d ? T(phrase, { dose: d[value] }) : R.guideText('rsiNoDose'));
     const doseList = w
       ? `<p><b>${T('weightHeader.weightKg', { weight: w })}</b> · ${R.guideText('rsiNotRecorded')}</p><dl>` +
-        `<dt>${T('referenceSheets.fentanylName')}</dt><dd>${T('referenceSheets.doseMcgIv', { dose: d.fentanylMcg })}</dd>` +
-        `<dt>${T('referenceSheets.ketamineUsualName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.ketamineMg })}</dd>` +
-        `<dt>${T('referenceSheets.ketamineReducedName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.reducedKetamineMg })}</dd>` +
-        `<dt>${T('referenceSheets.blockerName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.blockerMg })}</dd></dl>`
+        `<dt>${T('referenceSheets.fentanylName')}</dt><dd>${dose('referenceSheets.doseMcgIv', 'fentanylMcg')}</dd>` +
+        `<dt>${T('referenceSheets.ketamineUsualName')}</dt><dd>${dose('liveCards.doseMgIv', 'ketamineMg')}</dd>` +
+        `<dt>${T('referenceSheets.ketamineReducedName')}</dt><dd>${dose('liveCards.doseMgIv', 'reducedKetamineMg')}</dd>` +
+        `<dt>${T('referenceSheets.blockerName')}</dt><dd>${dose('liveCards.doseMgIv', 'blockerMg')}</dd></dl>`
       : '<button class="primary" data-action="weight">' + T('referenceSheets.enterWeightButton') + '</button>';
     sheet(
       T('referenceSheets.rsiTitle'),

@@ -59,11 +59,11 @@ test('approved changes list: each "after" is in the rules file and each "before"
   const value = (v) => (v === REMOVED ? undefined : v);
   assert.ok(APPROVED_CHANGES.length > 0);
   for (const c of APPROVED_CHANGES) {
-    assert.equal(at(file, c.path), value(c.after), `${c.row} ${c.path} in the rules file`);
-    assert.equal(at(frozenJson, c.path), value(c.before), `${c.row} ${c.path} in the frozen JSON copy`);
+    assert.deepStrictEqual(at(file, c.path), value(c.after), `${c.row} ${c.path} in the rules file`); // deep: A12 adds whole tables
+    assert.deepStrictEqual(at(frozenJson, c.path), value(c.before), `${c.row} ${c.path} in the frozen JSON copy`);
     if (Array.isArray(c.path)) continue; // notes are not in the v22 baseline (its comments became notes)
     const inBaseline = at(FROZEN_BASELINE, c.path);
     assert.ok(inBaseline === value(c.before) || (inBaseline === undefined && additions[c.path] === c.before), `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
   }
-  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11'], 'only approved rows (doc 07): add a row here only after the owner approves it');
+  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11', 'A12'], 'only approved rows (doc 07): add a row here only after the owner approves it');
 });

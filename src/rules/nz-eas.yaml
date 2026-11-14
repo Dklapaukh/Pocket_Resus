@@ -127,7 +127,59 @@ numbers:
       mgPerKg: 2
       maxMg: 200
       roundAdultToMg: 50
-    displayDecimals: 1
+    tables:
+      paediatric:
+        - columnKg: 10
+          fentanylMcg: 20
+          ketamineMg: 20
+          reducedKetamineMg: 10
+          blockerMg: 20
+        - columnKg: 20
+          fentanylMcg: 40
+          ketamineMg: 40
+          reducedKetamineMg: 20
+          blockerMg: 40
+        - columnKg: 30
+          fentanylMcg: 60
+          ketamineMg: 60
+          reducedKetamineMg: 30
+          blockerMg: 60
+        - columnKg: 40
+          fentanylMcg: 80
+          ketamineMg: 80
+          reducedKetamineMg: 40
+          blockerMg: 80
+      adult:
+        - columnKg: 50
+          fentanylMcg: 100
+          ketamineMg: 100
+          reducedKetamineMg: 50
+          blockerMg: 100
+        - columnKg: 60
+          fentanylMcg: 120
+          ketamineMg: 120
+          reducedKetamineMg: 60
+          blockerMg: 100
+        - columnKg: 70
+          fentanylMcg: 140
+          ketamineMg: 140
+          reducedKetamineMg: 70
+          blockerMg: 150
+        - columnKg: 80
+          fentanylMcg: 160
+          ketamineMg: 160
+          reducedKetamineMg: 80
+          blockerMg: 150
+        - columnKg: 90
+          fentanylMcg: 180
+          ketamineMg: 180
+          reducedKetamineMg: 90
+          blockerMg: 200
+        - columnKg: 100
+          fentanylMcg: 200
+          ketamineMg: 200
+          reducedKetamineMg: 100
+          blockerMg: 200
   tubes:
     showUpToAge: 14
     underOneSizeMinMm: 3
@@ -268,8 +320,9 @@ wording:
     - "Rocuronium <b>or</b> suxamethonium: {blockerMgPerKg} mg/kg IV, maximum {blockerMaxMg} mg. Adult dose usually rounded to nearest {blockerRoundMg} mg. Alternatives, not both."
     - Use the full RSI CPG for patient context and administration.
   guidanceCaption: "Packaged NZCPG exports: {exportDate}. Reversible causes: {reversibleCauses}. Local protocol takes precedence. This extracted app requires clinical validation before patient-care use."
-  rsiNotRecorded: calculated references, not recorded administrations
+  rsiNotRecorded: guideline table references, not recorded administrations
   rsiConditions: Fentanyl only for TBI, suspected intracranial pathology or hypertension; withhold with shock. Consider reduced ketamine with shock / prior sedation; do not reduce for prolonged seizures. Neuromuscular blockers are alternatives, not both.
+  rsiNoDose: Seek clinical advice
   tubeNoAge: Enter age to show the paediatric ETT and length-at-lips formula results.
   tubeCaution: Paediatric formulae are guides; confirm actual fit. Not a weight-only adult tube-size recommendation.
   igelSourceCaption: "iGel colours/ranges: {igel}."
@@ -1050,7 +1103,7 @@ notes:
   numbers.preparation.magnesium.adultGrams: the adult 10 mmol dose in grams
   numbers.preparation.magnesium.overMinMinutes: given over 1-2 minutes
   numbers.preparation.magnesium.ampouleMmol: "paediatric: 10 mmol / 5 mL ampoule diluted to 10 mL = 1 mmol/mL"
-  numbers.rsi: RSI dose references (EAS 9.3), shown on the Guidance tab from the EXACT entered weight (not the band). Each dose = weight x perKg, capped at max. Above the adult threshold (weight.adultAboveKg) the blocker is first rounded to the nearest roundAdultToMg. Shown to displayDecimals places.
+  numbers.rsi: "RSI dose references (EAS 9.3), shown on the Guidance tab. Change A12 (owner-approved 14 Nov 2026): the doses are looked up in the EAS 9.3 dose summary tables (tables.paediatric and tables.adult, cpg-rsi.pdf page 2), not calculated. A child (weight.adultAboveKg or less) uses the column of its weight band, rounded up; the 5 kg band has no column, so the pop-up shows \"Seek clinical advice\" (decision 7 rule 3). An adult uses the first adult column at or above the weight (rounded up to the next 10 kg); above the last column the last (\"≥ 100 kg\") is used. The per-kg doses, maximums and roundAdultToMg fill the Guidance-tab RSI extract wording only."
   numbers.rsi.blocker: rocuronium OR suxamethonium
   numbers.tubes: "Paediatric tube formulae (shown on the Guidance tab from age in years, up to showUpToAge). Under 1 year: a fixed size range, length = size x underOneLengthTimesSize. Otherwise: size = age / sizeAgeDivisor + sizeAddMm; length = age / lengthAgeDivisor + lengthAddCm."
   numbers.doubleTapLockMs: "A5 (owner ruling 4 Nov 2026): after a dose is recorded, the Live card cannot record again for this long. Adrenaline is also greyed out while locked; magnesium and fluids are not."

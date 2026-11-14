@@ -214,19 +214,17 @@ export function guideText(key, values = {}) {
 
 const roundTo = (value, decimals) => Math.round(value * 10 ** decimals) / 10 ** decimals;
 
-/* RSI dose references from the exact weight in kg (not the band). Reference only; records nothing. */
+/* RSI dose references looked up in the EAS 9.3 dose summary tables (change A12). Reference only; records nothing.
+   A child (weight.adultAboveKg or less) uses the column of its weight band, rounded up (decision 2). The 5 kg band
+   has no column, so null is returned and the pop-up shows "Seek clinical advice" (decision 7 rule 3).
+   An adult uses the first adult column at or above the weight; above the last column, the last ("≥ 100 kg").
+   Returns a copy of the column: { columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg }, or null. */
 export function rsiDoses(weightKg) {
-  const { fentanyl, ketamine, reducedKetamine, blocker, displayDecimals } = RULES.numbers.rsi;
-  const capped = (perKg, max) => Math.min(weightKg * perKg, max);
-  const blockerMg = weightKg > RULES.numbers.weight.adultAboveKg
-    ? Math.min(Math.round((weightKg * blocker.mgPerKg) / blocker.roundAdultToMg) * blocker.roundAdultToMg, blocker.maxMg)
-    : capped(blocker.mgPerKg, blocker.maxMg);
-  return {
-    fentanylMcg: roundTo(capped(fentanyl.mcgPerKg, fentanyl.maxMcg), displayDecimals),
-    ketamineMg: roundTo(capped(ketamine.mgPerKg, ketamine.maxMg), displayDecimals),
-    reducedKetamineMg: roundTo(capped(reducedKetamine.mgPerKg, reducedKetamine.maxMg), displayDecimals),
-    blockerMg: roundTo(blockerMg, displayDecimals),
-  };
+  const { paediatric, adult } = RULES.numbers.rsi.tables;
+  const column = weightKg <= RULES.numbers.weight.adultAboveKg
+    ? paediatric.find((c) => c.columnKg === childBand(weightKg)?.maxKg)
+    : adult.find((c) => weightKg <= c.columnKg) ?? adult.at(-1);
+  return column ? { ...column } : null;
 }
 
 /* Tube size and length-at-lips wording for an age in years, or null when not shown (no age, or above
