@@ -157,6 +157,12 @@ owner said not to skip them if it saves no time.
    (4) **Owner 14 Nov 2026 (approving A12):** the working does not need to be shown in the app, only in the
    reviewer documentation (doc 11); the screen shows the outcome ("clinicians know how it is calculated").
    Rows that only add working on screen (A13, A14, A16's wording) need re-presenting with this in mind.
+8. **Band tables are the authority (owner 14 Nov 2026).** The EAS 7.2 band tables (cpg-paediatric-equipment.pdf
+   pages 5–15: "5 kg / less than one year", "10 kg / 1 year", "20 kg / 2-5 years", "30 kg / 6-10 years",
+   "40 kg / 11-13 years") are the source for child drug doses, tube sizes, shock energy and airway device (the
+   tables list an LMA, no iGel). Weight from age uses those headings; ages are rounded up unless under 1 year;
+   **age 14 is treated as adult**. Rows A15 and A16 and a new tube-size row are being rewritten to match (A15 and
+   A17 were approved before this; nothing built). Open: RSI doses keep EAS 9.3 (A12) or switch to EAS 7.2.
 
 ## Approved changes: apply only AFTER parity is proven
 | ID | Change | Status |
