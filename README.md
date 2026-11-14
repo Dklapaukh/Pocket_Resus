@@ -8,15 +8,13 @@ while developing or testing.
 
 The root JavaScript files such as `core.js` and `app.js` are historical
 baselines used by tests. They are not the modules loaded by the live page.
-For a focused software review, start with the
-[software review guide](docs/16-SOFTWARE-REVIEW-GUIDE.md).
 Start with [the code map](docs/10-DEVELOPER-CODE-MAP.md) before changing code.
-The current decisions and handover are in
-[doc 07](docs/07-HANDOFF-AND-CHANGE-BACKLOG.md). The source comparison,
-independent review questions and readability assessment are in
-[docs 11](docs/11-CLINICAL-RULE-INVENTORY.md),
-[13](docs/13-INDEPENDENT-REVIEW-BRIEF.md), and
-[14](docs/14-READABILITY-ASSESSMENT.md).
+The guiding principle and owner decisions are in
+[doc 06](docs/06-PRINCIPLES-AND-DECISIONS.md), the current state and next steps in
+[doc 07](docs/07-HANDOFF-AND-CHANGE-BACKLOG.md), and the trace from every
+clinical value on screen to its guideline page in
+[doc 11](docs/11-CLINICAL-RULE-INVENTORY.md). Clinical numbers and wording live
+only in `src/rules/nz-eas.yaml`.
 
 ## Tests
 

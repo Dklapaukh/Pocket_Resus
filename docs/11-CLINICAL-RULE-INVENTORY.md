@@ -1,241 +1,99 @@
-# Clinical rule and recording inventory
+# 11. Guideline trace: where everything clinical on screen comes from
 
-This is a source-to-implementation index of the current application at base
-`72b3eeb` plus the local readability edits. It describes software behaviour,
-not independent clinical validation. Source labels below are those recorded by
-the application or decisions log; they do not assert that every displayed
-phrase or calculation has been checked against the cited passage. The bundled
-EAS exports are dated 24 September 2026 according to the app. Page numbers
-are provided only where the app links to one. Decisions in docs 06 and 07
-supersede earlier project notes. Tests establish software behaviour, not
-clinical approval.
+This is the evidence for the guiding principle (doc 06): the app shows what the NZ EAS CPGs say and
+calculates only what a guideline tells it to. **Every clinical number, sentence and trigger must
+have a row here. A change that adds or alters one updates this page in the same commit.**
 
-## Assessment and medicine references
+It is a software trace, not independent clinical validation. Values were compared with the text of
+the packaged PDFs (exports dated 24 Sep 2026) on 14 Nov 2026 and by the tests named below; a
+second person has not yet checked each cell by eye (see "Still to do").
 
-| Rule and boundaries currently implemented | Trace | Source / decision and review status | Test entry points |
-| --- | --- | --- | --- |
-| Weight accepts >0 to 500 kg, at most one decimal; age estimate: under 1 year 5 kg, integer ages 1–10 `(age+4)×2` kg, 11–14 `age×3` kg; otherwise no estimate. | `engine/core.js`: `validWeight`, `estimate`; `app/sheets.js`: `openWeight`; `app/events.js`: `save-weight` | EAS 7.2 (`cpg-paediatric-equipment.pdf`); app warns estimate may underestimate and excludes newborn resuscitation. Exact passage and age-boundary review outstanding. | `characterisation`, `golden`, `dom-golden` |
-| Weight ≤40 kg is child; dose bands round up to 5, 10, 20, 30, 40 kg. Adrenaline band/100 mg, amiodarone first band×5 mg. Above 40 kg or empty weight, engine reference is adult 1 mg adrenaline and 300/150 mg amiodarone. Invalid weight yields no reference. Engine also calculates band×2.5 mg for second amiodarone; the live child card suppresses it. | `core.js`: `dose`, `isPaediatric`; `engine/drug-cards.js`: `doseFor`; `app/views.js`: `drugCard` | EAS 7.2; C4 and weight-band decisions; C6b rejects the child second-dose number as unsourced. Empty-weight reference and whether a card can actually record are separate questions. Exact table cells need independent review. | `characterisation`, `golden`, `c6b2-second-amiodarone`, `dom-golden` |
-| Energy is 4 J/kg of the rounded-up band, 200 J above 40 kg; prompt for paediatric pads when calculated energy ≤100 J (currently through 20 kg). An empty weight defaults to 200 J in the shock reference, while header requests weight. | `core.js`: `joules`, `needsPaediatricPads`; `engine/log-view.js`: `shockEnergy`; `app/views.js`: `weightHeader` | A1 and C3, docs 06/07. Owner retained pad threshold; doc 06 records no EAS source found for that threshold. Adult EAS wording is maximum defibrillator setting, while app caps at 200 J. | `a1-energy`, `engine-fidelity`, `dom-golden` |
-| CPR cycle 120 s; adrenaline review 240 s after latest active dose; countdown warns at 30 and 15 s. A timer reaching zero does not record treatment. | `core.js`: `CYCLE`, `ADR`, `timing`, `begin`; `app/views.js`: `tick` | EAS 3.14 (`cpg-cardiac-arrest.pdf`); reminder presentation is app behaviour. Exact passage and reminder thresholds need independent review. | `golden`, `side-by-side`, `dom-golden` |
-| Amiodarone appears at 3 counted shocks, including previous shocks and irrespective of current rhythm, unless another lower card takes precedence; once shown it persists for the patient, also when a dose exists. At one dose and <6 shocks adult shows due after 6; child offers an empty manual dose form with clinical advice. At ≥6 shocks adult reference is 150 mg and child shows clinical advice. Torsades history withholds routine amiodarone. | `engine/drug-cards.js`: `amiodaroneDue`, `secondAmiodaroneEarly`, `childSecondAmiodarone`, `childAmiodaroneAdvice`, `lowerCard`; `app/views.js`: `amioCardVisible`, `drugCard` | EAS 3.14/14.4 (`cpg-drugs/eas-14-4.pdf`); A2, A2b, C5, C6b, C6b-2 and A2c in docs 06/07. The early child manual-entry path records what was given; it is not a suggested second dose. | `a2-amiodarone-card`, `a2b-amiodarone-gate`, `c6b2-second-amiodarone` |
-| Latest relevant PEA, Asystole or Other (A7, owner ruling 11 Nov 2026) selects fluids; VF/VT/Torsades select magnesium if torsades has occurred, otherwise amiodarone. Unknown does not trigger fluids. The older engine helper is PEA-only and is not the live selector. | `engine/drug-cards.js`: `latestLowerRhythm`, `lowerCard`; `engine/rhythm-care.js`: `careMode` (original, test only), `hasTorsades` | A2c owner decision; A7 (owner ruling 11 Nov 2026): Other triggers fluids. | `a2c-fluids-non-shockable`, `dom-golden` |
-| Magnesium reference: adult/empty weight 10 mmol; child bands 20/30/40 kg give 4/6/8 mmol; 5/10 kg have no listed dose and seek advice. Routine card permits up to two recorded doses and requires confirmation for repeat. | `engine/rhythm-care.js`: `magnesiumReference`, `supportStats`; `app/session.js`: `recordSupport`; `app/views.js`: `supportCard`; `app/sheets.js`: `supportAdministration` | EAS 3.14, 14.27 and 7.2; C6a retained. Administration text and exact source passages need independent review. | `characterisation`, `golden`, `a5-double-tap-guard`, `dom-golden` |
-| Fluids reference requires valid weight: child exact weight ×20–40 mL; adult 1,000–2,000 mL. Actual volume is manually entered; total includes active mL events. | `engine/rhythm-care.js`: `fluidReference`, `supportStats`; `app/session.js`: `recordSupport`; `app/sheets.js`: `supportAdministration` | EAS 3.14; A2c governs card selection, not the volume. Exact source and scope need independent review. | `characterisation`, `golden`, `a2c-fluids-non-shockable` |
-| Adrenaline quick record locked for 210 s after latest active dose; magnesium and fluids quick paths locked for 5 s. Manual Other form is separate; undo or correction can affect derived locks. Special situation disables routine prompts; ROSC/end also restrict routine recording. | `engine/drug-cards.js`: `lockLeft` (`RULES.doubleTapLockMs`); `app/session.js`: `recordSupport`; `app/events.js`; `app/views.js`: `drugCard`, `tick` | A5 owner decision, not a guideline dosing interval. | `a5-double-tap-guard`, `dom-golden` |
-| Administration instructions: adrenaline adult undiluted; child 1 mg diluted to 10 mL (0.1 mg/mL). Amiodarone undiluted; magnesium preparation, repeat, timing and line caution appear in its info sheet. | `app/sheets.js`: `administration`, `torsadesSnippet`, `supportAdministration` | App cites EAS 3.14, 14.3, 14.4, 14.27 and 7.2; bundled drug PDFs exist for 14.3/14.4, 14.27 is linked online. Exact text and applicability need independent review. | `dom-golden`, `characterisation` |
-| RSI doses (since A12, 14 Nov 2026) are looked up in the EAS 9.3 dose summary tables (`numbers.rsi.tables`): a child uses the column of its weight band, rounded up (10, 20, 30, 40 kg); the 5 kg band has no column and shows "Seek clinical advice" for all four; an adult uses the next column up (50 to 90 kg), 91 kg and above the "≥ 100 kg" column. The pop-up shows the outcome only (owner, 14 Nov 2026): weight, then the four doses. Before A12: exact weight × per-kg dose, capped at 200, adult blocker to the nearest 50 mg. Conditional indications and alternatives are displayed alongside. | engine `rsiDoses`; `app/views.js`: `guidance`, `referenceSheet` | EAS 9.3 (`cpg-rsi.pdf`); exact passage, rounding boundary and all conditions need independent review. References do not record administrations. | `dom-golden` (scenario coverage only; no claim of exhaustive boundaries) |
-| Age <1 shows cuffed ETT 3–4 mm and length size×3 cm; ages 1–14 show age/4+3.5 mm and age/2+12 cm. iGel ranges displayed 2–5 through 90+ kg. Equipment choices, sites and colours are fixed lists, not automatic selections. | `app/views.js`: `referenceSheet`; `app/data.js`: `ARREST_EQUIPMENT`, `ARREST_SITES`, `COLOURS`; `app/sheets.js`: `openEquipment` | App links EAS 7.2 and credits Intersurgical for iGel ranges/colours. Exact age zero behaviour and source passages require review. | `dom-golden` (scenario coverage only) |
+Packaged guidelines: EAS 3.14 cardiac arrest (`cpg-cardiac-arrest.pdf`), 3.15 post ROSC
+(`cpg-post-rosc.pdf`), 7.2 paediatric equipment and doses (`cpg-paediatric-equipment.pdf`), 9.2 RSI
+preparation (`cpg-preparation-rsi.pdf`), 9.3 RSI (`cpg-rsi.pdf`), 9.4 RSI checklist
+(`cpg-rsi-checklist.pdf`), 14.3 adrenaline and 14.4 amiodarone (`cpg-drugs/`). EAS 14.27 magnesium
+is linked online only. Page numbers are PDF pages. All values live in `src/rules/nz-eas.yaml`.
 
-## Workflow, documentation and recording rules
+## 1. Patient-specific numbers
+"Looked up" = read from a stored copy of a guideline table. "Fixed" = one stored value.
+Band = the child's weight rounded up to 5, 10, 20, 30 or 40 kg (EAS 7.2 page 1 states this rule).
 
-| Behaviour | Trace | Source / decision and review status | Test entry points |
-| --- | --- | --- | --- |
-| Rhythm check after cycle expiry records shock or no-shock immediately with unknown rhythm; completing the sheet updates that event. ROSC stops clocks and opens post-ROSC checklist; re-arrest starts a new cycle. Allowed rhythms and shock energy validation are explicit. | `engine/rhythm-care.js`: `startOutcome`, `completeOutcome`; `core.js`: `check`, `begin`; `app/session.js`: `saveRhythm`; `app/events.js`: `rearrest` | Workflow of original app; no inference that rhythm or treatment occurred from a timer. Review source/clinical appropriateness independently. | `golden`, `side-by-side`, `dom-golden` |
-| Previous shock records a countable event with unknown time before app start; earlier counts in history need not have individual timestamps. | `engine/rhythm-care.js`: `addPreAppShock`; `core.js`: `counts`; `app/events.js`: history and previous-shock actions | Owner decision 3 and A2b. | `a2b-amiodarone-gate`, `dom-golden` |
-| Arrest, post-ROSC, RSI preparation and RSI checklists record checked/unchecked item events; a tick is review, not treatment. The arrest checklist attention prompt needs active CPR, ≥90 s remaining and an active adrenaline event. | `app/data.js`: `ARREST_CHECKLISTS`; `app/events.js` change handler; `app/views.js`: `checkStatus`, `checksView`; `engine/rhythm-care.js`: `checklistPrompt` | Labels link EAS 3.14 page 2, 3.15 page 2, 9.2 and 9.4 respectively. Exact item-by-item transcription and prompt policy require review. | `golden`, `dom-golden` |
-| Eight 4H/4T guidance prompts are fixed text; they do not record a diagnosis or treatment. | `app/data.js`: `CAUSES`; `app/views.js`: `guidanceGrid` | App cites ANZCOR 11.2 for reversible causes and local protocol. Clinical wording/source mapping remains to review. | `dom-golden` |
-| Custom medicine form records actual name, positive dose, unit, route and time; equipment and notes are recorded separately. The form can record a dose even where routine suggestions are restricted. | `app/sheets.js`: `openDrug`, `openEquipment`, `openNote`; `app/events.js`: submit handler | Recording workflow, not a dosage recommendation. | `dom-golden`, `c6b2-second-amiodarone` |
-| Corrections retain prior values in audit, update derived counters and medicine clocks, and do not restart a cycle. Voids remain in audit but leave active counts; state-change events cannot be voided here and their times cannot be changed here. Undo restores the previous snapshot. | `app/events.js`: edit and void handlers; `app/session.js`: `syncRhythm`; `core.js`: `active`, `counts`, `undo` | App audit policy; independently review clinical record requirements. | `golden`, `side-by-side`, `dom-golden` |
-| Log filters select all events or interventions; checklist summary synthesizes start/finish from active ticks. Text export uses the chosen view and excludes voided entries; JSON retains session/audit data. | `engine/log-view.js`: `logEntries`, `checklistTimes`; `app/sheets.js`: `exportText`, `exportSheet`; `app/state.js`: `logRows` | App recording/export policy; not a clinical rule. Clipboard and real-device export need device checks. | `golden`, `side-by-side`, `dom-golden` |
-
-## Locating passages in the bundled exports
-
-Page numbers below are PDF pages as well as printed page numbers. These are
-navigation pointers based on text extraction, not a visual or clinical review
-of the source tables.
-
-- EAS 3.14 pages 1–2: cycle and drug timing, shockable rhythm, torsades,
-  PEA fluid guidance and the arrest checklist. The source describes fluids
-  under PEA; A2c deliberately extends the app's card to Asystole. The app's
-  A2b visibility gate also counts shocks regardless of current rhythm, while
-  the guideline's amiodarone instruction is framed around VF/VT.
-- EAS 7.2 page 1: weight bands, age estimates, tube formulae and energy;
-  page 2: adrenaline preparation; pages 4–5: magnesium preparation and the
-  first weight table; subsequent pages contain the other band tables.
-  The app's under-1 tube-length display does not separately implement the
-  newborn formula listed on page 1. Applicability needs clinical review.
-- EAS 9.3 pages 1–2 and 4: RSI drug conditions, calculated doses and
-  summary tables. EAS 14.3 page 2: cardiac-arrest adrenaline preparation;
-  EAS 14.4 pages 1–2: indications, contraindications and arrest doses.
-- EAS 3.15 page 2, EAS 9.2 page 1 and EAS 9.4 page 1 are the linked
-  post-ROSC, preparation and RSI checklist locations respectively; compare
-  each item visually before calling it a verified transcription.
-
-## Focused passage comparison, 6 November 2026
-
-The following comparisons were made against rendered pages of the bundled
-24 September 2026 exports and the live code. They are a limited software
-source review, not independent clinical validation or a review of the whole
-CPG. Existing behaviour and owner decisions have not been changed.
-
-| Source passage | Comparison with implementation | Follow-up |
-| --- | --- | --- |
-| EAS 3.14 pp. 1–2: two-minute cycles, IV adrenaline every four minutes, adult amiodarone after three and six shocks in VF/VT, including earlier shocks. | Timer intervals and adult reference amounts match those stated. The app gate counts shocks regardless of current rhythm (A2b) and may continue to show the card; visibility is not an instruction that the guideline's rhythm condition is met. | Preserve A2b; clinical reviewer should assess presentation in context. Reminder thresholds and recording guards are app policies. |
-| EAS 3.14 p. 2: withhold amiodarone if torsades is present or has occurred; adult magnesium 10 mmol over 1–2 minutes, repeat once if persistent or recurrent; fluids 1–2 L adult or 20–40 mL/kg child under PEA. | References and repeat limit correspond to these passages. A2c also offers fluids after asystole; A7 (owner ruling 11 Nov 2026) extends this to Other. | Preserve decisions and seek clinical review of the extension; check paediatric magnesium tables separately. |
-| EAS 7.2 p. 1: age-based weight estimates and airway formulae; 4 J/kg; drug tables based on rounded-up bands. | The listed formulae and bands are represented in the app. The app has discrete integer age boundaries for the weight estimate (since A16, 14 Nov 2026: taken from the band table headings, part years rounded up, age 14 adult), applies a separate approved band-based energy rule, and does not separately display the newborn length formula. The source presents newborn and under-one length rows. | Clinical review of fractional-age gaps, newborn applicability, and A1's energy interpretation remains outstanding. |
-| EAS 9.3 pp. 1–2 and 4: conditional fentanyl, ketamine, and alternative neuromuscular blockers; adult and child dose tables and maxima. | App calculations express the stated weight-based values and caps. The app's brief fentanyl summary says hypertension without the source's adult systolic threshold or child context, and omits timing immediately before ketamine. The source includes wider RSI indications, assessment and procedure context that the summary does not reproduce. | **Owner ruling 11 Nov 2026: keep the abbreviated wording (threshold not added).** Use the full guideline for context. Check rounding and every boundary separately. Do not change wording or recommendations without clinical decision. |
-
-Additional visual comparison: EAS 14.3 page 2's cardiac-arrest administration
-section specifies undiluted IV bolus for adults and children rounded to 50 kg
-or more, and dilution of 1 mg to 10 mL with 0.9% sodium chloride for children
-rounded to 40 kg or less, followed by drawing up the dose for IV bolus. The
-adrenaline reference dialog describes these same preparation boundaries and
-concentration. This is a comparison of that administration passage only;
-it does not verify dosage tables, other indications, or clinical applicability.
-Visual review of EAS 14.3 p. 1 also shows role-specific authorised practice
-levels and indications beyond cardiac arrest. The app's adrenaline dialog
-is a cardiac-arrest reference and does not determine a user's practice level
-or reproduce those other indications. Applicability and local authorisation
-remain for clinical review; this comparison makes no recommendation.
-
-Additional visual comparison: EAS 14.4 page 2 lists 300 mg for an adult in
-cardiac arrest and a possible 150 mg second dose if VF or VT persists after
-six shocks; it directs the reader to paediatric tables for a child. The app's
-adult reference displays 300/150 mg and its child dialog says to seek clinical
-advice for the second dose. The page also includes cautions and pregnancy
-context that the short app dialog does not reproduce. The app's shock-count
-visibility gate is governed by A2b and is not a check that VF/VT is present.
-This comparison does not verify paediatric table cells, all contraindications,
-or whether the abbreviated presentation is clinically appropriate.
-EAS 14.4 page 3's cardiac-arrest administration line specifies an undiluted
-IV bolus, as does the app's amiodarone dialog. That page separately describes
-tachydysrhythmia administration; the app's arrest reference does not cover
-that separate use.
-Visual comparison of EAS 14.4 page 1: its arrest indication is framed as
-VF/VT after three shocks. It also lists contraindications including severe
-allergy, severe iodine allergy, cyclic-antidepressant-associated VT, and
-torsades. The app dialog explicitly warns about torsades, but does not list
-the other contraindications; its A2b card gate does not establish the current
-rhythm. The app offers a special-situation switch and a guideline link, but
-this comparison does not determine whether that presentation is sufficient.
-**Owner ruling 11 Nov 2026: the other contraindications are not to be added; keep current dialog.**
-
-Additional visual comparison: EAS 7.2 pages 4–5 describes a paediatric
-magnesium preparation of 1 mmol/mL using 5 mL from a 10 mmol/5 mL ampoule,
-diluted to 10 mL with 0.9% sodium chloride. The app's magnesium dialog
-describes that preparation. The source continues with an approximately
-15-minute administration instruction; the app separately describes a 1–2
-minute **adult cardiac-arrest** administration and does not give a
-paediatric administration time. The applicability of these passages to the
-torsades workflow needs clinical review; no timing conclusion is inferred.
-The 5 kg cardiac-arrest table on page 5 lists adrenaline 0.05 mg,
-amiodarone 25 mg and manual defibrillation 20–25 J. The app's 5 kg band
-references are 0.05 mg, 25 mg and 20 J, respectively; the energy selection
-reflects the separately recorded A1 rule rather than the full table range.
-The same cardiac-arrest cells on pages 8, 10, 12 and 14 list, for the
-10/20/30/40 kg bands respectively, adrenaline 0.1/0.2/0.3/0.4 mg and
-amiodarone 50/100/150/200 mg. These match the app's band reference values.
-The source energy ranges are 40–50/80–100/120–150/160–200 J; the app's
-A1 rule selects their lower endpoints. Magnesium rows on pages 7, 9, 11,
-13 and 15 show dashes for 5 and 10 kg, then 4/6/8 mmol for 20/30/40 kg,
-matching the app's reference values. These are cell comparisons, not a
-validation of band selection, repeat dosing, indications or applicability.
-
-On a further visual review of EAS 7.2 p. 1, the cuffed ETT size table labels
-one row "Newborn to 1 year" and the next "1 year and over". The app uses
-the formula at exactly age 1 and the 3–4 mm range below 1. The printed row
-labels overlap at that boundary; their intended interpretation and whether
-the app's presentation is suitable need clinical review. The same page has
-a separate newborn length formula that the app does not separately display.
-
-### Checklist text comparison
-
-A text-extraction comparison (not a visual proof or clinical validation) found
-all checklist items represented in the app in the same order as EAS 3.14
-pp. 2–3, EAS 3.15 pp. 2–3, EAS 9.2 p. 1 and EAS 9.4 pp. 1–2. The app
-expands EAS 9.4 section headings into each item and uses plain `ETCO2` and
-`cmH2O` text for subscript notation. These are checklist-review ticks, not
-recordings that interventions occurred. The source documents contain wider
-clinical context beyond their checklists. Visual item-by-item confirmation and
-clinical review remain outstanding.
-
-Visual follow-up: the nine post-cardiac-arrest checklist items in EAS 3.15
-pages 2–3 appear in the same order and wording in the app, except that the
-app writes `ETCO2` without the source's subscript. This checks the checklist
-text only; it does not verify the surrounding treatment guidance, the meaning
-of a checked item, or clinical appropriateness. Visual comparison also found
-the arrest checklist (3.14 pp. 2–3) and airway backup checklist (9.2 p. 1)
-represented in order, with plain `ETCO2` in the app. The RSI checklist
-(9.4 pp. 1–2) is represented in order, with each section heading repeated
-before its items and `cmH2O` written without subscripts. The 9.2 introductory
-sentence is shortened in the app. This is a transcription comparison, not
-clinical validation or an assessment of the checklist workflow.
-
-## Where each patient-specific number comes from (checked 14 Nov 2026)
-Read from the engine (`src/engine`), the rule set (`src/rules/nz-eas.yaml`) and the packaged PDFs; nothing
-in the app was changed. "Looked up" = the app reads a value stored in the rule set. "Calculated" = the app
-does arithmetic on the weight or age while it runs. Pages are PDF pages.
-
-| Output | Looked up or calculated | Guideline source | Finding |
+| Output | How | Guideline | Notes and test |
 |---|---|---|---|
-| Child adrenaline, first amiodarone, magnesium | **Looked up** by weight band (5, 10, 20, 30, 40 kg, weight rounded up): `numbers.childBands` | EAS 7.2 band tables, `cpg-paediatric-equipment.pdf` pages 5, 8, 10, 12, 14 (magnesium: 7, 9, 11, 13, 15) | All 15 values match. Magnesium at 5 and 10 kg is "-" in the tables; the app shows "Dose: clinical review" |
-| Child shock energy | **Looked up** by weight band: 20, 40, 80, 120, 160 J | EAS 7.2 "Manual defibrillation" rows, same pages: 20-25, 40-50, 80-100, 120-150, 160-200 J | Nothing is multiplied while the app runs. The stored value is the bottom of each table range (change A1) and equals band × 4 J/kg (EAS 7.2 page 1). `shock.joulesPerKg` is used only in wording and in a checker rule |
-| Adult adrenaline, amiodarone 300 / 150 mg, magnesium, 200 J, fluids 1–2 L | **Fixed values** (`numbers.adult`) | EAS 3.14, `cpg-cardiac-arrest.pdf` pages 1–2; EAS 14.4 page 2 | Match |
-| Child second amiodarone dose | Not shown: the card reads "Seek clinical advice" (C6b) | **None.** EAS 7.2 has one amiodarone row per band | The unsourced stored numbers (12.5 to 100 mg) were deleted by A10 (14 Nov 2026); after two recorded doses the card's dose line is empty |
-| Child fluid volume | **Since A11 (14 Nov 2026): looked up and traced:** band (rounded up) table volume to 40 mL/kg × band weight, working shown. Before: entered weight × 20 and × 40 mL/kg | EAS 3.14 page 2 gives "20-40 ml/kg". EAS 7.2 band tables give the 20 mL/kg volume: 100, 200, 400, 600, 800 mL (pages 7, 9, 12, 14, 16) | The table is not in the rule set. The guideline has no table for the 40 mL/kg end |
-| Weight estimated from age | **Since A16 (14 Nov 2026): looked up** in `numbers.ageEstimate` from the band table headings, nothing calculated. Rule (not shown on screen beyond the caption; for reviewers): an age under 1 year → 5 kg; any other age is rounded UP to the next whole year (1.1 → 2), then 1 year → 10 kg, 2–5 years → 20 kg, 6–10 → 30 kg, 11–13 → 40 kg; 14 years (13.1 to 14) → adult: no weight is filled, the pop-up says "Age 14: adult. Enter the weight."; 0, over 14 or not a number → refused. Before: (age + 4) × 2 for whole years 1–10, age × 3 for 11–14 (age 14 = 42 kg), part years refused | EAS 7.2 band table headings, `cpg-paediatric-equipment.pdf` pages 5–15 ("5 kg / less than one year" … "40 kg / 11-13 years"); owner decision 8 (age 14 = adult) | Matches the headings (test `a16-weight-from-age-bands`). Differs from the page 1 formula at age 6 (formula 20 kg, table 30 kg) and at 14 (formula 42 kg, adult) |
-| Tube size and length at lips | **Since A18 (14 Nov 2026): looked up** in the band rows (`numbers.childBands`, `ettSizesMm`, `ettLengthCm`), nothing calculated. Band (for reviewers): the saved weight rounded up; with no valid weight, the band from the saved age (weight from age, A16); a saved weight wins. Over 40 kg, or age 13.1 and above: "Not shown for adults (over 40 kg or 14 years)."; neither weight nor a usable age (including age 0): "Enter weight or age …". Since A17, "Use age" with an empty box, a non-number or a negative age saves nothing (before: an empty box saved age 0). Before: age ÷ 4 + 3.5 mm and age ÷ 2 + 12 cm (under 1 year 3–4 mm, size × 3 cm), from age only | EAS 7.2 band tables, `cpg-paediatric-equipment.pdf` pages 6, 8, 10, 12, 14: 3 / 9 cm, 3 or 4 / 12 cm, 4 or 5 / 15 cm, 5 or 6 / 17 cm, 6 or 7 / 19 cm (checked against the PDF text 14 Nov 2026); caution line from page 1 | All 10 values match (test `a18-tube-sizes-band-table`). The newborn formula (6 + weight) is not in the app |
-| RSI doses: fentanyl, ketamine, reduced ketamine, rocuronium / suxamethonium | **Since A12 (14 Nov 2026): looked up** in `numbers.rsi.tables`, nothing calculated. Column used (not shown on screen, owner 14 Nov 2026; for reviewers): child = weight band rounded up (5.1–10 kg → 10, 10.1–20 → 20, 20.1–30 → 30, 30.1–40 → 40); 5 kg or less → "Seek clinical advice", no number; adult = next 10 kg up (40.1–50 → 50 … 80.1–90 → 90); over 90 kg → "≥ 100 kg". Before: entered weight × dose per kg, limited to 200; above 40 kg the blocker rounded to the nearest 50 mg | EAS 9.3, `cpg-rsi.pdf` page 2: adult table (50 to ≥ 100 kg in 10 kg steps) and paediatric table (10, 20, 30, 40 kg) | All 40 values match the PDF (test `a12-rsi-table-doses`). How to check one: take the column above, read the four doses in that column of page 2. Example: 45 kg → 50 kg column: 100 mcg, 100 mg, 50 mg, 100 mg |
-| LMA size and cuff volume | **Since A15 (14 Nov 2026): looked up** in the band rows (`lmaSize`, `lmaCuffMl`), same band as the tube size (A18: weight rounded up, else from age). Adult or no band: not shown. Before: the whole iGel weight list (Intersurgical product information, not an EAS guideline), now deleted with its source line | EAS 7.2 band tables, `cpg-paediatric-equipment.pdf`: LMA size 1 / 4 mL (5 kg), 2 / 10 mL (10 and 20 kg), 3 / 20 mL (30 and 40 kg) (checked against the PDF text 14 Nov 2026) | All 10 values match (test `a15-lma-band-table`). The iGel remains a device that can be recorded (equipment form), with its sizes and colours |
+| Child adrenaline, first amiodarone, magnesium | Looked up by band | EAS 7.2 band tables, pages 5, 8, 10, 12, 14 (magnesium 7, 9, 11, 13, 15) | All 15 values match. `rules-file` test |
+| Child magnesium, 5 and 10 kg bands | No number: "Seek clinical advice" | EAS 7.2 prints "-" | A9. `a9-magnesium-seek-advice` |
+| Child second amiodarone dose | No number | None: EAS 7.2 has one amiodarone row per band | A10. `a10-child-second-amiodarone` |
+| Adult adrenaline 1 mg, amiodarone 300 then 150 mg, magnesium 10 mmol, fluids 1–2 L | Fixed | EAS 3.14 pages 1–2; EAS 14.4 page 2 | Match. `rules-file` test |
+| Child shock energy | Looked up by band: 20, 40, 80, 120, 160 J | EAS 7.2 tables print ranges: 20–25, 40–50, 80–100, 120–150, 160–200 J; page 1 gives 4 J/kg | **Deviation D3** (one value shown, not the range). `a1-energy` |
+| Adult shock energy 200 J | Fixed | EAS 3.14 page 1: "Maximum joule setting for an adult" | **Deviation D3** |
+| Child fluid volume | Looked up by band: 100, 200, 400, 600, 800 mL, then the words "EAS 3.14 allows up to 40 mL/kg" | EAS 7.2 band tables (20 mL/kg row), pages 7, 9, 12, 14, 16; EAS 3.14 page 2 "20-40 ml/kg" | A19 (see doc 07 for its state). Before A19 the upper end was calculated (40 mL/kg × band) |
+| Weight from age | Looked up: under 1 year 5 kg; 1 year 10 kg; 2–5 years 20 kg; 6–10 years 30 kg; 11–13 years 40 kg; 14 years "adult, enter the weight" | EAS 7.2 band table headings, pages 5–15 | A16. Part-year ages are rounded up (**D7**). The page 1 formula is not used (principle 4). `a16-weight-from-age-bands` |
+| Tube size and length at lips | Looked up by band: 3 mm / 9 cm; 3 or 4 / 12; 4 or 5 / 15; 5 or 6 / 17; 6 or 7 / 19. Adults: not shown | EAS 7.2 band tables, pages 6, 8, 10, 12, 14; caution line from page 1 | A17, A18. A saved weight wins over the age. `a18-tube-sizes-band-table` |
+| LMA size and cuff volume | Looked up by band: 1 / 4 mL; 2 / 10 mL (10 and 20 kg); 3 / 20 mL (30 and 40 kg) | EAS 7.2 band tables | A15. `a15-lma-band-table` |
+| RSI doses: fentanyl, ketamine, reduced ketamine, rocuronium or suxamethonium | Looked up by column. Child: band (10 to 40 kg); 5 kg band has no column: "Seek clinical advice". Adult: next 10 kg column up; over 90 kg the "≥ 100 kg" column | EAS 9.3 page 2, adult and paediatric dose tables | A12. All 40 values match. Adult rounding up is decision 2 (**D8**). `a12-rsi-table-doses` |
 
-**Does "the app reads from tables and does not calculate" hold?** Yes for every arrest drug dose and the
-shock energy, since A12 for the RSI doses, since A16 for weight from age and since A18 for tube size and
-length. No for one output: the child fluid volume's upper end (40 mL/kg × band weight, EAS 3.14), which is
-arithmetic done by the app (question to the owner, 14 Nov 2026).
+## 2. Timing, counting and triggers
+| What the app does | How | Guideline | Notes |
+|---|---|---|---|
+| 2-minute CPR cycle; adrenaline review every 4 minutes | Clock from recorded times | EAS 3.14 page 1 | Nothing is recorded because time passed |
+| Amiodarone card at 3 shocks, second dose at 6, counting shocks before arrival | Count | EAS 3.14 pages 1–2: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival" | **Deviation D4** (the card ignores the current rhythm) |
+| Torsades recorded: amiodarone withheld, magnesium card, one repeat | Flag from the record | EAS 3.14 page 2 | The clinician records torsades; the app does not diagnose it |
+| Fluids card and pop-up after PEA | Latest recorded rhythm | EAS 3.14 page 2, "If the patient is in PEA" | **Deviation D1** (also shown after Asystole and Other) |
+| Paediatric pads prompt at 100 J or less | Threshold | None | **Deviation D2** |
 
-**Paediatric tables.** EAS 7.2 and EAS 9.3 are in the repo, so no PDF is missing. Tables the guideline has
-and the rule set lacked are now in it (ETT size and length per band, A18; LMA per band, A15) (the fluid 20 mL/kg volumes were added
-by A11, the RSI tables by A12). Values no packaged guideline gives (owner to supply a source or a
-ruling): a child's second amiodarone dose (removed, A10); RSI doses for the 5 kg band ("Seek clinical advice", A12; 41
-to 49 kg use the 50 kg column, decision 2); the fluid volume at 40 mL/kg per band. Owner dose rules 14 Nov 2026 (doc 07 decisions 2 and 7): band weight for every dose, traced formula calculations allowed, "Seek clinical advice" where no dose is given; proposed changes A9 to A14 (not built).
+## 3. Wording, checklists and references
+| Content | Guideline | Notes |
+|---|---|---|
+| Arrest, post-ROSC, RSI preparation and RSI checklists | EAS 3.14 pages 2–3; 3.15 pages 2–3; 9.2 page 1; 9.4 pages 1–2 | Same items in the same order. `ETCO2` and `cmH2O` without subscripts; 9.4 section headings repeated in each item; the 9.2 opening sentence is shortened (**D6**) |
+| Drug administration pop-ups: adrenaline (adult undiluted; child 1 mg diluted to 10 mL), amiodarone (undiluted), magnesium (preparation, 1–2 minutes for an adult, repeat once) | EAS 14.3 page 2; 14.4 pages 2–3; 7.2 pages 4–5; 3.14 page 2 | The app's wording is a summary, not an extract (**D6**). No child magnesium administration time is shown (EAS 7.2 gives about 15 minutes outside arrest) |
+| Guidance tab: RSI summary (per-kg doses, maximums, conditions) | EAS 9.3 pages 1–2 | Summary wording; the adult systolic threshold for fentanyl is left out (**D6**) |
+| Reversible causes (4 Hs / 4 Ts prompts) | **ANZCOR 11.2, not an NZ EAS CPG** | **Deviation D5.** EAS 3.14 page 13 has its own list |
+| "Seek clinical advice" where no dose is printed | App wording | Kept on purpose (decision 7 rule 3); the source line says no dose is listed |
 
-## Review still required
+## 4. Every calculation the app performs
+1. Rounds a child's weight up to its band (EAS 7.2 page 1) and an adult's weight up to the next
+   RSI column (decision 2; **D8**).
+2. Rounds a part-year age up to pick a band heading (decision 8; **D7**).
+3. Counts shocks and doses, and runs the 2-minute and 4-minute clocks (EAS 3.14).
+4. Adds up recorded fluid volumes for the status line (the record, not guidance).
+5. No dose, energy or size is multiplied or divided while the app runs (true once A19 is applied;
+   until then the child fluid upper end is 40 mL/kg × band). `shock.joulesPerKg` is used only in
+   wording and in a checker rule.
 
-### Software edge case: comma in a stored weight
+## 5. Deviations: where the app is not "the guideline, as written, at the right time"
+Each needs an owner ruling, one at a time (doc 07 lists which is next). Option A is recommended in
+each case because it is what the principle requires. An approved option becomes an A-table row and
+is built and tested like any other change.
 
-**Fixed 12 Nov 2026 (doc 07 step 2):** a valid comma weight is converted to a decimal point
-when a saved session is loaded (start-up, another tab, and every undo copy) by
-`restoreSaved` in `src/engine/core.js`; the raw save is kept under
-`resus-pocket-v1-repaired-backup`. The engine calculations are unchanged, so the side-by-side
-test still matches. Test: `tests/step2-saved-session-repair.test.mjs`. History below.
+| # | The app today | The guideline | Options |
+|---|---|---|---|
+| D1 | Fluids card and pop-up after PEA, **Asystole** (A2c) and **Other** (A7) | EAS 3.14 page 2 lists fluids under "If the patient is in PEA" only | **A (recommended):** fluids card and pop-up after PEA only. **B:** keep Asystole and Other, each labelled on screen "owner addition, not in EAS 3.14" |
+| D2 | "Use paediatric pads" prompt when the energy is 100 J or less (up to the 20 kg band) | No energy threshold. EAS 3.14 page 10: "Routinely place pads in the anterior/posterior position for small children and morbidly obese patients" | **A (recommended):** remove the prompt. **B:** keep it, labelled "owner addition, not in the EAS guidelines" |
+| D3 | One shock energy per band (the bottom of the table range, equal to 4 J/kg × band); 200 J for an adult | EAS 7.2 tables print a range per band (for example 80–100 J); EAS 3.14 says "Maximum joule setting for an adult" | **A (recommended):** show what is printed: the range for a child, "Maximum joule setting" for an adult; the energy recorded with a shock is then chosen by the clinician, not pre-filled. **B:** keep the single values, with the source line naming the table range and the 4 J/kg rule |
+| D4 | Amiodarone card appears at 3 shocks whatever the latest rhythm (A2b), and stays | "If in VF or VT after three shocks…" | **A (recommended):** keep the count as the trigger but make the card's first line the guideline's own sentence, including "If in VF or VT", so the rhythm judgement stays with the clinician. **B:** show the card only when the latest recorded rhythm is VF or VT (the app then decides from the record; shocks before arrival have no rhythm) |
+| D5 | Eight 4 Hs / 4 Ts prompts cited to ANZCOR 11.2 | EAS 3.14 page 13 lists eight "potentially reversible causes of PEA": hypoxia, hypothermia, hypovolaemia (including anaphylaxis), hyper/hypokalaemia (and other metabolic abnormalities), tension pneumothorax, tamponade (cardiac), toxins (poisoning), thrombosis (pulmonary and coronary) | **A (recommended):** replace with the EAS 3.14 list, word for word, cited to EAS 3.14. **B:** keep the ANZCOR prompts, labelled "ANZCOR 11.2, not an NZ EAS guideline" |
+| D6 | Several texts are summaries or shortened versions of the guideline (drug pop-ups, RSI summary, the 9.2 opening sentence). Rulings of 11 Nov 2026 kept the fentanyl threshold and the other amiodarone contraindications out | Principle 1: "as the guideline says it" | **A (recommended):** every guidance sentence becomes a word-for-word extract (shortened only by leaving whole sentences out), and a test compares each extract with the PDF text. **B:** keep the summaries, each labelled "summary: see the guideline" with its link |
+| D7 | A part-year age is rounded up to pick the band heading (5.5 years uses "6-10 years") | The headings are whole years ("2-5 years", "6-10 years"); the guideline does not say what to do between them | **A (recommended):** accept whole years only (and "under 1 year"). **B:** keep rounding up (decision 8) |
+| D8 | An adult's weight is rounded up to the next RSI column (45 kg uses the 50 kg column) | EAS 9.3 prints the columns; no rounding rule for adults was found in its text (EAS 7.2 states rounding up for children only) | **A (recommended):** keep rounding up, and add the sentence "weight rounded up to the next column" to the RSI pop-up so the choice is visible. **B:** show both neighbouring columns and let the clinician choose |
 
-The normal save-weight path converts a comma to a decimal point before
-storing the weight. A direct engine check with a session weight of `15,5`
-shows that `validWeight` and the adrenaline/amiodarone band calculation
-accept it, while `magnesiumReference` and `fluidReference` use numeric
-coercion without that conversion. In that constructed state the magnesium
-basis contains an undefined band and the fluid bounds are non-finite. In a
-simulated reload of that constructed state with PEA, the fluids card displayed
-`NaN–NaN mL IV`; this is an observed software defect for that state, not a
-clinical recommendation. Both
-the historical root app and current weight form normalize before saving;
-the current startup and cross-tab paths accept session objects without
-normalizing every field. We have not established whether any genuine saved
-session can contain such a weight; this is a software compatibility question,
-not a clinical ruling.
-The engine and existing behavior have not been changed.
-Investigation on 6 November: the current app has JSON export but no session
-JSON import or restore control. Startup and cross-tab updates load version 1
-session objects directly; undo restores an earlier session snapshot. Therefore
-any externally altered or otherwise malformed session could propagate a comma
-weight, including through undo, but these paths do not establish that ordinary
-entry produces one. The five historical `app.js` revisions available in this
-checkout all normalize comma input and save `String(+w)`; this does not prove
-what every earlier or separately distributed build did, or what exists on real
-devices. No real saved session was inspected. Changing load behavior or the
-engine calculations would change behavior for this constructed state;
-leave it documented rather than assuming a migration is needed. A future fix
-must consider startup, cross-tab updates and undo snapshots together, preserve
-recorded events and audit history, and verify both magnesium and fluids.
+## 6. App mechanics (not guidance; must never read like a guideline instruction)
+Timer messages ("30 seconds remaining", "Prepare for rhythm check", overdue time); the arrest
+checklist reminder (cycle running, at least 1 min 30 s left, adrenaline given); double-tap locks
+(adrenaline 3 min 30 s, magnesium and fluids 5 s; A5); the special-situation switch (turns routine
+prompts off); "+ Previous shock"; "Other…" manual entry (records what was given, suggests nothing;
+a child's second amiodarone dose can only be entered this way); corrections, voids, undo; the log
+and its exports; saving and recovery (doc 17). Equipment lists, sites and iGel sizes and colours
+are things that can be **recorded**, not recommendations (iGel data: Intersurgical).
 
-This inventory covers the live clinical references and their recording paths,
-but does **not** complete an independent passage-by-passage source audit. A
-clinical reviewer must verify each cited edition, page/table, population,
-units, conditions, and any local authority before clinical use; inspect the
-actual PDF rather than treating the labels above as proof. Specific unresolved
-items include the pad threshold, the owner's Other-rhythm fluids ruling (A7), the child
-second amiodarone source, RSI and airway boundaries, and exact checklist and
-administration wording. Some broad regression tests exercise scenarios rather
-than every listed boundary. Offline operation, background timing, install,
-wake lock and clipboard still require real-device checks.
+## 7. Still to do
+- **Second-person check:** each cell of sections 1 to 3 compared by eye with the PDF page (not only
+  with extracted text), recorded here with name and date.
+- **Independent clinical review** (after the owner's rulings on D1 to D8): the reviewer works from
+  this page and the PDFs, never from the app as the authority, and records reviewer, date,
+  guideline edition and pages, and a decision for each row.
+- **Guideline currency:** the packaged exports are dated 24 Sep 2026 and marked "uncontrolled
+  document". Before each release compare each guideline's online version with the packaged export
+  and record the result here. Last compared: EAS 3.14 only, 12 Nov 2026 (version 1.1.0.1 of
+  16 June 2026, same text).
+- Not in the app, noted in the guideline: the newborn tube-length formula (EAS 7.2 page 1); the
+  wider context, cautions and practice levels in EAS 14.3 and 14.4.
