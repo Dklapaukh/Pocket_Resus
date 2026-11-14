@@ -49,6 +49,14 @@ const NEW_TUBE_SHEET_TOP = "/* Reference pop-up opened from Guidance (RSI doses,
 const OLD_TUBE_SHEET = "  const tube = R.tubeReference(age); // rule: engine tubeReference\n  const igelRanges = R.RULES.equipment.igelRanges\n    .map((r) => (r.maxKg === null\n      ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })\n      : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');\n  const tubeReference = tube\n    ? `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`\n    : paras('tubeNoAge');\n";
 const NEW_TUBE_SHEET = "  const tube = R.tubeReference(st.s.weight, st.s.age); // rule: engine tubeReference (A18: band table, weight first)\n  const igelRanges = R.RULES.equipment.igelRanges\n    .map((r) => (r.maxKg === null\n      ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })\n      : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');\n  const tubeReference = !tube\n    ? paras('tubeNoAge')\n    : tube.adult\n      ? paras('tubeAdult')\n      : `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`;\n";
 const OLD_TUBE_FORMULAE = {"showUpToAge": 14, "underOneSizeMinMm": 3, "underOneSizeMaxMm": 4, "underOneLengthTimesSize": 3, "sizeAgeDivisor": 4, "sizeAddMm": 3.5, "lengthAgeDivisor": 2, "lengthAddCm": 12, "displayDecimals": 1};
+/* A15: LMA size from the EAS 7.2 band tables; the iGel list (Intersurgical) removed (code before and after). */
+const OLD_LMA_CODE = "/* Cuffed ETT size and length at lips from the EAS 7.2 band tables (change A18). The band comes from the saved\n   weight, rounded up; with no valid weight, from the saved age (weight from age, A16). A saved weight wins.\n   Returns { size, length } for a child band, { adult: true } for a weight over adultAboveKg or an age above the\n   age rows (14 years or more), or null when neither weight nor age gives a band. */\nexport function tubeReference(weight, age) {\n  const kg = validWeight(weight) ? weightNumber(weight) : estimate(age);\n  if (kg === null) return adultAge(age) !== null || Number(age) > RULES.numbers.ageEstimate.adultUpToAge ? { adult: true } : null;\n  const band = childBand(kg);\n  if (!band) return { adult: true };\n  const [first, second] = band.ettSizesMm;\n  const sizes = second === undefined ? first : wording('tubeSizeOr', { first, second });\n  return { size: wording('tubeSizeBand', { sizes }), length: wording('tubeLengthBand', { cm: band.ettLengthCm }) };\n}\n\n";
+const NEW_LMA_CODE = "/* Cuffed ETT size and length at lips from the EAS 7.2 band tables (change A18). The band comes from the saved\n   weight, rounded up; with no valid weight, from the saved age (weight from age, A16). A saved weight wins.\n   Returns { size, length, lma } for a child band (lma: the band's LMA size and cuff volume, change A15),\n   { adult: true } for a weight over adultAboveKg or an age above the age rows (14 years or more), or null when\n   neither weight nor age gives a band. */\nexport function tubeReference(weight, age) {\n  const kg = validWeight(weight) ? weightNumber(weight) : estimate(age);\n  if (kg === null) return adultAge(age) !== null || Number(age) > RULES.numbers.ageEstimate.adultUpToAge ? { adult: true } : null;\n  const band = childBand(kg);\n  if (!band) return { adult: true };\n  const [first, second] = band.ettSizesMm;\n  const sizes = second === undefined ? first : wording('tubeSizeOr', { first, second });\n  return {\n    size: wording('tubeSizeBand', { sizes }),\n    length: wording('tubeLengthBand', { cm: band.ettLengthCm }),\n    lma: wording('lmaBand', { size: band.lmaSize, cuffMl: band.lmaCuffMl }),\n  };\n}\n\n";
+const OLD_LMA_SHEET = "  const tube = R.tubeReference(st.s.weight, st.s.age); // rule: engine tubeReference (A18: band table, weight first)\n  const igelRanges = R.RULES.equipment.igelRanges\n    .map((r) => (r.maxKg === null\n      ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })\n      : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');\n  const tubeReference = !tube\n    ? paras('tubeNoAge')\n    : tube.adult\n      ? paras('tubeAdult')\n      : `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`;\n";
+const NEW_LMA_SHEET = "  const tube = R.tubeReference(st.s.weight, st.s.age); // rule: engine tubeReference (A18: band table, weight first)\n  const tubeReference = !tube\n    ? paras('tubeNoAge')\n    : tube.adult\n      ? paras('tubeAdult')\n      : `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p><p>${tube.lma}</p>`;\n";
+const OLD_IGEL_LINES = "    `<h3>${T('referenceSheets.igelHeading')}</h3><p>${T('referenceSheets.igelRangesLine', { ranges: igelRanges })}</p>` +\n    `<a href=\"${R.RULES.sources.guidelines.paediatric.pdf}\" target=\"_blank\">${T('references.guidelineLink', { code: R.RULES.sources.guidelines.paediatric.code })}</a><p class=\"caption\">${R.guideText('igelSourceCaption')}</p>`,";
+const NEW_IGEL_LINES = "    `<a href=\"${R.RULES.sources.guidelines.paediatric.pdf}\" target=\"_blank\">${T('references.guidelineLink', { code: R.RULES.sources.guidelines.paediatric.code })}</a>`,";
+const OLD_IGEL_RANGES = [{"size": "1", "minKg": 2, "maxKg": 5}, {"size": "1.5", "minKg": 5, "maxKg": 12}, {"size": "2", "minKg": 10, "maxKg": 25}, {"size": "2.5", "minKg": 25, "maxKg": 35}, {"size": "3", "minKg": 30, "maxKg": 60}, {"size": "4", "minKg": 50, "maxKg": 90}, {"size": "5", "minKg": 90, "maxKg": null}];
 /* A12: the EAS 9.3 dose summary tables (cpg-rsi.pdf page 2), one row per column. */
 const column = (columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg) => ({ columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg });
 const RSI_TABLES = {
@@ -113,6 +121,23 @@ export const APPROVED_CHANGES = [
   { row: 'A18', path: ['notes', 'numbers.tubes'], before: "Paediatric tube formulae (shown on the Guidance tab from age in years, up to showUpToAge). Under 1 year: a fixed size range, length = size x underOneLengthTimesSize. Otherwise: size = age / sizeAgeDivisor + sizeAddMm; length = age / lengthAgeDivisor + lengthAddCm.", after: REMOVED, follows: "numbers.rsi.blocker" },
   { row: 'A18', path: ['notes', 'wording.tubeSizeBand'], before: REMOVED, after: "Tube sheet results (change A18): sizes and length come from the band row (numbers.childBands, ettSizesMm and ettLengthCm); two sizes are joined by tubeSizeOr", follows: 'wording.tubeSizeUnderOne' },
   { row: 'A18', path: ['notes', 'wording.tubeSizeUnderOne'], before: "Tube sheet results; gaps come from numbers.tubes", after: REMOVED, follows: "wording.rsiNotRecorded" },
+  // A15 (approved 14 Nov 2026, decision 8): LMA size and cuff volume from the EAS 7.2 band tables; the iGel list
+  // (Intersurgical product information, not an EAS guideline), its source and its caption are deleted.
+  ...[[1, 4], [2, 10], [2, 10], [3, 20], [3, 20]].map(([size, cuffMl], band) => [
+    // the cuff first, then the size before it: both follow the band's length at lips, which is unique per band
+    { row: 'A15', path: `numbers.childBands.${band}.lmaCuffMl`, before: REMOVED, after: cuffMl, follows: 'ettLengthCm' },
+    { row: 'A15', path: `numbers.childBands.${band}.lmaSize`, before: REMOVED, after: size, follows: 'ettLengthCm' },
+  ]).flat(),
+  { row: 'A15', path: 'wording.lmaBand', before: REMOVED, after: 'LMA size {size} · cuff {cuffMl} mL', follows: 'tubeLengthBand' },
+  { row: 'A15', path: 'wording.igelSourceCaption', before: "iGel colours/ranges: {igel}.", after: REMOVED, follows: 'tubeLengthBand' },
+  { row: 'A15', path: 'wording.referenceSheets.igelRangesLine', before: "{ranges}.", after: REMOVED, follows: 'igelRangeAndAbove' },
+  { row: 'A15', path: 'wording.referenceSheets.igelRangeAndAbove', before: "{size}: {min}+ kg", after: REMOVED, follows: 'igelRange' },
+  { row: 'A15', path: 'wording.referenceSheets.igelRange', before: "{size}: {min}–{max} kg", after: REMOVED, follows: 'igelHeading' },
+  { row: 'A15', path: 'wording.referenceSheets.igelHeading', before: "iGel weight ranges", after: REMOVED, follows: 'ageEstimateHeading' },
+  { row: 'A15', path: 'equipment.igelRanges', before: OLD_IGEL_RANGES, after: REMOVED, follows: 'colours' },
+  { row: 'A15', path: 'sources.igel', before: "Intersurgical product information", after: REMOVED, follows: 'reversibleCauses' },
+  { row: 'A15', path: ['notes', 'numbers.childBands'], before: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026). ettSizesMm and ettLengthCm = the cuffed ETT size(s) and length at lips from the EAS 7.2 band table (change A18, owner-approved 14 Nov 2026), shown in the Tube sizes pop-up.", after: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026). ettSizesMm and ettLengthCm = the cuffed ETT size(s) and length at lips from the EAS 7.2 band table (change A18, owner-approved 14 Nov 2026), shown in the Tube sizes pop-up. lmaSize and lmaCuffMl = the LMA size and cuff inflation volume from the EAS 7.2 band table (change A15, owner-approved 14 Nov 2026), shown in the Tube sizes pop-up." },
+  { row: 'A15', path: ['notes', 'equipment.igelRanges'], before: "iGel weight ranges in kg (Intersurgical product information); maxKg null = and above.", after: REMOVED, follows: 'equipment.colours' },
 ];
 
 /* The exact code edits of approved rows: file, code before, code after (each "after" must occur once). */
@@ -129,6 +154,10 @@ export const CODE_CHANGES = [
   { row: 'A18', file: 'src/engine/core.js', before: OLD_TUBE_SECTION, after: NEW_TUBE_SECTION },
   { row: 'A18', file: 'src/app/views.js', before: OLD_TUBE_SHEET_TOP, after: NEW_TUBE_SHEET_TOP },
   { row: 'A18', file: 'src/app/views.js', before: OLD_TUBE_SHEET, after: NEW_TUBE_SHEET },
+  { row: 'A15', file: 'src/engine/core.js', before: OLD_LMA_CODE, after: NEW_LMA_CODE },
+  { row: 'A15', file: 'src/engine/core.js', before: "    reversibleCauses: RULES.sources.reversibleCauses,\n    igel: RULES.sources.igel,\n", after: "    reversibleCauses: RULES.sources.reversibleCauses,\n" },
+  { row: 'A15', file: 'src/app/views.js', before: OLD_LMA_SHEET, after: NEW_LMA_SHEET },
+  { row: 'A15', file: 'src/app/views.js', before: OLD_IGEL_LINES, after: NEW_IGEL_LINES },
 ];
 
 /* Put a value back into a group directly after the name it followed (keeps the order of names). */
@@ -245,10 +274,11 @@ export function withApprovedChangesInJsonText(text) {
     }
     const find = `"${key}": ${JSON.stringify(change.before)}`;
     if (change.after === REMOVED) {
-      // delete the whole line (with its comma); the value is never the last in its group here
-      const line = new RegExp(`\\n[ ]*${escape(find)},(?=\\n)`, 'g');
-      assert.equal((result.match(line) || []).length, 1, `${change.row} ${shown(change.path)}: the line "${find}," must appear exactly once`);
-      result = result.replace(line, '');
+      // delete the whole line with its comma; for the last value in its group (A15) the comma before it goes instead
+      const line = new RegExp(`\\n[ ]*${escape(find)},(?=\\n)`, 'g'), lastLine = new RegExp(`,\\n[ ]*${escape(find)}(?=\\n)`, 'g');
+      const found = (result.match(line) || []).length, foundLast = found ? 0 : (result.match(lastLine) || []).length;
+      assert.equal(found + foundLast, 1, `${change.row} ${shown(change.path)}: the line "${find}" must appear exactly once`);
+      result = result.replace(found ? line : lastLine, '');
       continue;
     }
     assert.equal(result.split(find).length - 1, 1, `${change.row} ${shown(change.path)}: "${find}" must appear exactly once`);

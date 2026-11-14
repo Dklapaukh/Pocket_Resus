@@ -206,7 +206,6 @@ export function wordingGaps() {
     // part 5
     exportDate: RULES.sources.exportDate,
     reversibleCauses: RULES.sources.reversibleCauses,
-    igel: RULES.sources.igel,
   };
 }
 
@@ -237,8 +236,9 @@ export function rsiDoses(weightKg) {
 
 /* Cuffed ETT size and length at lips from the EAS 7.2 band tables (change A18). The band comes from the saved
    weight, rounded up; with no valid weight, from the saved age (weight from age, A16). A saved weight wins.
-   Returns { size, length } for a child band, { adult: true } for a weight over adultAboveKg or an age above the
-   age rows (14 years or more), or null when neither weight nor age gives a band. */
+   Returns { size, length, lma } for a child band (lma: the band's LMA size and cuff volume, change A15),
+   { adult: true } for a weight over adultAboveKg or an age above the age rows (14 years or more), or null when
+   neither weight nor age gives a band. */
 export function tubeReference(weight, age) {
   const kg = validWeight(weight) ? weightNumber(weight) : estimate(age);
   if (kg === null) return adultAge(age) !== null || Number(age) > RULES.numbers.ageEstimate.adultUpToAge ? { adult: true } : null;
@@ -246,7 +246,11 @@ export function tubeReference(weight, age) {
   if (!band) return { adult: true };
   const [first, second] = band.ettSizesMm;
   const sizes = second === undefined ? first : wording('tubeSizeOr', { first, second });
-  return { size: wording('tubeSizeBand', { sizes }), length: wording('tubeLengthBand', { cm: band.ettLengthCm }) };
+  return {
+    size: wording('tubeSizeBand', { sizes }),
+    length: wording('tubeLengthBand', { cm: band.ettLengthCm }),
+    lma: wording('lmaBand', { size: band.lmaSize, cuffMl: band.lmaCuffMl }),
+  };
 }
 
 /* ---------- Shock energy ---------- */

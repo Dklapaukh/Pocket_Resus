@@ -33,7 +33,7 @@ const ENGINE_GAPS = [
   'magOverMinMinutes', 'magOverMaxMinutes', 'magChildMmolPerMl', 'magAmpouleMmol', 'magAmpouleMl', 'magChildDiluteToMl',
   'adultFluidsMinL', 'adultFluidsMaxL', 'childFluidsMinPerKg', 'childFluidsMaxPerKg', 'fentanylMcgPerKg', 'fentanylMaxMcg',
   'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg',
-  'exportDate', 'reversibleCauses', 'igel', 'warningSeconds',
+  'exportDate', 'reversibleCauses', 'warningSeconds',
 ];
 
 
@@ -65,8 +65,8 @@ const WORDING = {
   guidanceRsiTitle: ['text'],
   guidanceRsi: ['list', 'fentanylMcgPerKg', 'fentanylMaxMcg', 'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg'],
   guidanceCaption: ['text', 'exportDate', 'reversibleCauses'], rsiNotRecorded: ['text'], rsiConditions: ['text'], rsiNoDose: ['text'], tubeNoAge: ['text'],
-  tubeCaution: ['text'], igelSourceCaption: ['text', 'igel'], tubeAdult: ['text', 'adultAboveKg', 'adultAges'],
-  tubeSizeBand: ['text', 'sizes'], tubeSizeOr: ['text', 'first', 'second'], tubeLengthBand: ['text', 'cm'],
+  tubeCaution: ['text'], tubeAdult: ['text', 'adultAboveKg', 'adultAges'],
+  tubeSizeBand: ['text', 'sizes'], tubeSizeOr: ['text', 'first', 'second'], tubeLengthBand: ['text', 'cm'], lmaBand: ['text', 'size', 'cuffMl'],
   weightSheetAgeEstimate: ['text', 'underOneYearKg', 'ageBandList', 'adultAges'],
   tubeSheetAgeEstimate: ['text', 'underOneYearKg', 'ageBandList', 'adultAges'],
   ageBandWeight: ['text', 'ages', 'kg'], ageOneYear: ['text', 'age'], ageManyYears: ['text', 'age'], ageYearRange: ['text', 'from', 'to'],
@@ -136,8 +136,7 @@ const WORDING = {
   referenceSheets: {
     rsiTitle: ['text'], fentanylName: ['text'], ketamineUsualName: ['text'], ketamineReducedName: ['text'], blockerName: ['text'],
     doseMcgIv: ['text', 'dose'], enterWeightButton: ['text'], tubesTitle: ['text'], ageLabel: ['text'], useAgeButton: ['text'], cuffedEtt: ['text'],
-    lengthAtLips: ['text'], ageEstimateHeading: ['text'], igelHeading: ['text'], igelRange: ['text', 'size', 'min', 'max'],
-    igelRangeAndAbove: ['text', 'size', 'min'], igelRangesLine: ['text', 'ranges'],
+    lengthAtLips: ['text'], ageEstimateHeading: ['text'],
   },
   popups: { closeAria: ['text'] },
   forms: {
@@ -259,6 +258,8 @@ const NUMBER_LIMITS = [
   { path: 'numbers.childBands.*.shockJ', type: 'number', unit: 'J', above: 0, max: 2000 }, // a child shock energy (5000 J is impossible)
   { path: 'numbers.childBands.*.ettSizesMm.*', type: 'number', unit: 'mm', above: 0, max: 30 }, // a cuffed ETT size for the band (A18)
   { path: 'numbers.childBands.*.ettLengthCm', type: 'number', unit: 'cm', above: 0, max: 100 }, // ETT length at lips for the band (A18)
+  { path: 'numbers.childBands.*.lmaSize', type: 'number', unit: 'LMA size', above: 0, max: 10 }, // LMA size for the band (A15)
+  { path: 'numbers.childBands.*.lmaCuffMl', type: 'number', unit: 'mL', above: 0, max: 100 }, // LMA cuff inflation volume for the band (A15)
   { path: 'numbers.childBands.*.fluidsTableMl', type: 'number', unit: 'mL', above: 0, max: 5000 }, // the band's 20 mL/kg fluid volume from the EAS 7.2 table (A11)
   // ---- doses and energies, adults ----
   { path: 'numbers.adult.adrenalineMg', type: 'number', unit: 'mg', above: 0, max: 100 }, // adult adrenaline dose
@@ -307,8 +308,6 @@ const NUMBER_LIMITS = [
   { path: 'equipment.maxTubeSizeMm', type: 'number', unit: 'mm', above: 0, max: 30 }, // largest tube size that can be recorded
   { path: 'equipment.forms.intubation.lipsMinCm', type: 'number', unit: 'cm', above: 0, max: 100 }, // shortest length at lips that can be recorded
   { path: 'equipment.forms.intubation.lipsMaxCm', type: 'number', unit: 'cm', above: 0, max: 100 }, // longest length at lips that can be recorded
-  { path: 'equipment.igelRanges.*.minKg', type: 'number', unit: 'kg', atLeast: 0, max: 1000 }, // lightest patient for this iGel size
-  { path: 'equipment.igelRanges.*.maxKg', type: 'number', unit: 'kg', above: 0, max: 1000, orEmpty: true }, // heaviest patient for this iGel size (empty = "and above", last row only)
   // ---- sources ----
   { path: 'sources.guidelines.cardiacArrest.offlinePage', type: 'whole', unit: 'page number', above: 0, max: 10000 }, // page of the packaged cardiac arrest guideline
 ];
@@ -329,7 +328,6 @@ export const RELATIONSHIP_RULES = [
   { id: 'ampouleFitsDilutedVolume', onByDefault: true, plain: 'The magnesium ampoule volume is not above the volume the child dose is diluted to.' },
   { id: 'bandDosesRiseWithWeight', onByDefault: false, plain: 'Within the child bands, adrenaline, amiodarone, magnesium and shock energy never fall as the weight band rises.' },
   { id: 'secondAmiodaroneNotAboveFirst', onByDefault: false, plain: 'The second amiodarone dose is not above the first, for adults and for every child band.' },
-  { id: 'igelRangesLeaveNoGap', onByDefault: false, plain: 'The iGel weight ranges leave no weight uncovered between the lightest and the heaviest size.' },
 ];
 const RELATIONSHIPS_ON_BY_DEFAULT = RELATIONSHIP_RULES.filter((rule) => rule.onByDefault).map((rule) => rule.id);
 
@@ -531,7 +529,7 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
       let previous, previousRow;
       N.childBands.forEach((row, i) => {
         const where = `numbers.childBands.${i}`;
-        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'magnesiumMmol', 'shockJ', 'fluidsTableMl', 'ettSizesMm', 'ettLengthCm']);
+        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'magnesiumMmol', 'shockJ', 'fluidsTableMl', 'ettSizesMm', 'ettLengthCm', 'lmaSize', 'lmaCuffMl']);
         if (!r) return;
         const maxKg = number(`${where}.maxKg`, r.maxKg);
         if (maxKg !== undefined && previous !== undefined && maxKg <= previous) say(`${where}.maxKg`, `bands must go in rising order, one row per band (${maxKg} follows ${previous})`);
@@ -549,6 +547,8 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
           if (sizes.length === 2 && sizes.every((v) => v !== undefined) && sizes[1] <= sizes[0]) say(`${where}.ettSizesMm.1`, `the second size must be larger than the first (${sizes[0]})`);
         }
         number(`${where}.ettLengthCm`, r.ettLengthCm);
+        number(`${where}.lmaSize`, r.lmaSize); // A15
+        number(`${where}.lmaCuffMl`, r.lmaCuffMl);
         previousRow = { ...previousRow, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)) };
         if (on('bandEnergyIsWeightTimesJoulesPerKg') && maxKg !== undefined && joulesPerKg !== undefined && typeof r.shockJ === 'number' && r.shockJ !== maxKg * joulesPerKg)
           say(`${where}.shockJ`, `must be the band weight (${maxKg}) times the joules per kg (${joulesPerKg}) = ${maxKg * joulesPerKg} (found ${r.shockJ})`);
@@ -763,7 +763,7 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
   /* ---------- Part 4: equipment ---------- */
   const E = file.equipment;
   if (isObject(E)) {
-    group('equipment', E, [], ['devices', 'blades', 'maxTubeSizeMm', 'sites', 'colours', 'igelRanges', 'accessDevices', 'forms']);
+    group('equipment', E, [], ['devices', 'blades', 'maxTubeSizeMm', 'sites', 'colours', 'accessDevices', 'forms']);
     const sizes = {};
     const dv = group('equipment.devices', E.devices, DEVICE_TYPES_USED_BY_APP);
     if (dv) for (const type of DEVICE_TYPES_USED_BY_APP) {
@@ -827,40 +827,13 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
         if (sizes[type] && !sizes[type].includes(size)) say(`equipment.colours.${type}.${size}`, `"${size}" is not one of the ${type} sizes`);
       }
     }
-    if (!Array.isArray(E.igelRanges) || E.igelRanges.length === 0) say('equipment.igelRanges', 'must be a list with one row for each iGel size');
-    else {
-      let prevMin, prevMax;
-      const seen = [];
-      E.igelRanges.forEach((row, i) => {
-        const where = `equipment.igelRanges.${i}`;
-        const r = group(where, row, ['size', 'minKg', 'maxKg']);
-        if (!r) return;
-        if (plainText(`${where}.size`, r.size)) {
-          if (seen.includes(r.size)) say(`${where}.size`, `"${r.size}" has more than one row`);
-          seen.push(r.size);
-          if (sizes.igel && !sizes.igel.includes(r.size)) say(`${where}.size`, `"${r.size}" is not an iGel size in equipment.devices.igel.sizes`);
-        }
-        const min = number(`${where}.minKg`, r.minKg);
-        if (min !== undefined && prevMin !== undefined && min <= prevMin) say(`${where}.minKg`, `ranges must go in rising order (${min} follows ${prevMin})`);
-        if (on('igelRangesLeaveNoGap') && min !== undefined && prevMax !== undefined && min > prevMax) say(`${where}.minKg`, `leaves weights from ${prevMax} to ${min} kg with no iGel size`);
-        if (min !== undefined) prevMin = min;
-        if (r.maxKg === null) { numbersChecked.add(`${where}.maxKg`); if (i !== E.igelRanges.length - 1) say(`${where}.maxKg`, '"and above" (empty) is allowed on the last row only'); }
-        else {
-          const max = number(`${where}.maxKg`, r.maxKg);
-          if (max !== undefined && min !== undefined && max <= min) say(`${where}.maxKg`, `must be above the lowest weight (${min})`);
-          if (max !== undefined && prevMax !== undefined && max <= prevMax) say(`${where}.maxKg`, `ranges must go in rising order (${max} follows ${prevMax})`);
-          if (max !== undefined) prevMax = max;
-        }
-      });
-      for (const size of sizes.igel || []) if (!seen.includes(size)) say('equipment.igelRanges', `has no row for iGel size "${size}"`);
-    }
   }
 
   /* ---------- Part 5: sources ---------- */
   const S = file.sources;
   if (isObject(S)) {
-    group('sources', S, [], ['name', 'summary', 'exportDate', 'reversibleCauses', 'igel', 'guidelines', 'guidanceLinks']);
-    for (const k of ['name', 'summary', 'exportDate', 'reversibleCauses', 'igel']) plainText(`sources.${k}`, S[k]);
+    group('sources', S, [], ['name', 'summary', 'exportDate', 'reversibleCauses', 'guidelines', 'guidanceLinks']);
+    for (const k of ['name', 'summary', 'exportDate', 'reversibleCauses']) plainText(`sources.${k}`, S[k]);
     const gl = group('sources.guidelines', S.guidelines, Object.keys(GUIDELINES_USED_BY_APP));
     if (gl) for (const [id, keys] of Object.entries(GUIDELINES_USED_BY_APP)) {
       const g = group(`sources.guidelines.${id}`, gl[id], keys);

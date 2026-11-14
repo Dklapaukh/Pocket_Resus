@@ -544,22 +544,17 @@ export function referenceSheet(type) {
     return;
   }
   const tube = R.tubeReference(st.s.weight, st.s.age); // rule: engine tubeReference (A18: band table, weight first)
-  const igelRanges = R.RULES.equipment.igelRanges
-    .map((r) => (r.maxKg === null
-      ? T('referenceSheets.igelRangeAndAbove', { size: r.size, min: r.minKg })
-      : T('referenceSheets.igelRange', { size: r.size, min: r.minKg, max: r.maxKg }))).join(' · ');
   const tubeReference = !tube
     ? paras('tubeNoAge')
     : tube.adult
       ? paras('tubeAdult')
-      : `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p>`;
+      : `<p><b>${T('referenceSheets.cuffedEtt')}</b> ${tube.size}</p><p><b>${T('referenceSheets.lengthAtLips')}</b> ${tube.length}</p><p>${tube.lma}</p>`;
   sheet(
     T('referenceSheets.tubesTitle'),
     `<label>${T('referenceSheets.ageLabel')}<input id="referenceAge" type="number" min="0" max="120" step="any" value="${esc(st.s.age)}"></label>` +
     `<button data-save-age>${T('referenceSheets.useAgeButton')}</button>${tubeReference}` +
     `<p class="caption">${R.guideText('tubeCaution')}</p>` +
     `<h3>${T('referenceSheets.ageEstimateHeading')}</h3><p>${R.wording('tubeSheetAgeEstimate', R.ageEstimateGaps())}</p>` +
-    `<h3>${T('referenceSheets.igelHeading')}</h3><p>${T('referenceSheets.igelRangesLine', { ranges: igelRanges })}</p>` +
-    `<a href="${R.RULES.sources.guidelines.paediatric.pdf}" target="_blank">${T('references.guidelineLink', { code: R.RULES.sources.guidelines.paediatric.code })}</a><p class="caption">${R.guideText('igelSourceCaption')}</p>`,
+    `<a href="${R.RULES.sources.guidelines.paediatric.pdf}" target="_blank">${T('references.guidelineLink', { code: R.RULES.sources.guidelines.paediatric.code })}</a>`,
   );
 }

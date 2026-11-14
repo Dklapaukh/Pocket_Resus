@@ -80,7 +80,7 @@ test('reference wording is plain text, and every {gap} is one the app fills', ()
     fluidsExtract: ['adultFluidsMinL', 'adultFluidsMaxL', 'childFluidsMinPerKg', 'childFluidsMaxPerKg'],
     magnesiumHow: ['adultMagnesiumMmol', 'fluid', 'magAdultDiluteToMl', 'magOverMinMinutes', 'magOverMaxMinutes', 'magChildMmolPerMl', 'magAmpouleMl', 'magAmpouleMmol', 'magAmpouleMl', 'magChildDiluteToMl'],
     guidanceIntro: ['cprCycleMinWord', 'adrenalineEveryMin', 'amiodaroneFirstShocks', 'amiodaroneSecondShocks', 'bandList', 'joulesPerKg', 'adultShockJ'],
-    guidanceCaption: ['exportDate', 'reversibleCauses'], igelSourceCaption: ['igel'],
+    guidanceCaption: ['exportDate', 'reversibleCauses'], lmaBand: ['size', 'cuffMl'], // A15: igelSourceCaption deleted
     guidanceRsi: ['fentanylMcgPerKg', 'fentanylMaxMcg', 'ketamineMgPerKg', 'ketamineMaxMg', 'reducedKetamineMgPerKg', 'blockerMgPerKg', 'blockerMaxMg', 'blockerRoundMg'] };
   // Stage 2: screen text, labels and messages are in groups (one level, or two). Their gaps are filled by the app
   // (listed here) or by the engine from part 1 / part 5; the checker (src/rules/check.js) lists each entry's own gaps.

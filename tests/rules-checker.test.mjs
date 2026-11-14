@@ -81,9 +81,10 @@ const BROKEN = [
   ['an intubation size the app would refuse', (c) => { c.equipment.devices.intubation.sizes.push('15'); }, 'equipment.devices.intubation.sizes.7: "15" must be a number above 0 and no more than equipment.maxTubeSizeMm'],
   ['a colour for a size that does not exist', (c) => { c.equipment.colours.iv['26'] = '#ffffff'; }, 'equipment.colours.iv.26: "26" is not one of the iv sizes'],
   ['a colour that is not a colour', (c) => { c.equipment.colours.io.Large = 'yellow'; }, 'equipment.colours.io.Large: must be a colour'],
-  ['iGel ranges out of order', (c) => { c.equipment.igelRanges[3].minKg = 1; }, 'equipment.igelRanges.3.minKg: ranges must go in rising order'],
-  ['an iGel size with no row', (c) => { c.equipment.igelRanges.splice(2, 1); }, 'equipment.igelRanges: has no row for iGel size "2"'],
-  ['an "and above" range that is not last', (c) => { c.equipment.igelRanges[0].maxKg = null; }, 'equipment.igelRanges.0.maxKg: "and above"'],
+  // A15 (14 Nov 2026): the iGel weight list was deleted; LMA per band instead
+  ['an LMA size that is not a number', (c) => { c.numbers.childBands[1].lmaSize = 'two'; }, 'numbers.childBands.1.lmaSize: must be a number'],
+  ['a band row with no LMA cuff volume', (c) => { delete c.numbers.childBands[3].lmaCuffMl; }, 'numbers.childBands.3.lmaCuffMl: is missing'],
+  ['an iGel weight list put back', (c) => { c.equipment.igelRanges = [{ size: '1', minKg: 2, maxKg: 5 }]; }, 'equipment.igelRanges: is not a setting the app knows'],
   ['a guideline link with no PDF name', (c) => { c.sources.guidelines.rsi.pdf = 'rsi'; }, 'sources.guidelines.rsi.pdf: must be a PDF file name'],
   ['a web link that is not https', (c) => { c.sources.guidelines.magnesium.web = 'cpg.stjohn.org.nz/x'; }, 'sources.guidelines.magnesium.web: must be a secure web address'],
   ['a listed link to a guideline that does not exist', (c) => { c.sources.guidanceLinks.push('nonsense'); }, 'sources.guidanceLinks.4: "nonsense" is not a guideline'],

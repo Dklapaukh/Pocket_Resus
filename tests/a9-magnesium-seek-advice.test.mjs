@@ -75,5 +75,5 @@ test('approved changes list: each "after" is in the rules file and each "before"
     assert.ok(isDeepStrictEqual(inBaseline, value(c.before)) || (inBaseline === undefined && additions[c.path] === c.before), // deep: A16 swaps a whole group
       `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
   }
-  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11', 'A12', 'A16', 'A18'], 'only approved rows (doc 07): add a row here only after the owner approves it');
+  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11', 'A12', 'A16', 'A18', 'A15'], 'only approved rows (doc 07): add a row here only after the owner approves it');
 });

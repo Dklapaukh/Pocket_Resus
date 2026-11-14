@@ -75,7 +75,8 @@ const PLANTED = [
   { kind: 'tube size', change: 'length at lips for the 10 kg band 12 cm becomes 13 cm', file: RULES, find: '      ettLengthCm: 12\n', replace: '      ettLengthCm: 13\n', hint: 0 },
   { kind: 'tube size', change: 'the saved age wins over the saved weight', file: CORE, find: 'const kg = validWeight(weight) ? weightNumber(weight) : estimate(age);', replace: 'const kg = estimate(age) ?? (validWeight(weight) ? weightNumber(weight) : null);', hint: 0 },
   { kind: 'table row', change: '30 kg band magnesium 6 mmol becomes 7 mmol', file: RULES, find: 'magnesiumMmol: 6\n', replace: 'magnesiumMmol: 7\n', hint: 3 },
-  { kind: 'table row', change: 'iGel size 2.5 range 25–35 kg becomes 25–36 kg', file: RULES, find: 'minKg: 25\n      maxKg: 35\n', replace: 'minKg: 25\n      maxKg: 36\n', hint: 0 },
+  // re-pointed for A15 (14 Nov 2026: the iGel list was deleted; the LMA per band took its place in the Tube sizes pop-up)
+  { kind: 'table row', change: '30 kg band LMA cuff 20 mL becomes 25 mL', file: RULES, find: '      ettLengthCm: 17\n      lmaSize: 3\n      lmaCuffMl: 20\n', replace: '      ettLengthCm: 17\n      lmaSize: 3\n      lmaCuffMl: 25\n', hint: 89 },
   { kind: 'clock display', change: 'times just after midnight shown as 24:05 instead of 00:05', file: FORMAT, find: '    hour12: false,', replace: "    hourCycle: 'h24',", hint: 6 },
   { kind: 'double-tap lock', change: 'fluids 5 s double-tap lock becomes 4 s', file: RULES, find: 'fluids: 5000\n', replace: 'fluids: 4000\n', hint: 7 },
   { kind: 'timer threshold', change: 'overdue "+" time shown from exactly 1 s late instead of after 1 s', file: RULES, find: 'overdueShownAfterMs: 1000\n', replace: 'overdueShownAfterMs: 999\n', hint: 7 },

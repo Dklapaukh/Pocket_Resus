@@ -34,6 +34,8 @@ numbers:
       ettSizesMm:
         - 3
       ettLengthCm: 9
+      lmaSize: 1
+      lmaCuffMl: 4
     - maxKg: 10
       adrenalineMg: 0.1
       amiodaroneFirstMg: 50
@@ -44,6 +46,8 @@ numbers:
         - 3
         - 4
       ettLengthCm: 12
+      lmaSize: 2
+      lmaCuffMl: 10
     - maxKg: 20
       adrenalineMg: 0.2
       amiodaroneFirstMg: 100
@@ -54,6 +58,8 @@ numbers:
         - 4
         - 5
       ettLengthCm: 15
+      lmaSize: 2
+      lmaCuffMl: 10
     - maxKg: 30
       adrenalineMg: 0.3
       amiodaroneFirstMg: 150
@@ -64,6 +70,8 @@ numbers:
         - 5
         - 6
       ettLengthCm: 17
+      lmaSize: 3
+      lmaCuffMl: 20
     - maxKg: 40
       adrenalineMg: 0.4
       amiodaroneFirstMg: 200
@@ -74,6 +82,8 @@ numbers:
         - 6
         - 7
       ettLengthCm: 19
+      lmaSize: 3
+      lmaCuffMl: 20
   adult:
     adrenalineMg: 1
     amiodaroneFirstMg: 300
@@ -342,7 +352,7 @@ wording:
   tubeSizeBand: "{sizes} mm"
   tubeSizeOr: "{first} or {second}"
   tubeLengthBand: "{cm} cm"
-  igelSourceCaption: "iGel colours/ranges: {igel}."
+  lmaBand: LMA size {size} · cuff {cuffMl} mL
   weightSheetAgeEstimate: "Under 1 year: {underOneYearKg} kg. {ageBandList} {adultAges}: adult. Age rounded up to the next whole year. CPG 7.2; estimates may underestimate."
   tubeSheetAgeEstimate: "Under 1 year: {underOneYearKg} kg. {ageBandList} {adultAges}: adult. Age rounded up to the next whole year. CPG 7.2; estimates may underestimate."
   ageBandWeight: "{ages}: {kg} kg."
@@ -544,10 +554,6 @@ wording:
     cuffedEtt: "Cuffed ETT:"
     lengthAtLips: "Length at lips:"
     ageEstimateHeading: Age-based weight estimate
-    igelHeading: iGel weight ranges
-    igelRange: "{size}: {min}–{max} kg"
-    igelRangeAndAbove: "{size}: {min}+ kg"
-    igelRangesLine: "{ranges}."
   popups:
     closeAria: Close dialog
   forms:
@@ -976,28 +982,6 @@ equipment:
       "5": "#ee9b43"
       "1.5": "#88c9ee"
       "2.5": "#fff"
-  igelRanges:
-    - size: "1"
-      minKg: 2
-      maxKg: 5
-    - size: "1.5"
-      minKg: 5
-      maxKg: 12
-    - size: "2"
-      minKg: 10
-      maxKg: 25
-    - size: "2.5"
-      minKg: 25
-      maxKg: 35
-    - size: "3"
-      minKg: 30
-      maxKg: 60
-    - size: "4"
-      minKg: 50
-      maxKg: 90
-    - size: "5"
-      minKg: 90
-      maxKg: null
   accessDevices:
     - iv
     - io
@@ -1057,7 +1041,6 @@ sources:
   summary: EAS 3.14 (cardiac arrest), EAS 7.2 (paediatric tables), EAS 14.27 (magnesium)
   exportDate: "24 September 2026"
   reversibleCauses: ANZCOR 11.2
-  igel: Intersurgical product information
   guidelines:
     cardiacArrest:
       code: "3.14"
@@ -1103,7 +1086,7 @@ notes:
   numbers.ageEstimate.underOneYearKg: any age below 1 year
   numbers.ageEstimate.bands: "Rounded-up age up to maxAge (and above the previous row) gives weightKg, the band weight: 1 year 10 kg, 2-5 years 20 kg, 6-10 years 30 kg, 11-13 years 40 kg"
   numbers.ageEstimate.adultUpToAge: "a rounded-up age above the last band and up to this age is treated as adult (owner decision 8: age 14 = adult): no weight is filled and the weight must be entered"
-  numbers.childBands: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026). ettSizesMm and ettLengthCm = the cuffed ETT size(s) and length at lips from the EAS 7.2 band table (change A18, owner-approved 14 Nov 2026), shown in the Tube sizes pop-up."
+  numbers.childBands: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026). ettSizesMm and ettLengthCm = the cuffed ETT size(s) and length at lips from the EAS 7.2 band table (change A18, owner-approved 14 Nov 2026), shown in the Tube sizes pop-up. lmaSize and lmaCuffMl = the LMA size and cuff inflation volume from the EAS 7.2 band table (change A15, owner-approved 14 Nov 2026), shown in the Tube sizes pop-up."
   numbers.adult: Adult references (also used when no weight has been entered).
   numbers.child.fluidsMinMlPerKg: "20-40 mL/kg, EAS 3.14. A child uses the weight band (change A11): the lower volume is the band's fluidsTableMl, the upper is fluidsMaxMlPerKg x the band weight"
   numbers.shock.joulesPerKg: each child band's shockJ = maxKg x joulesPerKg (change A1; checked by test)
@@ -1144,7 +1127,6 @@ notes:
   equipment.maxTubeSizeMm: a recorded intubation tube size must be above 0 and no more than this
   equipment.sites: IV / IO access site choices.
   equipment.colours: Colours shown beside cannula, IO and iGel sizes.
-  equipment.igelRanges: iGel weight ranges in kg (Intersurgical product information); maxKg null = and above.
   sources: "===== PART 5: SOURCES ====="
   sources.exportDate: date of the packaged guideline PDFs
   sources.guidelines: "Guidelines the app links to: EAS code, label, PDF packaged with the app (offline) and web page."

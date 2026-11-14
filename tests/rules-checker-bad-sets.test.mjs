@@ -101,8 +101,9 @@ const BAD = [
   ['the same size twice', 'equipment', '"sizes": ["24", "22", "20", "18", "16"]', '"sizes": ["24", "22", "22", "18", "16"]', 'equipment.devices.iv.sizes', 'same item more than once'],
   ['the largest tube size is negative', 'equipment', '"maxTubeSizeMm": 12', '"maxTubeSizeMm": -12', 'equipment.maxTubeSizeMm', 'above 0'],
   ['length-at-lips limits the wrong way round', 'equipment', '"lipsMaxCm": 50', '"lipsMaxCm": 0.5', 'equipment.forms.intubation.lipsMinCm', 'smallest length'],
-  ['iGel ranges out of order', 'equipment', '"minKg": 25,', '"minKg": 4,', 'equipment.igelRanges.3.minKg', 'rising order'],
-  ['an iGel "and above" range that is not the last', 'equipment', '"minKg": 2,\n        "maxKg": 5\n', '"minKg": 2,\n        "maxKg": null\n', 'equipment.igelRanges.0.maxKg', '"and above"'],
+  // A15 (14 Nov 2026): the iGel weight list was deleted; the LMA per band took its place (same kinds of fault: impossible numbers)
+  ['an LMA size of zero', 'numbers', '"lmaSize": 1,', '"lmaSize": 0,', 'numbers.childBands.0.lmaSize', 'above 0'],
+  ['a negative LMA cuff volume', 'numbers', '"lmaCuffMl": 4\n', '"lmaCuffMl": -4\n', 'numbers.childBands.0.lmaCuffMl', 'above 0'],
   ['a laryngoscopy method with no blade list', 'equipment', '"methods": ["Video", "Direct"]', '"methods": ["Video", "Indirect"]', 'equipment.forms.laryngoscopy.methods', 'blade list'],
   // ---------- part 5: sources ----------
   ['a web link that is not secure', 'sources', '"web": "https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas"', '"web": "http://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas"', 'sources.guidelines.magnesium.web', 'secure web address'],
@@ -171,7 +172,7 @@ test('the bad rule sets do not change the reference they are made from', () => {
 /* ---------- Clinical relationship rules: named, described, and only on when switched on ---------- */
 
 test('every relationship rule has a name and a plain-English description, and the default list is the ones marked on', () => {
-  assert.ok(RELATIONSHIP_RULES.length >= 9);
+  assert.ok(RELATIONSHIP_RULES.length >= 8); // 9 until A15 (14 Nov 2026) deleted the iGel list and its rule
   for (const r of RELATIONSHIP_RULES) { assert.match(r.id, /^[a-z][A-Za-z]+$/); assert.ok(r.plain.length > 30 && r.plain.endsWith('.'), r.id); assert.equal(typeof r.onByDefault, 'boolean'); }
   assert.throws(() => checkRuleSet(reference, { relationshipRules: ['notARule'] }), /not the name of a relationship rule/);
 });
@@ -186,7 +187,7 @@ const RELATIONSHIPS = [
   ['ampouleFitsDilutedVolume', '"ampouleMl": 5,', '"ampouleMl": 50,', 'numbers.preparation.magnesium.ampouleMl'],
   ['bandDosesRiseWithWeight', '"amiodaroneFirstMg": 100,', '"amiodaroneFirstMg": 10,', 'numbers.childBands.2.amiodaroneFirstMg'],
   ['secondAmiodaroneNotAboveFirst', '"amiodaroneSecondMg": 150,', '"amiodaroneSecondMg": 450,', 'numbers.adult.amiodaroneSecondMg'],
-  ['igelRangesLeaveNoGap', '"minKg": 25,', '"minKg": 38,', 'equipment.igelRanges.3.minKg'],
+  // igelRangesLeaveNoGap was deleted with the iGel list (A15, 14 Nov 2026)
 ];
 
 for (const [rule, find, replace, place] of RELATIONSHIPS) {
@@ -209,7 +210,7 @@ test('with no relationship rules switched on, an editor can change a clinical nu
 });
 
 test('the rules marked off by default are exactly the ones written but not yet approved', () => {
-  assert.deepEqual(RELATIONSHIP_RULES.filter((r) => !r.onByDefault).map((r) => r.id), ['bandDosesRiseWithWeight', 'secondAmiodaroneNotAboveFirst', 'igelRangesLeaveNoGap']);
+  assert.deepEqual(RELATIONSHIP_RULES.filter((r) => !r.onByDefault).map((r) => r.id), ['bandDosesRiseWithWeight', 'secondAmiodaroneNotAboveFirst']);
 });
 
 /* ---------- Every number has a type, a unit and a range ---------- */

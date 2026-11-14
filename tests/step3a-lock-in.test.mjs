@@ -62,7 +62,7 @@ const APP_VALUES = {
   childFluidBasis: { band: 20, min: 400, maxPerKg: 40, max: 800 }, amiodaroneNotYetDue: { first: 3, second: 6 }, amiodaroneSecondNotYetDue: { second: 6 },
   invalidWeight: { maxKg: 500 }, estimatedWeightSource: { age: 7 }, amiodaroneReviewAt: { shocks: 3 }, maxDosesRecorded: { maxDoses: 2 },
   amiodaroneChildPopupDose: { first: 100 }, amiodaroneAdultPopupDose: { first: 300, second: 150 }, drugPopupFooter: { guideline: '14.3' },
-  tubeSizeBand: { sizes: '4 or 5' }, tubeSizeOr: { first: 4, second: 5 }, tubeLengthBand: { cm: 15 }, // A18: filled by the engine's tubeReference
+  tubeSizeBand: { sizes: '4 or 5' }, tubeSizeOr: { first: 4, second: 5 }, tubeLengthBand: { cm: 15 }, lmaBand: { size: 2, cuffMl: 10 }, // A18, A15: filled by the engine's tubeReference
   // A16: the adult-age message (app) and the age-row phrases (filled by the engine's ageEstimateGaps)
   estimateAgeAdult: { age: 14 }, ageBandWeight: { ages: '2–5 years', kg: 20 }, ageOneYear: { age: 1 }, ageManyYears: { age: 14 }, ageYearRange: { from: 2, to: 5 },
 };

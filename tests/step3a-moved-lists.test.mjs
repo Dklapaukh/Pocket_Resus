@@ -3,6 +3,7 @@
 // since commit 97db27d) before anything moved.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { withApprovedChanges } from './helpers/approved-changes.mjs';
 import { readFileSync } from 'node:fs';
 import { RULES } from '../src/rules/load.js';
 import { LISTS } from './helpers/engines.mjs';
@@ -42,7 +43,8 @@ test('part 4: blades, tube size limit and iGel ranges as v21 showed them', () =>
   });
   assert.equal(RULES.equipment.maxTubeSizeMm, 12);
   // v21 tube sheet text: "1: 2–5 kg · 1.5: 5–12 kg · 2: 10–25 kg · 2.5: 25–35 kg · 3: 30–60 kg · 4: 50–90 kg · 5: 90+ kg."
-  assert.deepEqual(RULES.equipment.igelRanges.map((r) => [r.size, r.minKg, r.maxKg]),
+  // A15 (owner-approved 14 Nov 2026) deleted the iGel list; the step 3a move is still proved against v21 with the approved changes undone
+  assert.deepEqual(withApprovedChanges(RULES, 'undo').equipment.igelRanges.map((r) => [r.size, r.minKg, r.maxKg]),
     [['1', 2, 5], ['1.5', 5, 12], ['2', 10, 25], ['2.5', 25, 35], ['3', 30, 60], ['4', 50, 90], ['5', 90, null]]);
 });
 
@@ -53,7 +55,7 @@ test('part 4 checks: valid colours, iGel sizes match the iGel device, ranges ord
       assert.ok(RULES.equipment.devices[type].sizes.includes(size), `${type} ${size} is a listed size`);
     }
   }
-  const r = RULES.equipment.igelRanges;
+  const r = withApprovedChanges(RULES, 'undo').equipment.igelRanges; // as before A15
   assert.deepEqual(r.map((x) => x.size), RULES.equipment.devices.igel.sizes);
   r.forEach((x, i) => {
     assert.ok(x.maxKg === null ? i === r.length - 1 : x.minKg < x.maxKg, x.size);
