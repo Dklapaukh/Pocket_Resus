@@ -13,7 +13,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { RULES } from '../src/rules/load.js';
-import { RULES as BASELINE } from './baseline/nz-eas-v22-a8.js';
+import { RULES as FROZEN_BASELINE } from './baseline/nz-eas-v22-a8.js';
+import { withApprovedChanges, withApprovedChangesFlat } from './helpers/approved-changes.mjs';
 import { baselineComments } from './helpers/rules-comments.mjs';
 import { readYamlStrict } from '../src/rules/parse.js';
 import { rulesFileText } from '../src/rules/write.js';
@@ -21,7 +22,9 @@ import { rulesFileText } from '../src/rules/write.js';
 const yamlText = readFileSync(new URL('../src/rules/nz-eas.yaml', import.meta.url), 'utf8');
 const file = readYamlStrict(yamlText); // the whole file, read the strict way
 const baselineSource = readFileSync(new URL('./baseline/nz-eas-v22-a8.js', import.meta.url), 'utf8');
-const ADDITIONS = JSON.parse(readFileSync(new URL('./baseline/stage2-additions.json', import.meta.url), 'utf8'));
+// Approved A-table changes (tests/helpers/approved-changes.mjs) are made in the frozen copies before comparing.
+const BASELINE = withApprovedChanges(FROZEN_BASELINE);
+const ADDITIONS = withApprovedChangesFlat(JSON.parse(readFileSync(new URL('./baseline/stage2-additions.json', import.meta.url), 'utf8')));
 const PARTS = ['numbers', 'wording', 'checklists', 'equipment', 'sources'];
 
 // Every single value (text, number, true / false, empty) with its dotted place, in file order.
@@ -110,7 +113,7 @@ test('the comparison itself can see a changed value, a changed type, a swapped o
 // the strict way, whole (about and notes too), at every depth: same values, same kinds (number, text,
 // true/false, empty), same order of names.
 const frozenJsonText = readFileSync(new URL('./baseline/nz-eas-before-yaml.json', import.meta.url), 'utf8');
-const frozenJson = JSON.parse(frozenJsonText);
+const frozenJson = withApprovedChanges(JSON.parse(frozenJsonText));
 
 // Every place in a value, in order, with the kind of value there and (for names) the order of names.
 function everyPlace(node, where = 'file', out = []) {

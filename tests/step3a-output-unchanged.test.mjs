@@ -5,11 +5,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { rmSync } from 'node:fs';
 import { runAll } from './helpers/step3a-scenarios.mjs';
 import { ROOT } from './helpers/engines.mjs';
+import { appWithApprovedChangesUndone } from './helpers/approved-changes.mjs';
 
 const golden = JSON.parse(readFileSync(new URL('./golden/step3a-v21-output.json', import.meta.url), 'utf8'));
-const run = runAll(ROOT);
+// The golden file holds only fingerprints of screens, so approved A-table changes cannot be swapped into it.
+// Instead the scenarios run on a copy of the app with those changes taken out of its rules file
+// (tests/helpers/approved-changes.mjs): that copy must still match v21 exactly, so nothing else changed.
+// Each approved change has its own test of the new screens (for example tests/a9-magnesium-seek-advice.test.mjs).
+const undoneDir = appWithApprovedChangesUndone(ROOT);
+const run = runAll(undoneDir);
+rmSync(undoneDir, { recursive: true, force: true });
 
 test('step 3a: every scenario runs to the end', () => assert.deepEqual(run.problems, []));
 

@@ -61,7 +61,8 @@ const RULES = {
   'magnesium repeat confirmed': (s) => s.label.includes('data-confirm-magnesium'),
   'magnesium maximum reached': (s) => s.screens.main.includes('2 doses · clinical review'),
   'magnesium tap within 5 s ignored': (s, p) => s.label.includes('data-support=magnesium') && p && ev(s).length === ev(p).length && !open(s) && !s.label.includes('greyed'),
-  '"Dose: clinical review" (5/10 kg)': (s) => s.screens.main.includes('Dose: clinical review'),
+  // A9 (14 Nov 2026): this text was "Dose: clinical review" in recordings made before A9
+  'magnesium "Seek clinical advice" (5/10 kg)': (s) => s.screens.main.includes('Magnesium\nSeek clinical advice') || s.screens.main.includes('Dose: clinical review'),
   'fluids card': (s) => s.screens.main.includes('id="fluidsCard"'),
   'fluids recorded by form': (s) => ev(s).some((e) => e.type === 'fluids'),
   'fluids total shown': (s) => /mL recorded · review total/.test(s.screens.main),

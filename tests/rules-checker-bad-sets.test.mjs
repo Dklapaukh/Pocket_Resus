@@ -17,7 +17,10 @@ import { checkRuleSet, RELATIONSHIP_RULES } from '../src/rules/check.js';
 import { readYamlStrict } from '../src/rules/parse.js';
 import { rulesFileText } from '../src/rules/write.js';
 
-const text = readFileSync(new URL('./baseline/nz-eas-before-yaml.json', import.meta.url), 'utf8');
+import { withApprovedChangesInJsonText } from './helpers/approved-changes.mjs';
+
+// Approved A-table changes (tests/helpers/approved-changes.mjs) are made in the frozen copies before comparing.
+const text = withApprovedChangesInJsonText(readFileSync(new URL('./baseline/nz-eas-before-yaml.json', import.meta.url), 'utf8'));
 const reference = JSON.parse(text);
 const count = (haystack, needle) => haystack.split(needle).length - 1;
 

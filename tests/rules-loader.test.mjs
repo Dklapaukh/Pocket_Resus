@@ -9,7 +9,10 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { RULES as BASELINE } from './baseline/nz-eas-v22-a8.js';
+import { RULES as FROZEN_BASELINE } from './baseline/nz-eas-v22-a8.js';
+import { withApprovedChanges } from './helpers/approved-changes.mjs';
+// Approved A-table changes (tests/helpers/approved-changes.mjs) are made in the frozen copies before comparing.
+const BASELINE = withApprovedChanges(FROZEN_BASELINE);
 import { readYamlStrict } from '../src/rules/parse.js';
 import { rulesFileText } from '../src/rules/write.js';
 

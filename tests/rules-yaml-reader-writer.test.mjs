@@ -16,6 +16,7 @@ import { load as libraryLoad, YAML11_SCHEMA, CORE_SCHEMA } from '../src/vendor/j
 import { parseRules, readYamlStrict, checkPlainValues } from '../src/rules/parse.js';
 import { rulesFileText, isPlainlySafe } from '../src/rules/write.js';
 import { checkRuleSet } from '../src/rules/check.js';
+import { withApprovedChanges } from './helpers/approved-changes.mjs';
 
 const at = (path) => new URL('../' + path, import.meta.url);
 const yamlText = readFileSync(at('src/rules/nz-eas.yaml'), 'utf8');
@@ -252,7 +253,7 @@ test('the real file cut at EVERY character, and at every line break, is refused 
 });
 
 test('the end mark is not data: the values read are exactly the values of the frozen JSON file, with nothing extra', () => {
-  const frozen = JSON.parse(readFileSync(at('tests/baseline/nz-eas-before-yaml.json'), 'utf8'));
+  const frozen = withApprovedChanges(JSON.parse(readFileSync(at('tests/baseline/nz-eas-before-yaml.json'), 'utf8'))); // plus approved A-table changes
   assert.deepStrictEqual(readYamlStrict(yamlText), frozen);
   assert.deepEqual(Object.keys(readYamlStrict(yamlText)), ['about', 'numbers', 'wording', 'checklists', 'equipment', 'sources', 'notes']);
 });
