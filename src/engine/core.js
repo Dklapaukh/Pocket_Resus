@@ -265,7 +265,8 @@ export function needsPaediatricPads(weight) {
 /* ---------- Medicine references ---------- */
 
 /* Adrenaline and amiodarone dose references in mg. No weight entered, or above 40 kg = adult.
-   An invalid weight gives null (no reference shown). */
+   An invalid weight gives null (no reference shown). A child has no second amiodarone dose (amio2 is
+   null): EAS 7.2 gives none, so the card says "Seek clinical advice" or shows no dose (C6b, A10). */
 export function dose(session) {
   const adult = isBlank(session.weight) || (validWeight(session.weight) && weightNumber(session.weight) > RULES.numbers.weight.adultAboveKg);
   if (adult) {
@@ -281,7 +282,7 @@ export function dose(session) {
   return {
     adr: band.adrenalineMg,
     amio1: band.amiodaroneFirstMg,
-    amio2: band.amiodaroneSecondMg,
+    amio2: null, // A10: no guideline source for a child's second dose
     basis: wording('childDoseBasis', { band: band.maxKg }),
   };
 }

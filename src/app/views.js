@@ -56,6 +56,7 @@ export function drugCard(type) {
   let doseText;
   if (needsClinicalAdvice) doseText = R.wording('childSecondAmiodarone');
   else if (secondDoseEarly) doseText = R.wording('amiodaroneSecondNotYetDue', { second: R.RULES.numbers.amiodarone.dueAtShocks[1] });
+  else if (doseReference && value === null) doseText = ''; // A10: a child's second dose has no number (two doses recorded: empty line)
   else if (doseReference) doseText = esc(T('liveCards.doseMgIv', { dose: value }));
   else doseText = T('liveCards.enterWeight');
 

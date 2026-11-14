@@ -25,31 +25,26 @@ numbers:
     - maxKg: 5
       adrenalineMg: 0.05
       amiodaroneFirstMg: 25
-      amiodaroneSecondMg: 12.5
       magnesiumMmol: null
       shockJ: 20
     - maxKg: 10
       adrenalineMg: 0.1
       amiodaroneFirstMg: 50
-      amiodaroneSecondMg: 25
       magnesiumMmol: null
       shockJ: 40
     - maxKg: 20
       adrenalineMg: 0.2
       amiodaroneFirstMg: 100
-      amiodaroneSecondMg: 50
       magnesiumMmol: 4
       shockJ: 80
     - maxKg: 30
       adrenalineMg: 0.3
       amiodaroneFirstMg: 150
-      amiodaroneSecondMg: 75
       magnesiumMmol: 6
       shockJ: 120
     - maxKg: 40
       adrenalineMg: 0.4
       amiodaroneFirstMg: 200
-      amiodaroneSecondMg: 100
       magnesiumMmol: 8
       shockJ: 160
   adult:

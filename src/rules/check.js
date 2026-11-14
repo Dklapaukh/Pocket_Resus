@@ -255,7 +255,7 @@ const NUMBER_LIMITS = [
   // ---- doses and energies, children (one row per weight band) ----
   { path: 'numbers.childBands.*.adrenalineMg', type: 'number', unit: 'mg', above: 0, max: 100 }, // a child adrenaline dose
   { path: 'numbers.childBands.*.amiodaroneFirstMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // a child first amiodarone dose
-  { path: 'numbers.childBands.*.amiodaroneSecondMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // a child second amiodarone dose
+  // no child second amiodarone dose: EAS 7.2 gives none (A10, 14 Nov 2026); a band row holding one is refused
   { path: 'numbers.childBands.*.magnesiumMmol', type: 'number', unit: 'mmol', above: 0, max: 1000, orEmpty: true }, // a child magnesium dose (empty = no dose for this band)
   { path: 'numbers.childBands.*.shockJ', type: 'number', unit: 'J', above: 0, max: 2000 }, // a child shock energy (5000 J is impossible)
   // ---- doses and energies, adults ----
@@ -533,18 +533,17 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
       let previous, previousRow;
       N.childBands.forEach((row, i) => {
         const where = `numbers.childBands.${i}`;
-        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'amiodaroneSecondMg', 'magnesiumMmol', 'shockJ']);
+        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'magnesiumMmol', 'shockJ']);
         if (!r) return;
         const maxKg = number(`${where}.maxKg`, r.maxKg);
         if (maxKg !== undefined && previous !== undefined && maxKg <= previous) say(`${where}.maxKg`, `bands must go in rising order, one row per band (${maxKg} follows ${previous})`);
         if (maxKg !== undefined) previous = maxKg;
         const values = {};
-        for (const key of ['adrenalineMg', 'amiodaroneFirstMg', 'amiodaroneSecondMg', 'shockJ', 'magnesiumMmol']) {
+        for (const key of ['adrenalineMg', 'amiodaroneFirstMg', 'shockJ', 'magnesiumMmol']) {
           values[key] = number(`${where}.${key}`, r[key]); // magnesium may be empty (no dose for this band): then undefined
           if (on('childNotAboveAdult')) lessOrEqual(`${where}.${key}`, values[key], adult[key], 'the child value', 'the adult value');
           if (on('bandDosesRiseWithWeight') && previousRow) lessOrEqual(`${where}.${key}`, previousRow[key], values[key], 'the previous band value', 'this band value');
         }
-        if (on('secondAmiodaroneNotAboveFirst')) lessOrEqual(`${where}.amiodaroneSecondMg`, values.amiodaroneSecondMg, values.amiodaroneFirstMg, 'the second dose', 'the first dose');
         previousRow = { ...previousRow, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)) };
         if (on('bandEnergyIsWeightTimesJoulesPerKg') && maxKg !== undefined && joulesPerKg !== undefined && typeof r.shockJ === 'number' && r.shockJ !== maxKg * joulesPerKg)
           say(`${where}.shockJ`, `must be the band weight (${maxKg}) times the joules per kg (${joulesPerKg}) = ${maxKg * joulesPerKg} (found ${r.shockJ})`);

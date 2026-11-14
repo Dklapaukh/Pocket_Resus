@@ -16,8 +16,8 @@ test('EAS 7.2 paediatric table: adrenaline, amiodarone, magnesium per weight ban
   ]);
 });
 
-test('second amiodarone dose for children is half the first (app rule; no EAS source, see C6b)', () => {
-  for (const b of RULES.numbers.childBands) assert.equal(b.amiodaroneSecondMg, b.amiodaroneFirstMg / 2);
+test('A10: no child band holds a second amiodarone dose (EAS 7.2 gives none; C6b, approved 14 Nov 2026)', () => {
+  for (const b of RULES.numbers.childBands) assert.ok(!Object.hasOwn(b, 'amiodaroneSecondMg'), `${b.maxKg} kg band`);
 });
 
 test('shock energy: 4 J/kg of the band, the bottom of each EAS 7.2 range (change A1); adult 200 J', () => {

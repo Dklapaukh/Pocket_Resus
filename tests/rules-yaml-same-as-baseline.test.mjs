@@ -65,7 +65,8 @@ const pinnedNotes = Object.entries(ADDITIONS).filter(([path]) => path.startsWith
 test('the baseline has 425 values and every one is still in the rule set, identical and in the same relative order (all five parts)', () => {
   assert.deepEqual(Object.keys(RULES), PARTS, 'the app gets the five parts only (about and notes are not passed on)');
   assert.deepEqual(Object.keys(BASELINE), PARTS);
-  assert.equal(flatten(BASELINE).length, 425);
+  assert.equal(flatten(FROZEN_BASELINE).length, 425, 'the frozen baseline has 425 values');
+  assert.equal(flatten(BASELINE).length, 420, 'less the five child second amiodarone doses deleted by A10');
   assert.deepEqual(baselineProblems(RULES, BASELINE), []);
   for (const part of PARTS) assert.deepEqual(baselineProblems({ [part]: file[part] }, { [part]: BASELINE[part] }), [], part);
 });
@@ -128,7 +129,8 @@ test('the YAML file read the strict way equals the frozen JSON file from before 
   assert.equal(JSON.stringify(file), JSON.stringify(frozenJson), 'same names in the same order, same kinds, at every depth');
   assert.deepEqual(Object.keys(file), ['about', ...PARTS, 'notes']);
   const places = everyPlace(frozenJson);
-  assert.equal(places.length, 1168, 'the comparison covers every value and group of the frozen file');
+  assert.equal(everyPlace(JSON.parse(frozenJsonText)).length, 1168, 'the comparison covers every value and group of the frozen file');
+  assert.equal(places.length, 1163, 'less the five child second amiodarone doses deleted by A10');
   assert.deepEqual(everyPlace(file), places);
 });
 

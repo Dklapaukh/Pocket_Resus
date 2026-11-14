@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { openApp } from './helpers/dom-app.mjs';
 import { ROOT } from './helpers/engines.mjs';
-import { APPROVED_CHANGES } from './helpers/approved-changes.mjs';
+import { APPROVED_CHANGES, REMOVED } from './helpers/approved-changes.mjs';
 import { readYamlStrict } from '../src/rules/parse.js';
 import { RULES as FROZEN_BASELINE } from './baseline/nz-eas-v22-a8.js';
 
@@ -58,10 +58,10 @@ test('approved changes list: each "after" is in the rules file and each "before"
   const at = (tree, dotted) => dotted.split('.').reduce((node, name) => (node && typeof node === 'object' ? node[name] : undefined), tree);
   assert.ok(APPROVED_CHANGES.length > 0);
   for (const c of APPROVED_CHANGES) {
-    assert.equal(at(file, c.path), c.after, `${c.row} ${c.path} in the rules file`);
+    assert.equal(at(file, c.path), c.after === REMOVED ? undefined : c.after, `${c.row} ${c.path} in the rules file`);
     assert.equal(at(frozenJson, c.path), c.before, `${c.row} ${c.path} in the frozen JSON copy`);
     const inBaseline = at(FROZEN_BASELINE, c.path);
     assert.ok(inBaseline === c.before || (inBaseline === undefined && additions[c.path] === c.before), `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
   }
-  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9'], 'only approved rows (doc 07): add a row here only after the owner approves it');
+  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10'], 'only approved rows (doc 07): add a row here only after the owner approves it');
 });

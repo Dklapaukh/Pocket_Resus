@@ -34,3 +34,14 @@ export function giveOriginalTheA1Energy() {
   original.joules = ported.joules;
   original.needsPaediatricPads = ported.needsPaediatricPads;
 }
+
+// A10 (owner-approved 14 Nov 2026): a child has no second amiodarone dose (EAS 7.2 gives none), so the new
+// engine's dose() gives amio2 = null for a child. Same treatment as A1: tests that compare old and new
+// engines call this to give the ORIGINAL object that rule (and nothing else); adults are untouched.
+export function giveOriginalTheA10ChildSecondDose() {
+  const originalDose = original.dose;
+  original.dose = (s) => {
+    const reference = originalDose(s);
+    return reference && original.isPaediatric(s) ? { ...reference, amio2: null } : reference;
+  };
+}

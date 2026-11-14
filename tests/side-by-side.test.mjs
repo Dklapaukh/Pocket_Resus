@@ -1,8 +1,9 @@
 // Stage 1 exit gate: old and new engines run side by side on 300 random action sequences.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { original, ported, giveOriginalTheA1Energy } from './helpers/engines.mjs';
-giveOriginalTheA1Energy(); // A1: the only intended difference between the engines
+import { original, ported, giveOriginalTheA1Energy, giveOriginalTheA10ChildSecondDose } from './helpers/engines.mjs';
+giveOriginalTheA1Energy(); // A1 and A10: the only intended differences between the engines
+giveOriginalTheA10ChildSecondDose();
 import { compareEngines } from './helpers/fuzz.mjs';
 // Since 11 Nov 2026 this is the main engine safeguard: the readable rewrite replaced the exact-line
 // fidelity test (owner-approved), so the number of sequences was raised from 300 to 3000.
