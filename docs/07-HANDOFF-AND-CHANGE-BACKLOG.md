@@ -117,23 +117,14 @@ edited and none is skipped: the pretend clock means long cases take no longer to
 owner said not to skip them if it saves no time.
 
 **Waiting for the owner:**
-- **QUESTION TO ANSWER NEXT (dose sources; asked 14 Nov 2026).** The check in doc 11 ("Where each
-  patient-specific number comes from") found that the arrest drug doses and shock energy are read from
-  the guideline tables, but four outputs are calculated by the app: child fluid volume, weight from age,
-  tube size and length, and the RSI doses. The guideline PDFs in the repo already hold tables for three
-  of them, so no new guideline is needed. Which do you want?
-  - **Option A (recommended):** Change the app so child fluid volume, tube size and length, and RSI doses
-    are read from the guideline's weight-band tables (EAS 7.2 and EAS 9.3), each as its own approved
-    change with its own test, one at a time. Weight from age stays as the guideline's own formula
-    (EAS 7.2 gives a formula, not a table). The screen will change for in-between weights (example: a
-    15 kg child shows fluids 300–600 mL today; the 20 kg table row says 400 mL).
-  - **Option B:** Leave the app as it is. The calculated outputs stay calculated, and the store listing
-    and design notes say plainly which outputs are calculated from the guideline's formulas.
-  - **Option C:** Remove the calculated reference outputs (RSI doses, tube sizes, child fluid volume)
-    from the app, leaving only what is read from tables.
-  Recommended: A, because it matches your principle (the app only shows what the guideline tables say).
-  Also needed from you, because the guideline has no table for them (doc 11 lists each): a child's
-  second amiodarone dose; RSI doses for the 5 kg band; the upper (40 mL/kg) fluid volume per band.
+- **Dose sources: owner chose Option A (14 Nov 2026).** Child fluid volume, tube size and length, and
+  RSI doses are to be read from the guideline's weight-band tables (EAS 7.2 and EAS 9.3; doc 11 lists
+  the tables and pages) instead of being calculated. Weight from age stays as the guideline's formula.
+  **Not built.** Each is a clinical change: its own A-table row with the exact values and the screens
+  that change, the owner's approval of that row, and its own test, one at a time, in a chat the owner
+  started (never an unattended run). First to prepare: child fluid volume.
+  **Needed from the owner** (no packaged guideline gives these): a child's second amiodarone dose; RSI
+  doses for the 5 kg band and for 41 to 49 kg; the fluid volume at 40 mL/kg per band.
 - Reviewer (answered 13 Nov 2026): Opus · high; Fable · high if Opus is stopped by a limit again.
 - **Store apps (owner 14 Nov 2026): developer accounts go under the owner's personal name.** So Google
   requires a closed test with 12 testers for 14 days before public release (organisation accounts are
@@ -143,8 +134,8 @@ owner said not to skip them if it saves no time.
   only shows recommendations taken from the guideline dose tables, so the only check needed is that it
   matches the guidelines; clinical decisions (for example diagnosing torsades) are made only by the
   clinician. Checked 14 Nov 2026 (doc 11): true for the arrest drug doses and shock energy; not true
-  for child fluid volume, weight from age, tube sizes and RSI doses, which are calculated (question
-  above). The app already installs from the web link on both kinds of phone. Whether it is a medical
+  for child fluid volume, weight from age, tube sizes and RSI doses, which are calculated (owner chose to
+  move them to table look-ups, item above). The app already installs from the web link on both kinds of phone. Whether it is a medical
   device under NZ law is a question for Medsafe.
 - New start-up message if the rule set cannot be read (stage 1; wording in `src/rules/parse.js`): owner may reword.
 - Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit; six in all) have been switched on since stage 1, though E1 said to list them only. Example of what they refuse: a band energy rounded to a defibrillator step (20 J typed as 21 J). Keep them on, or list only? To be asked before E2.

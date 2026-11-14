@@ -28,7 +28,7 @@
 ## 14 Nov 2026 (editor decisions are numbered in doc 18)
 - **Rule set file format: YAML** (doc 18 decision 9). Replaces plain JSON (chosen 12 Nov 2026, built in stage 1). Built in step E1b; live from the next release.
 - **Editor:** no version-history screens, only the current version number (doc 18 decision 26). A rule set goes live when confirmed in the editor (doc 18 decision 20; replaces "goes live through GitHub", 12 Nov 2026).
-- **Store apps:** developer accounts under the owner's personal name. **Design principle:** the app is not a clinical calculator; it shows only what the guideline dose tables say (doc 18 decision 27; what is still calculated is listed in doc 11).
+- **Store apps:** developer accounts under the owner's personal name. **Design principle:** the app is not a clinical calculator; it shows only what the guideline dose tables say (doc 18 decision 27; what is still calculated is listed in doc 11). Owner chose to move child fluid volume, tube sizes and RSI doses to look-ups from the guideline band tables, one approved change at a time (not built).
 - **A8:** "Option A" meant updating the step 2 comparison test. **v23** passed the owner's phone check.
 
 ## Still open
