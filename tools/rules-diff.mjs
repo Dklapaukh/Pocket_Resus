@@ -24,11 +24,7 @@
 // Testing limits (not app rules): only cases within 90 minutes of case time and 10 adrenaline doses are
 // compared; longer or heavier cases are left out and counted as skipped.
 // Nothing in the working copy is changed. The library behind this is tests/reference/lib/rules-diff.mjs.
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { ROOT } from '../tests/reference/lib/reference-app.mjs';
-import { readYamlStrict } from '../src/rules/parse.js';
-import { allCaseIds, compareRuleSets, fastCaseIds, formatReport, parseCaseList } from '../tests/reference/lib/rules-diff.mjs';
+import { allCaseIds, compareRuleSets, fastCaseIds, formatReport, parseCaseList, readRulesSpec } from '../tests/reference/lib/rules-diff.mjs';
 
 process.env.TZ = 'UTC';
 const argv = process.argv.slice(2);
@@ -38,25 +34,6 @@ const options = ['--cases', '--limit'];
 const known = ['--all', '--cases', '--screens-only', '--saved', '--limit', '--json']; // --saved is now the default, so it changes nothing
 const unknownFlags = argv.filter((a) => a.startsWith('--') && !known.includes(a));
 const positional = argv.filter((a, i) => !a.startsWith('--') && !options.includes(argv[i - 1]));
-
-/* The text of a file as it was at a commit, or null if the commit has no such file. */
-function gitShow(commit, file) {
-  try {
-    return execFileSync('git', ['show', `${commit}:${file}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'ignore'] });
-  } catch {
-    return null;
-  }
-}
-
-/* A rule set from a file path, or from git:<commit> (the YAML file, or the older JSON file if the commit
-   is from before the change to YAML). A file whose text starts with { is the older JSON layout. */
-function readRules(spec) {
-  const text = spec.startsWith('git:')
-    ? gitShow(spec.slice(4), 'src/rules/nz-eas.yaml') ?? gitShow(spec.slice(4), 'src/rules/nz-eas.json')
-    : readFileSync(spec, 'utf8');
-  if (text === null) throw new Error(`there is no rules file (src/rules/nz-eas.yaml or nz-eas.json) at ${spec}`);
-  return text.trimStart().startsWith('{') ? JSON.parse(text) : readYamlStrict(text);
-}
 
 if (positional.length !== 2 || unknownFlags.length) {
   if (unknownFlags.length) console.error('Unknown option: ' + unknownFlags.join(' '));
@@ -68,7 +45,7 @@ if (positional.length !== 2 || unknownFlags.length) {
 try {
   // --cases must be followed by real case numbers; an empty or missing list is an error, never "the fast set".
   const caseIds = flag('--cases') ? parseCaseList(value('--cases', '')) : flag('--all') ? allCaseIds() : fastCaseIds();
-  const result = await compareRuleSets(readRules(positional[0]), readRules(positional[1]), {
+  const result = await compareRuleSets(readRulesSpec(positional[0]), readRulesSpec(positional[1]), {
     caseIds, includeSaved: !flag('--screens-only'), onProgress: (text) => console.error(text + '...'),
   });
   console.log(flag('--json') ? JSON.stringify(result, null, 2) : formatReport(result, { limit: Number(value('--limit', 30)) }));

@@ -47,7 +47,10 @@ import { st, torsades } from './state.js';
 /* Weight, start time and earlier-count forms validate before committing. */
 function estimateWeight() {
   const w = R.estimate($('ageInput').value);
-  if (w === null) return error(R.guideText('estimateAgeError'));
+  if (w === null) {
+    const adult = R.adultAge($('ageInput').value); // A16: age 14 = adult, no weight is filled
+    return error(adult === null ? R.guideText('estimateAgeError') : R.guideText('estimateAgeAdult', { age: adult }));
+  }
   $('weightInput').value = w;
   $('weightPadPrompt').hidden = !R.needsPaediatricPads(w);
   st.sheetContext.source = R.guideText('estimatedWeightSource', { age: $('ageInput').value });

@@ -13,7 +13,8 @@
 // LIMITS FOR TEST CASES (the owner's testing limits, not app rules): a case counts only if it stays within
 // 90 minutes of case time and 10 adrenaline doses, under BOTH rule sets. The generated cases are played,
 // measured, and any case over a limit is left out of the comparison and listed as skipped.
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { Pool } from './run.mjs';
@@ -24,6 +25,28 @@ import { ROOT } from './reference-app.mjs';
 import { lines, diff } from './textdiff.mjs';
 import { checkRuleSet } from '../../../src/rules/check.js';
 import { rulesFileText } from '../../../src/rules/write.js';
+import { readYamlStrict } from '../../../src/rules/parse.js';
+
+/* The text of a file as it was at a commit, or null if the commit has no such file. */
+function gitShow(commit, file) {
+  try {
+    return execFileSync('git', ['show', `${commit}:${file}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch {
+    return null;
+  }
+}
+
+/* A rule set from a file path, or from git:<commit> (the YAML file, or the older JSON file if the commit
+   is from before the change to YAML). A file whose text starts with { is the older JSON layout.
+   (Moved here from tools/rules-diff.mjs on 14 Nov 2026 so a test can check what is read without playing it:
+   since A16 today's app cannot play a rule set from before A16, which has no age rows.) */
+export function readRulesSpec(spec) {
+  const text = spec.startsWith('git:')
+    ? gitShow(spec.slice(4), 'src/rules/nz-eas.yaml') ?? gitShow(spec.slice(4), 'src/rules/nz-eas.json')
+    : readFileSync(spec, 'utf8');
+  if (text === null) throw new Error(`there is no rules file (src/rules/nz-eas.yaml or nz-eas.json) at ${spec}`);
+  return text.trimStart().startsWith('{') ? JSON.parse(text) : readYamlStrict(text);
+}
 
 const PASS_TWO_BATCH = 16; // how many differing cases are held in full at one time
 export const CASE_LIMITS = { maxMinutes: 90, maxAdrenalineDoses: 10 };

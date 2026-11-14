@@ -26,7 +26,7 @@ const PARTS = ['numbers', 'wording', 'checklists', 'equipment', 'sources'];
 
 /* The {gap} names the engine fills from part 1 and part 5 for any wording (engine wordingGaps). */
 const ENGINE_GAPS = [
-  'underOneYearKg', 'tenMaxAge', 'tenAddYears', 'tenMultiplyBy', 'fourteenFromAge', 'fourteenMaxAge', 'fourteenMultiplyBy',
+  'underOneYearKg', 'ageBandList', 'adultAges', 'ageMaxYears',
   'cprCycleMinWord', 'adrenalineEveryMin', 'amiodaroneFirstShocks', 'amiodaroneSecondShocks', 'amiodaroneMaxDoses',
   'magnesiumMaxDoses', 'bandList', 'joulesPerKg', 'adultShockJ', 'padsUpToJ', 'adultAboveKg', 'adultRoundedToKg', 'fluid',
   'fluidShort', 'adrDiluteMg', 'adrDiluteMl', 'adrDiluteMgPerMl', 'adultMagnesiumMmol', 'magAdultGrams', 'magAdultDiluteToMl',
@@ -48,7 +48,7 @@ const WORDING = {
   childFluidBasis: ['text', 'band', 'min', 'maxPerKg', 'max'], noWeightFluidBasis: ['text'], amiodaroneNotYetDue: ['text', 'first', 'second'],
   amiodaroneSecondNotYetDue: ['text', 'second'], childSecondAmiodarone: ['text'], invalidWeight: ['text', 'maxKg'],
   headerEnergyTitle: ['text', 'joulesPerKg', 'adultShockJ'], padsPrompt: ['text'], padsPromptWithLimit: ['text', 'padsUpToJ'],
-  estimateAgeError: ['text', 'fourteenMaxAge'], estimatedWeightSource: ['text', 'age'], adrenalineOverdue: ['text', 'adrenalineEveryMin'],
+  estimateAgeError: ['text', 'ageMaxYears'], estimateAgeAdult: ['text', 'age'], estimatedWeightSource: ['text', 'age'], adrenalineOverdue: ['text', 'adrenalineEveryMin'],
   adrenalineUntilReview: ['text', 'adrenalineEveryMin'], amiodaroneReviewAt: ['text', 'shocks'], maxDosesRecorded: ['text', 'maxDoses'],
   withholdTorsades: ['text'], magnesiumMaxDosesStatus: ['text', 'magnesiumMaxDoses'], magnesiumRepeatStatus: ['text'], magnesiumFirstStatus: ['text'],
   fluidsCardTitle: ['text', 'fluidShort'], noWeightDoseReference: ['text'], referenceOnly: ['text'], amiodaroneChildPopupDose: ['text', 'first'],
@@ -67,8 +67,9 @@ const WORDING = {
   guidanceCaption: ['text', 'exportDate', 'reversibleCauses'], rsiNotRecorded: ['text'], rsiConditions: ['text'], rsiNoDose: ['text'], tubeNoAge: ['text'],
   tubeCaution: ['text'], igelSourceCaption: ['text', 'igel'], tubeSizeUnderOne: ['text', 'minMm', 'maxMm'], tubeLengthUnderOne: ['text', 'timesSize'],
   tubeSizeFormula: ['text', 'mm'], tubeLengthFormula: ['text', 'cm'],
-  weightSheetAgeEstimate: ['text', 'underOneYearKg', 'tenMaxAge', 'tenAddYears', 'tenMultiplyBy', 'fourteenFromAge', 'fourteenMaxAge', 'fourteenMultiplyBy'],
-  tubeSheetAgeEstimate: ['text', 'underOneYearKg', 'tenMaxAge', 'tenAddYears', 'tenMultiplyBy', 'fourteenFromAge', 'fourteenMaxAge', 'fourteenMultiplyBy'],
+  weightSheetAgeEstimate: ['text', 'underOneYearKg', 'ageBandList', 'adultAges'],
+  tubeSheetAgeEstimate: ['text', 'underOneYearKg', 'ageBandList', 'adultAges'],
+  ageBandWeight: ['text', 'ages', 'kg'], ageOneYear: ['text', 'age'], ageManyYears: ['text', 'age'], ageYearRange: ['text', 'from', 'to'],
   drugNames: { adrenaline: ['text'], amiodarone: ['text'], magnesium: ['text'] },
   weightSources: { entered: ['text'] },
   rhythmCheckTitles: { shock: ['text'], noshock: ['text'], rosc: ['text'] },
@@ -247,11 +248,9 @@ const NUMBER_LIMITS = [
   { path: 'numbers.childBands.*.maxKg', type: 'number', unit: 'kg', above: 0, max: 1000 }, // top weight of one child band
   // ---- weight from age ----
   { path: 'numbers.ageEstimate.underOneYearKg', type: 'number', unit: 'kg', above: 0, max: 1000 }, // estimated weight under one year
-  { path: 'numbers.ageEstimate.oneToTenYears.maxAge', type: 'whole', unit: 'years', above: 0, max: 120 }, // last age of the first formula (nobody is older than 120)
-  { path: 'numbers.ageEstimate.oneToTenYears.addYears', type: 'number', unit: 'years', atLeast: 0, max: 120 }, // years added to the age in the first formula
-  { path: 'numbers.ageEstimate.oneToTenYears.multiplyBy', type: 'number', unit: 'kg per year of age', above: 0, max: 100 }, // multiplier of the first formula
-  { path: 'numbers.ageEstimate.elevenToFourteenYears.maxAge', type: 'whole', unit: 'years', above: 0, max: 120 }, // last age of the second formula
-  { path: 'numbers.ageEstimate.elevenToFourteenYears.multiplyBy', type: 'number', unit: 'kg per year of age', above: 0, max: 100 }, // multiplier of the second formula
+  { path: 'numbers.ageEstimate.bands.*.maxAge', type: 'whole', unit: 'years', above: 0, max: 120 }, // last (rounded-up) age of one age row (A16; nobody is older than 120)
+  { path: 'numbers.ageEstimate.bands.*.weightKg', type: 'number', unit: 'kg', above: 0, max: 1000 }, // the band weight given for that age row
+  { path: 'numbers.ageEstimate.adultUpToAge', type: 'whole', unit: 'years', above: 0, max: 120 }, // oldest age accepted; above the last row up to here = adult, no weight
   // ---- doses and energies, children (one row per weight band) ----
   { path: 'numbers.childBands.*.adrenalineMg', type: 'number', unit: 'mg', above: 0, max: 100 }, // a child adrenaline dose
   { path: 'numbers.childBands.*.amiodaroneFirstMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // a child first amiodarone dose
@@ -498,22 +497,23 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
       if (on('adultRoundedWeightWithinMaxWeight')) lessOrEqual('numbers.weight.adultRoundedToKg', rounded, weightMax, 'it', 'the highest valid weight');
     }
 
-    const a = group('numbers.ageEstimate', N.ageEstimate, ['underOneYearKg', 'oneToTenYears', 'elevenToFourteenYears']);
+    // Weight from age (A16): one row per age range, ages rising; the oldest accepted age is above the last row.
+    const a = group('numbers.ageEstimate', N.ageEstimate, ['underOneYearKg', 'bands', 'adultUpToAge']);
     if (a) {
       number('numbers.ageEstimate.underOneYearKg', a.underOneYearKg);
-      const ten = group('numbers.ageEstimate.oneToTenYears', a.oneToTenYears, ['maxAge', 'addYears', 'multiplyBy']);
-      const fourteen = group('numbers.ageEstimate.elevenToFourteenYears', a.elevenToFourteenYears, ['maxAge', 'multiplyBy']);
-      let tenMax, fourteenMax;
-      if (ten) {
-        tenMax = number('numbers.ageEstimate.oneToTenYears.maxAge', ten.maxAge);
-        number('numbers.ageEstimate.oneToTenYears.addYears', ten.addYears);
-        number('numbers.ageEstimate.oneToTenYears.multiplyBy', ten.multiplyBy);
-      }
-      if (fourteen) {
-        fourteenMax = number('numbers.ageEstimate.elevenToFourteenYears.maxAge', fourteen.maxAge);
-        number('numbers.ageEstimate.elevenToFourteenYears.multiplyBy', fourteen.multiplyBy);
-      }
-      if (tenMax !== undefined && fourteenMax !== undefined && fourteenMax <= tenMax) say('numbers.ageEstimate.elevenToFourteenYears.maxAge', `must be above the first age range's last age (${tenMax})`);
+      let lastAge;
+      if (!Array.isArray(a.bands) || a.bands.length === 0) say('numbers.ageEstimate.bands', 'must be a list with one row for each age range');
+      else a.bands.forEach((row, i) => {
+        const where = `numbers.ageEstimate.bands.${i}`;
+        const r = group(where, row, ['maxAge', 'weightKg']);
+        if (!r) return;
+        const maxAge = number(`${where}.maxAge`, r.maxAge);
+        number(`${where}.weightKg`, r.weightKg);
+        if (maxAge !== undefined && lastAge !== undefined && maxAge <= lastAge) say(`${where}.maxAge`, `age rows must go in rising order (${maxAge} follows ${lastAge})`);
+        if (maxAge !== undefined) lastAge = maxAge;
+      });
+      const upTo = number('numbers.ageEstimate.adultUpToAge', a.adultUpToAge);
+      if (upTo !== undefined && lastAge !== undefined && upTo <= lastAge) say('numbers.ageEstimate.adultUpToAge', `must be above the last age row (${lastAge})`);
     }
 
     // Adult, shock: read first because the child rows are compared with them.

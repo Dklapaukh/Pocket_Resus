@@ -14,13 +14,16 @@ numbers:
     adultRoundedToKg: 50
   ageEstimate:
     underOneYearKg: 5
-    oneToTenYears:
-      maxAge: 10
-      addYears: 4
-      multiplyBy: 2
-    elevenToFourteenYears:
-      maxAge: 14
-      multiplyBy: 3
+    bands:
+      - maxAge: 1
+        weightKg: 10
+      - maxAge: 5
+        weightKg: 20
+      - maxAge: 10
+        weightKg: 30
+      - maxAge: 13
+        weightKg: 40
+    adultUpToAge: 14
   childBands:
     - maxKg: 5
       adrenalineMg: 0.05
@@ -272,7 +275,8 @@ wording:
   headerEnergyTitle: "{joulesPerKg} J/kg of CPG weight band · maximum {adultShockJ} J"
   padsPrompt: Use paediatric pads
   padsPromptWithLimit: Use paediatric pads · {padsUpToJ} J or less
-  estimateAgeError: Use an infant age in years or whole years 1–{fourteenMaxAge}.
+  estimateAgeError: Enter an age from under 1 year to {ageMaxYears} years.
+  estimateAgeAdult: "Age {age}: adult. Enter the weight."
   estimatedWeightSource: Estimated from age {age} years · CPG 7.2
   adrenalineOverdue: "{adrenalineEveryMin} min elapsed · review"
   adrenalineUntilReview: Until {adrenalineEveryMin} min review
@@ -330,8 +334,12 @@ wording:
   tubeLengthUnderOne: ETT size × {timesSize} cm
   tubeSizeFormula: "{mm} mm (formula)"
   tubeLengthFormula: "{cm} cm (formula)"
-  weightSheetAgeEstimate: "Under 1 year: {underOneYearKg} kg. 1–{tenMaxAge} years: (age + {tenAddYears}) × {tenMultiplyBy}. {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy}. CPG 7.2; estimates may underestimate. Excludes newborn resuscitation."
-  tubeSheetAgeEstimate: "Under 1 year: {underOneYearKg} kg. Ages 1–{tenMaxAge}: (age + {tenAddYears}) × {tenMultiplyBy} kg. Ages {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy} kg. Estimates may underestimate actual weight."
+  weightSheetAgeEstimate: "Under 1 year: {underOneYearKg} kg. {ageBandList} {adultAges}: adult. Age rounded up to the next whole year. CPG 7.2; estimates may underestimate."
+  tubeSheetAgeEstimate: "Under 1 year: {underOneYearKg} kg. {ageBandList} {adultAges}: adult. Age rounded up to the next whole year. CPG 7.2; estimates may underestimate."
+  ageBandWeight: "{ages}: {kg} kg."
+  ageOneYear: "{age} year"
+  ageManyYears: "{age} years"
+  ageYearRange: "{from}–{to} years"
   drugNames:
     adrenaline: Adrenaline
     amiodarone: Amiodarone
@@ -1082,10 +1090,10 @@ notes:
   numbers.weight.maxKg: highest weight accepted as valid
   numbers.weight.adultAboveKg: "above 40 kg the patient is treated as an adult (\"41 kg = 50 kg\")"
   numbers.weight.adultRoundedToKg: "how the wording describes an adult weight (\"rounded to 50 kg or more\")"
-  numbers.ageEstimate: Paediatric weight estimate from age, in years (EAS 7.2). Ages outside these rules give no estimate.
+  numbers.ageEstimate: Paediatric weight estimate from age, in years, from the EAS 7.2 band table headings (cpg-paediatric-equipment.pdf pages 5-15; change A16, owner-approved 14 Nov 2026). An age of 1 year or more is ROUNDED UP to the next whole year first. Ages of 0 or less, or above adultUpToAge, give no estimate.
   numbers.ageEstimate.underOneYearKg: any age below 1 year
-  numbers.ageEstimate.oneToTenYears: "(age + 4) x 2, whole years only"
-  numbers.ageEstimate.elevenToFourteenYears: age x 3, whole years only
+  numbers.ageEstimate.bands: "Rounded-up age up to maxAge (and above the previous row) gives weightKg, the band weight: 1 year 10 kg, 2-5 years 20 kg, 6-10 years 30 kg, 11-13 years 40 kg"
+  numbers.ageEstimate.adultUpToAge: "a rounded-up age above the last band and up to this age is treated as adult (owner decision 8: age 14 = adult): no weight is filled and the weight must be entered"
   numbers.childBands: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026)."
   numbers.adult: Adult references (also used when no weight has been entered).
   numbers.child.fluidsMinMlPerKg: "20-40 mL/kg, EAS 3.14. A child uses the weight band (change A11): the lower volume is the band's fluidsTableMl, the upper is fluidsMaxMlPerKg x the band weight"
