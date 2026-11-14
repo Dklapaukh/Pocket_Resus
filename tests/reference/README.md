@@ -1,7 +1,7 @@
 # Reference recordings (stage 0 safety net)
 
 **What this is.** Thousands of generated cases were played on the reference app (v22 plus approved
-changes A8 to A12, commit named in each file's header; re-recorded for A9 from 062e27a, A10 from 04d2b32, A11 from ae7f337 and A12 from 7ed57db, 14 Nov 2026) through the fake browser: a "person" taps buttons,
+changes A8 to A12 and A16, commit named in each file's header; re-recorded for A9 from 062e27a, A10 from 04d2b32, A11 from ae7f337, A12 from 7ed57db and A16 from 1093424, 14 Nov 2026) through the fake browser: a "person" taps buttons,
 types into boxes and lets time pass, only doing what could be done on a phone (nothing greyed out,
 hidden or behind an open pop-up is pressed). After **every step** everything visible was recorded
 (header with weight and clocks, the Live screen with its cards and status lines, any pop-up and what
@@ -28,7 +28,7 @@ themselves may play differently, because the "person" paces the case by reading 
 generator read the new name (raise `GENERATOR_VERSION`, re-record from the SAME reference commit and
 check the screens are unchanged), and only then re-record for the saved-session change.
 
-**How it was made.** `node tests/reference/record.mjs --commit 91843ae` (since A12: `--commit 7ed57db`) (the commit named in the file
+**How it was made.** `node tests/reference/record.mjs --commit 91843ae` (since A16: `--commit 1093424`) (the commit named in the file
 headers; how many cases, and how many are in the fast set, come from `RECORDED_CASES` and `FAST_CASES`
 in `lib/cases.mjs`, so this plain command reproduces the committed files). The app is taken
 from that commit with `git archive` (not from the working copy). Each case is fixed by its number: the
