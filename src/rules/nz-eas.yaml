@@ -253,7 +253,7 @@ wording:
   fluidsExtractQuote: "Correct immediately reversible causes.<br>Administer {fluid} IV:"
   fluidsExtract: The IV volume reference is {adultFluidsMinL}–{adultFluidsMaxL} L in adults, or {childFluidsMinPerKg}–{childFluidsMaxPerKg} mL/kg in children. Assess and treat the reversible cause.
   fluidsRecordNote: Record the actual volume given in mL. The card shows the recorded total; a rhythm change does not record fluid administration.
-  magnesiumNoDose: Dose requires clinical review
+  magnesiumNoDose: Seek clinical advice
   magnesiumHow:
     - "For adult cardiac-arrest administration, dilute the {adultMagnesiumMmol} mmol dose with {fluid} to {magAdultDiluteToMl} mL and give over {magOverMinMinutes}–{magOverMaxMinutes} minutes. The paediatric preparation in <em>EAS guideline 7.2</em> is {magChildMmolPerMl} mmol/mL: dilute {magAmpouleMl} mL from a {magAmpouleMmol} mmol/{magAmpouleMl} mL ampoule to {magChildDiluteToMl} mL, then draw up the table dose."
     - Avoid the IV line carrying a concurrent adrenaline infusion because precipitation can occur. Record magnesium in mmol.
@@ -354,14 +354,14 @@ wording:
     recordMmolIv: Record {dose} mmol IV
     recordFluid: Record fluid…
     recordRepeat: Record repeat…
-    reviewDose: Review dose
+    reviewDose: Seek clinical advice
     notYetDue: Not yet due
     manualReview: Manual review
     roscRecorded: ROSC recorded
     sessionEnded: Session ended
     weightNeeded: Weight needed
     selectDose: Select dose
-    doseClinicalReview: "Dose: clinical review"
+    doseClinicalReview: Seek clinical advice
     administrationAria: "{name} administration guidance"
     administrationLink: Administration ⓘ
     otherLink: Other…
