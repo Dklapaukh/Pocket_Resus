@@ -188,7 +188,7 @@ the app.
 and the rule set lacks: fluid volume at 20 mL/kg per band; ETT size and length per band; RSI doses for 10,
 20, 30 and 40 kg; LMA size per band. Values no packaged guideline gives (owner to supply a source or a
 ruling): a child's second amiodarone dose; RSI doses for the 5 kg band and for 41 to 49 kg; the fluid
-volume at 40 mL/kg per band. Owner decision 14 Nov 2026 (doc 07): fluids, tube sizes and RSI doses move to table look-ups, one approved change at a time.
+volume at 40 mL/kg per band. Owner dose rules 14 Nov 2026 (doc 07 decisions 2 and 7): band weight for every dose, traced formula calculations allowed, "Seek clinical advice" where no dose is given; proposed changes A9 to A14 (not built).
 
 ## Review still required
 

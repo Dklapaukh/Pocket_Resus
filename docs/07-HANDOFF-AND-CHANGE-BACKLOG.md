@@ -117,27 +117,9 @@ edited and none is skipped: the pretend clock means long cases take no longer to
 owner said not to skip them if it saves no time.
 
 **Waiting for the owner:**
-- **Dose sources: owner's rules (14 Nov 2026). Not built; each is a clinical change needing its own
-  A-table row with exact values, the owner's approval of that row, and its own test, in a chat the
-  owner started.** (1) The entered weight is rounded to a guideline weight band and that band is used
-  for every dose (**exact rounding rule to confirm, question below**). (2) Where the guideline gives a
-  dose formula (for example 2 mg/kg, 20–40 mL/kg), a simple calculation is acceptable if the screen
-  shows how it was worked out and the guideline it came from. This replaces "read fluids, tube sizes
-  and RSI doses from tables only" (Option A, earlier the same day). (3) Where a dose is unclear or
-  missing in the guideline, the app says "Seek clinical advice" and shows no number. Under (3): a
-  child's second amiodarone dose (already so; the unsourced stored numbers should be removed) and
-  magnesium at 5 and 10 kg (today reads "Dose: clinical review").
-- **QUESTION TO ANSWER NEXT (weight rounding; asked 14 Nov 2026).** The owner wrote "rounded to the
-  nearest 10". The guideline (EAS 7.2 page 1) rounds a child's weight **up** to 5, 10, 20, 30 or 40 kg,
-  which is what the app does now (owner decision 2). "Nearest 10" would put a 12 kg child on the 10 kg
-  doses (the guideline says 20 kg) and has no 5 kg band.
-  - **Option A (recommended):** Children: round up to the guideline bands 5, 10, 20, 30, 40 kg (as now).
-    Adults (over 40 kg), for RSI doses only: round up to the next 10 kg, matching the columns of the
-    EAS 9.3 adult table (50 to 100 kg); 100 kg or more uses the last column.
-  - **Option B:** Round to the nearest 10 kg for everyone, as written (12 kg uses 10 kg doses; under
-    5 kg has no band). This differs from the guideline.
-  - **Option C:** Round up to the next 10 kg for everyone, with no 5 kg band (a 3 kg baby uses the
-    10 kg doses). This differs from the guideline.
+- **Dose rules (decision 7): rows A9 to A14 are PROPOSED in the A-table (14 Nov 2026). NEXT: the
+  owner approves or corrects A9. Build nothing until a row is approved; then build that row only, with
+  its own test, and show the next row.**
 - Reviewer (answered 13 Nov 2026): Opus · high; Fable · high if Opus is stopped by a limit again.
 - **Store apps (owner 14 Nov 2026): developer accounts go under the owner's personal name.** So Google
   requires a closed test with 12 testers for 14 days before public release (organisation accounts are
@@ -147,8 +129,8 @@ owner said not to skip them if it saves no time.
   only shows recommendations taken from the guideline dose tables, so the only check needed is that it
   matches the guidelines; clinical decisions (for example diagnosing torsades) are made only by the
   clinician. Checked 14 Nov 2026 (doc 11): true for the arrest drug doses and shock energy; not true
-  for child fluid volume, weight from age, tube sizes and RSI doses, which are calculated (owner chose to
-  move them to table look-ups, item above). The app already installs from the web link on both kinds of phone. Whether it is a medical
+  for child fluid volume, weight from age, tube sizes and RSI doses, which are calculated (decision 7;
+  proposed rows A11 to A14). The app already installs from the web link on both kinds of phone. Whether it is a medical
   device under NZ law is a question for Medsafe.
 - New start-up message if the rule set cannot be read (stage 1; wording in `src/rules/parse.js`): owner may reword.
 - Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit; six in all) have been switched on since stage 1, though E1 said to list them only. Example of what they refuse: a band energy rounded to a defibrillator step (20 J typed as 21 J). Keep them on, or list only? To be asked before E2.
@@ -157,11 +139,19 @@ owner said not to skip them if it saves no time.
 ## Decisions made by owner
 1. Not rebuilt (historical): pause/resume, Reviewed/Suspected causes screen, "record rhythm
    only", VF/VT/torsades images, single-item live checklist. 4Hs/4Ts guidance prompts kept.
-2. Weights round **up** to CPG bands for drug doses (5, 10, 20, 30, 40 kg; above 40 kg adult).
+2. **Weight rounding (owner 14 Nov 2026, Option A; replaces the 3 Nov wording).** Children: weight
+   rounded **up** to the guideline bands 5, 10, 20, 30, 40 kg (EAS 7.2 page 1), as before. Adults (over
+   40 kg): adult doses; for RSI doses only, weight rounded up to the next 10 kg, matching the EAS 9.3
+   adult table columns (50 to 100 kg); 100 kg or more uses the last column.
 3. "+ Previous shock" just adds 1 to the shock count (no sheet).
 4. App is portrait only.
 5. Clinical changes are made one at a time, each with its own test and owner approval.
 6. Engine exact-line safeguard replaced by result-equivalence checks (11 Nov 2026).
+7. **Dose rules (owner 14 Nov 2026).** (1) The band weight (decision 2) is used for every dose.
+   (2) A simple calculation from a guideline formula (for example 2 mg/kg, 20–40 mL/kg) is acceptable
+   if the screen shows the working and the guideline it came from (replaces "tables only", earlier the
+   same day). (3) A dose that is missing or unclear in the guideline shows "Seek clinical advice" and
+   no number. Each change is its own A-table row (A9 to A14), approved and tested one at a time.
 
 ## Approved changes: apply only AFTER parity is proven
 | ID | Change | Status |
@@ -175,6 +165,12 @@ owner said not to skip them if it saves no time.
 | A4 | Countdown digits look too small in v16 (really: on shorter screens and in a Chrome tab); enlarge without re-creating the "+ Previous shock" overlap | **Applied 4 Nov 2026** as a short-screen layout change (shock block beside the digits), because the size number alone could not do it (see State). Owner phone check passed 4 Nov 2026 with tweaks (A4b); A4b passed with one more tweak, applied as **A4c** (needs upload + phone check) |
 | A5 | Guard against double-tap recording a drug twice: adrenaline greyed out 3 min 30 s; magnesium and fluids 5 s, not greyed | **Applied 4 Nov 2026** (owner ruling), needs upload + phone check |
 | A6 | Keep a backup of an unreadable saved session instead of silently discarding it | **Applied 4 Nov 2026** (owner ruling: build it, with a short message), needs upload + phone check |
+| A9 | **Magnesium, child 5 kg and 10 kg bands (any weight up to 10 kg): "Seek clinical advice"** (decision 7 rule 3; EAS 7.2 magnesium row is "-" at 5 and 10 kg, `cpg-paediatric-equipment.pdf` pages 7 and 9). Three texts change, nothing else: (a) magnesium card dose line "Dose: clinical review" → "Seek clinical advice"; (b) magnesium card button (greyed out, as now) "Review dose" → "Seek clinical advice"; (c) magnesium Administration pop-up dose line "Dose requires clinical review" → "Seek clinical advice". Unchanged: no number is shown; the source line "No magnesium dose listed for the 10 kg CPG band · seek clinical advice"; "Other…" still records an actual dose; 20, 30, 40 kg = 4, 6, 8 mmol; adult 10 mmol. **Screens that change:** magnesium card (lower slot after torsades) and magnesium Administration pop-up, weights up to 10 kg only. **Test:** at 3, 5, 7.5 and 10 kg all three places read "Seek clinical advice" with no number; 10.1 kg still shows 4 mmol; the what-changed report lists only these three texts | **Proposed 14 Nov 2026; NOT approved, do not build** |
+| A10 | **Child second amiodarone dose: remove the unsourced numbers** (decision 7 rule 3; C6b; EAS 7.2 has one amiodarone row per band). Delete the stored child second doses 12.5, 25, 50, 75, 100 mg (`numbers.childBands`, field `amiodaroneSecondMg`); the engine gives no second-dose number for a child; the checker stops requiring the field for child bands. Adult 300 / 150 mg unchanged. **Screens that change: none** (the card already reads "Seek clinical advice", "Select dose" opens an empty box, the pop-up says "second dose: seek clinical advice"). **Test:** no child band holds a second dose; the engine returns none for a child; the what-changed report shows no screen or saved-session difference | **Proposed 14 Nov 2026; NOT approved, do not build** |
+| A11 | **Child fluid volume from the band weight** (decision 7 rules 1 and 2). Weight rounded up to the band (5, 10, 20, 30, 40 kg). Lower end from the EAS 7.2 table (20 mL/kg row, pages 7, 9, 12, 14, 16): 100, 200, 400, 600, 800 mL. Upper end by the EAS 3.14 formula (20–40 mL/kg): 40 mL/kg × band = 200, 400, 800, 1200, 1600 mL. Card shows e.g. "400–800 mL IV" (format as now). Source line, replacing "20–40 mL/kg · EAS 3.14": "Child · {band} kg CPG band (rounded up) · {min} mL from the EAS 7.2 table; 40 mL/kg × {band} kg = {max} mL (EAS 3.14)". Examples: 3 kg 60–120 → 100–200 mL; 12 kg 240–480 → 400–800; 15 kg 300–600 → 400–800; 25 kg 500–1000 → 600–1200; exactly 5, 10, 20, 30, 40 kg unchanged. Adult (over 40 kg) 1000–2000 mL and "Enter weight" unchanged. **Screens that change:** fluids card volume and fluids Administration pop-up (volume and source line), child weights not on a band edge (the working is in the pop-up, one tap from the card). **Test:** every band edge and a weight inside each band; 40.1 kg adult; what-changed report lists only fluid volumes and the source line | **Proposed 14 Nov 2026; NOT approved, do not build** |
+| A12 | **RSI doses from the EAS 9.3 tables** (decision 7 rules 1 and 3, decision 2; `cpg-rsi.pdf` page 2). Child, band rounded up: **5 kg band (5 kg or less): "Seek clinical advice" for all four, no number** (no 5 kg column). 10 / 20 / 30 / 40 kg: fentanyl 20 / 40 / 60 / 80 mcg; ketamine (usual, 2 mg/kg) 20 / 40 / 60 / 80 mg; ketamine (reduced, 1 mg/kg) 10 / 20 / 30 / 40 mg; rocuronium or suxamethonium 20 / 40 / 60 / 80 mg. Adult (over 40 kg) rounded up to the next 10 kg; 91 kg and above use the "≥ 100 kg" column. 50 / 60 / 70 / 80 / 90 / ≥100 kg: fentanyl 100 / 120 / 140 / 160 / 180 / 200 mcg; ketamine usual 100 / 120 / 140 / 160 / 180 / 200 mg; ketamine reduced 50 / 60 / 70 / 80 / 90 / 100 mg; blocker 100 / 100 / 150 / 150 / 200 / 200 mg. Weight line becomes "{weight} kg → {column} kg column (rounded up) · EAS 9.3 {adult or paediatric} table"; "calculated references, not recorded administrations" → "guideline table references, not recorded administrations". Examples: 3 kg 6 mcg / 6 / 3 / 6 mg → Seek clinical advice; 15 kg 30 / 30 / 15 / 30 → 40 / 40 / 20 / 40; 45 kg 90 / 90 / 45 / 100 → 100 / 100 / 50 / 100; 65 kg 130 / 130 / 65 / 150 → 140 / 140 / 70 / 150; 120 kg reduced ketamine 120 → 100 mg (others unchanged). Unchanged: the Guidance-tab RSI extract (per-kg doses and maximums, guideline wording) and the conditions text. Note: EAS 7.2 band tables list rocuronium 5–40 mg (1 mg/kg); this row uses EAS 9.3, the RSI guideline. **Screens that change:** RSI doses pop-up (Guidance tab). **Test:** every column edge (5, 5.1, 10, 10.1 … 40, 40.1, 50, 50.1 … 100, 120 kg); what-changed report lists only the RSI pop-up | **Proposed 14 Nov 2026; NOT approved, do not build** |
+| A13 | **Weight from age: show the working** (decision 7 rule 2; EAS 7.2 page 1 formula). Weights unchanged. The saved weight source "Estimated from age {age} years · CPG 7.2" becomes: under 1 year "Estimated from age {age} years: under 1 year = 5 kg · CPG 7.2"; 1–10 years "Estimated from age {age} years: ({age} + 4) × 2 = {kg} kg · CPG 7.2"; 11–14 years "Estimated from age {age} years: {age} × 3 = {kg} kg · CPG 7.2" (still starts with "Estimated", so "· est." still shows). **Screens that change:** weight pop-up after Estimate, and wherever the saved weight source shows; saved sessions hold the new sentence. **Test:** every age 0 to 15; weights identical; what-changed report lists only the source sentence | **Proposed 14 Nov 2026; NOT approved, do not build** |
+| A14 | **Tube size and length: show the working** (decision 7 rule 2; EAS 7.2 page 1 formula; tubes go by age, not a dose, so no band). Sizes unchanged. Age 1–14: "{mm} mm (formula)" → "{age} ÷ 4 + 3.5 = {mm} mm · EAS 7.2 formula"; "{cm} cm (formula)" → "{age} ÷ 2 + 12 = {cm} cm · EAS 7.2 formula". Under 1 year: "3–4 mm" → "3–4 mm (under 1 year) · EAS 7.2"; "ETT size × 3 cm" → "ETT size × 3 cm · EAS 7.2". Not adopted: the EAS 7.2 weight-band ETT table (e.g. 20 kg "4 or 5", 15 cm), which can differ from the age formula. **Screens that change:** Tube sizes pop-up (Guidance tab). **Test:** every age 0 to 15; sizes identical; what-changed report lists only these lines | **Proposed 14 Nov 2026; NOT approved, do not build** |
 
 ## Open clinical flags (preserve current behaviour until ruled)
 C3, C5, C6a ruled **Keep**; C4 Keep for doses (energy uses bands under A1). **C6b:** child
