@@ -45,3 +45,9 @@ export function giveOriginalTheA10ChildSecondDose() {
     return reference && original.isPaediatric(s) ? { ...reference, amio2: null } : reference;
   };
 }
+
+// A11 (owner-approved 14 Nov 2026): a child's fluid volume comes from the weight band (EAS 7.2 table volume to
+// 40 mL/kg x the band weight). Same treatment as A1: the ORIGINAL object gets the new fluid rule, nothing else.
+export function giveOriginalTheA11BandFluids() {
+  original.fluidReference = ported.fluidReference;
+}

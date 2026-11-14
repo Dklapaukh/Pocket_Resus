@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { original, ported, giveOriginalTheA1Energy, giveOriginalTheA10ChildSecondDose } from './helpers/engines.mjs';
+import { original, ported, giveOriginalTheA1Energy, giveOriginalTheA10ChildSecondDose, giveOriginalTheA11BandFluids } from './helpers/engines.mjs';
 import { runAll } from './helpers/scenarios.mjs';
 const golden = readFileSync(new URL('./golden/engine.golden.json', import.meta.url), 'utf8');
 const text = o => JSON.stringify(runAll(o), null, 1) + '\n';
@@ -18,11 +18,12 @@ function diffs(a, b, path = '', out = []) {
 test('ported engine matches the golden file except shock-energy / pads values (A1) and child second amiodarone (A10)', () => {
   giveOriginalTheA1Energy();
   giveOriginalTheA10ChildSecondDose();
+  giveOriginalTheA11BandFluids();
   assert.equal(text(ported), text(original));
   const changed = diffs(JSON.parse(golden), runAll(ported));
   assert.ok(changed.length > 0, 'sanity: A1 does change some energy values');
   assert.ok(changed.some((p) => /amio2/.test(p)), 'sanity: A10 does change a child second amiodarone value');
-  for (const p of changed) assert.match(p, /joules|energy|padsPaed|pads|amio2/i, 'unexpected change at ' + p);
+  for (const p of changed) assert.match(p, /joules|energy|padsPaed|pads|amio2|fluid/i, 'unexpected change at ' + p); // A1, A10, A11
 });
 // The readable rewrite (11 Nov 2026) shares three small helpers between engine files; nothing else may be added or lost.
 const ADDED_BY_REWRITE = ['childBand', 'invalidEnergy', 'rhythmDetails'];

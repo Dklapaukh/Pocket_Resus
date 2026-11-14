@@ -49,7 +49,7 @@ test('doc 11: a saved comma weight shows real fluid volumes after reload (was Na
   const a = openApp({ appDir: ROOT, savedState: JSON.stringify(sessionWith({ weight: '15,5', group: 'Child', rhythm: 'PEA' }, [pea])) });
   assert.equal(stored(a).weight, '15.5');
   assert.doesNotMatch(main(a), /NaN/);
-  assert.equal(R.fluidReference(stored(a)).min, 310); // 20 mL/kg x 15.5 kg
+  assert.deepEqual([R.fluidReference(stored(a)).min, R.fluidReference(stored(a)).max], [400, 800]); // 15.5 kg -> 20 kg band (A11): EAS 7.2 table 400 mL, 40 mL/kg x 20 kg
   assert.ok(item(a, REPAIRED).includes('15,5'));
 });
 

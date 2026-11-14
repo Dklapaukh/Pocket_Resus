@@ -55,13 +55,15 @@ test('approved changes list: each "after" is in the rules file and each "before"
   const file = readYamlStrict(readFileSync(new URL('../src/rules/nz-eas.yaml', import.meta.url), 'utf8'));
   const frozenJson = JSON.parse(readFileSync(new URL('./baseline/nz-eas-before-yaml.json', import.meta.url), 'utf8'));
   const additions = JSON.parse(readFileSync(new URL('./baseline/stage2-additions.json', import.meta.url), 'utf8'));
-  const at = (tree, dotted) => dotted.split('.').reduce((node, name) => (node && typeof node === 'object' ? node[name] : undefined), tree);
+  const at = (tree, place) => (Array.isArray(place) ? place : place.split('.')).reduce((node, name) => (node && typeof node === 'object' ? node[name] : undefined), tree);
+  const value = (v) => (v === REMOVED ? undefined : v);
   assert.ok(APPROVED_CHANGES.length > 0);
   for (const c of APPROVED_CHANGES) {
-    assert.equal(at(file, c.path), c.after === REMOVED ? undefined : c.after, `${c.row} ${c.path} in the rules file`);
-    assert.equal(at(frozenJson, c.path), c.before, `${c.row} ${c.path} in the frozen JSON copy`);
+    assert.equal(at(file, c.path), value(c.after), `${c.row} ${c.path} in the rules file`);
+    assert.equal(at(frozenJson, c.path), value(c.before), `${c.row} ${c.path} in the frozen JSON copy`);
+    if (Array.isArray(c.path)) continue; // notes are not in the v22 baseline (its comments became notes)
     const inBaseline = at(FROZEN_BASELINE, c.path);
-    assert.ok(inBaseline === c.before || (inBaseline === undefined && additions[c.path] === c.before), `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
+    assert.ok(inBaseline === value(c.before) || (inBaseline === undefined && additions[c.path] === c.before), `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
   }
-  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10'], 'only approved rows (doc 07): add a row here only after the owner approves it');
+  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11'], 'only approved rows (doc 07): add a row here only after the owner approves it');
 });

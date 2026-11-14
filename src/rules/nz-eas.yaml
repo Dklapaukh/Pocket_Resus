@@ -27,26 +27,31 @@ numbers:
       amiodaroneFirstMg: 25
       magnesiumMmol: null
       shockJ: 20
+      fluidsTableMl: 100
     - maxKg: 10
       adrenalineMg: 0.1
       amiodaroneFirstMg: 50
       magnesiumMmol: null
       shockJ: 40
+      fluidsTableMl: 200
     - maxKg: 20
       adrenalineMg: 0.2
       amiodaroneFirstMg: 100
       magnesiumMmol: 4
       shockJ: 80
+      fluidsTableMl: 400
     - maxKg: 30
       adrenalineMg: 0.3
       amiodaroneFirstMg: 150
       magnesiumMmol: 6
       shockJ: 120
+      fluidsTableMl: 600
     - maxKg: 40
       adrenalineMg: 0.4
       amiodaroneFirstMg: 200
       magnesiumMmol: 8
       shockJ: 160
+      fluidsTableMl: 800
   adult:
     adrenalineMg: 1
     amiodaroneFirstMg: 300
@@ -206,7 +211,7 @@ wording:
   noMagnesiumDoseBasis: No magnesium dose listed for the {band} kg CPG band · seek clinical advice
   invalidWeightMagnesiumBasis: Enter a valid weight for a dose reference
   adultFluidBasis: Adult · EAS 3.14
-  childFluidBasis: "{minPerKg}–{maxPerKg} mL/kg · EAS 3.14"
+  childFluidBasis: Child · {band} kg CPG band (rounded up) · {min} mL from the EAS 7.2 table; {maxPerKg} mL/kg × {band} kg = {max} mL (EAS 3.14)
   noWeightFluidBasis: Enter weight for a volume reference
   amiodaroneNotYetDue: Not yet due. Review after {first} shocks in VF / pulseless VT (second dose after {second}, counting earlier shocks).
   amiodaroneSecondNotYetDue: Due after {second} shocks
@@ -1028,9 +1033,9 @@ notes:
   numbers.ageEstimate.underOneYearKg: any age below 1 year
   numbers.ageEstimate.oneToTenYears: "(age + 4) x 2, whole years only"
   numbers.ageEstimate.elevenToFourteenYears: age x 3, whole years only
-  numbers.childBands: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026)."
+  numbers.childBands: "Child weight bands (EAS 7.2). A child's weight is ROUNDED UP to the next band (e.g. 15 kg uses the 20 kg row). magnesiumMmol null = no dose listed: seek clinical advice. shockJ = 4 J/kg of the band, from change A1 (owner-approved 3 Nov 2026). fluidsTableMl = the 0.9% sodium chloride 20 mL/kg volume from the EAS 7.2 band table (change A11, owner-approved 14 Nov 2026)."
   numbers.adult: Adult references (also used when no weight has been entered).
-  numbers.child.fluidsMinMlPerKg: "20-40 mL/kg of the ACTUAL weight (not the band), EAS 3.14"
+  numbers.child.fluidsMinMlPerKg: "20-40 mL/kg, EAS 3.14. A child uses the weight band (change A11): the lower volume is the band's fluidsTableMl, the upper is fluidsMaxMlPerKg x the band weight"
   numbers.shock.joulesPerKg: each child band's shockJ = maxKg x joulesPerKg (change A1; checked by test)
   numbers.shock.paediatricPadsUpToJ: prompt for paediatric pads when the energy reference is 100 J or less
   numbers.shock.maxRecordableJ: a recorded energy must be above 0 and no more than this

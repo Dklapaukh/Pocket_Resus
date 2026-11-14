@@ -6,6 +6,15 @@ import { readFileSync } from 'node:fs';
 import { runScenarios, toHashes } from './helpers/dom-run.mjs';
 import { SCENARIOS } from './helpers/dom-scenarios.mjs';
 import { ROOT } from './helpers/engines.mjs';
+import { rmSync } from 'node:fs';
+import { appWithApprovedChangesUndone } from './helpers/approved-changes.mjs';
+
+// The golden file holds only fingerprints of the ORIGINAL app's screens, so the comparison runs on a copy of
+// the app with the approved A-table changes taken out (tests/helpers/approved-changes.mjs); each approved
+// change has its own test of the new screens.
+const undoneDir = appWithApprovedChangesUndone(ROOT);
+const undoneHashes = toHashes(runScenarios({ appDir: undoneDir }).out);
+rmSync(undoneDir, { recursive: true, force: true });
 
 const golden = JSON.parse(readFileSync(new URL('./golden/dom-original.json', import.meta.url), 'utf8'));
 
@@ -27,7 +36,7 @@ test('every scenario in the golden file still exists, with the same number of st
 
 for (const name of Object.keys(SCENARIOS)) {
   test(`screens and saved data match the original app: ${name}`, () => {
-    const now = toHashes(runScenarios({ appDir: ROOT }).out)[name], want = golden[name];
+    const now = undoneHashes[name], want = golden[name];
     for (let i = 0; i < want.length; i++) {
       for (const k of Object.keys(want[i])) {
         assert.equal(now[i][k], want[i][k], `${name} › step ${i + 1} "${want[i].label}" › ${k} differs`);

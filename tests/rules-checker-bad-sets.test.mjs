@@ -175,7 +175,7 @@ test('every relationship rule has a name and a plain-English description, and th
 /* [rule name, text to change, replacement, place the message starts with]. Each fault breaks only that relationship. */
 const RELATIONSHIPS = [
   ['childNotAboveAdult', '"adrenalineMg": 0.4,', '"adrenalineMg": 5,', 'numbers.childBands.4.adrenalineMg'],
-  ['bandEnergyIsWeightTimesJoulesPerKg', '"shockJ": 160\n', '"shockJ": 150\n', 'numbers.childBands.4.shockJ'],
+  ['bandEnergyIsWeightTimesJoulesPerKg', '"shockJ": 160,', '"shockJ": 150,', 'numbers.childBands.4.shockJ'], // ',' since A11 added a line after it
   ['lastBandReachesAdultWeight', '"maxKg": 40,\n        "adrenalineMg": 0.4', '"maxKg": 35,\n        "adrenalineMg": 0.4', 'numbers.childBands'],
   ['adultEnergyWithinRecordableLimit', '"maxRecordableJ": 1000', '"maxRecordableJ": 150', 'numbers.adult.shockJ'],
   ['adultRoundedWeightWithinMaxWeight', '"adultRoundedToKg": 50', '"adultRoundedToKg": 600', 'numbers.weight.adultRoundedToKg'],
@@ -199,7 +199,7 @@ for (const [rule, find, replace, place] of RELATIONSHIPS) {
 }
 
 test('with no relationship rules switched on, an editor can change a clinical number without being stopped', () => {
-  const set = JSON.parse(text.replace('"adrenalineMg": 0.4,', () => '"adrenalineMg": 5,').replace('"shockJ": 160\n', () => '"shockJ": 150\n'));
+  const set = JSON.parse(text.replace('"adrenalineMg": 0.4,', () => '"adrenalineMg": 5,').replace('"shockJ": 160,', () => '"shockJ": 150,'));
   assert.ok(checkRuleSet(set).length >= 2);
   assert.deepEqual(checkRuleSet(set, { relationshipRules: [] }), []);
 });

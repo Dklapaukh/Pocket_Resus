@@ -66,7 +66,7 @@ test('the baseline has 425 values and every one is still in the rule set, identi
   assert.deepEqual(Object.keys(RULES), PARTS, 'the app gets the five parts only (about and notes are not passed on)');
   assert.deepEqual(Object.keys(BASELINE), PARTS);
   assert.equal(flatten(FROZEN_BASELINE).length, 425, 'the frozen baseline has 425 values');
-  assert.equal(flatten(BASELINE).length, 420, 'less the five child second amiodarone doses deleted by A10');
+  assert.equal(flatten(BASELINE).length, 425 - 5 + 5, 'less the five child second amiodarone doses deleted by A10, plus the five band fluid volumes added by A11');
   assert.deepEqual(baselineProblems(RULES, BASELINE), []);
   for (const part of PARTS) assert.deepEqual(baselineProblems({ [part]: file[part] }, { [part]: BASELINE[part] }), [], part);
 });
@@ -130,7 +130,7 @@ test('the YAML file read the strict way equals the frozen JSON file from before 
   assert.deepEqual(Object.keys(file), ['about', ...PARTS, 'notes']);
   const places = everyPlace(frozenJson);
   assert.equal(everyPlace(JSON.parse(frozenJsonText)).length, 1168, 'the comparison covers every value and group of the frozen file');
-  assert.equal(places.length, 1163, 'less the five child second amiodarone doses deleted by A10');
+  assert.equal(places.length, 1168 - 5 + 5, 'less the five child second doses deleted by A10, plus the five band fluid volumes added by A11');
   assert.deepEqual(everyPlace(file), places);
 });
 
@@ -159,7 +159,8 @@ test('every comment in the baseline file is kept as a note (none lost)', () => {
   assert.equal(comments[0].path, 'BASELINE-MARKER', 'the first comment is the baseline label added at the move');
   const original = comments.slice(1); // the baseline label is not one of the original comments
   assert.equal(original.length, 62, 'the original file has 62 comments');
-  const kept = { about: file.about, ...file.notes };
+  const undone = withApprovedChanges(file, 'undo'); // notes rewritten by an approved change are compared as they were before it
+  const kept = { about: undone.about, ...undone.notes };
   const newPlaces = pinnedNotes.map(([place]) => place); // notes added in stage 2 (pinned above), not from a baseline comment
   for (const c of original) {
     assert.ok(c.path in kept, `no note for "${c.path}"`);

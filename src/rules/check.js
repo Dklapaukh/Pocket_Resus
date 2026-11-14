@@ -45,7 +45,7 @@ const ENGINE_GAPS = [
 const WORDING = {
   adultDoseBasis: ['text', 'adultAboveKg'], childDoseBasis: ['text', 'band'], adultMagnesiumBasis: ['text'], childMagnesiumBasis: ['text', 'band'],
   noMagnesiumDoseBasis: ['text', 'band'], invalidWeightMagnesiumBasis: ['text'], adultFluidBasis: ['text'],
-  childFluidBasis: ['text', 'minPerKg', 'maxPerKg'], noWeightFluidBasis: ['text'], amiodaroneNotYetDue: ['text', 'first', 'second'],
+  childFluidBasis: ['text', 'band', 'min', 'maxPerKg', 'max'], noWeightFluidBasis: ['text'], amiodaroneNotYetDue: ['text', 'first', 'second'],
   amiodaroneSecondNotYetDue: ['text', 'second'], childSecondAmiodarone: ['text'], invalidWeight: ['text', 'maxKg'],
   headerEnergyTitle: ['text', 'joulesPerKg', 'adultShockJ'], padsPrompt: ['text'], padsPromptWithLimit: ['text', 'padsUpToJ'],
   estimateAgeError: ['text', 'fourteenMaxAge'], estimatedWeightSource: ['text', 'age'], adrenalineOverdue: ['text', 'adrenalineEveryMin'],
@@ -258,6 +258,7 @@ const NUMBER_LIMITS = [
   // no child second amiodarone dose: EAS 7.2 gives none (A10, 14 Nov 2026); a band row holding one is refused
   { path: 'numbers.childBands.*.magnesiumMmol', type: 'number', unit: 'mmol', above: 0, max: 1000, orEmpty: true }, // a child magnesium dose (empty = no dose for this band)
   { path: 'numbers.childBands.*.shockJ', type: 'number', unit: 'J', above: 0, max: 2000 }, // a child shock energy (5000 J is impossible)
+  { path: 'numbers.childBands.*.fluidsTableMl', type: 'number', unit: 'mL', above: 0, max: 5000 }, // the band's 20 mL/kg fluid volume from the EAS 7.2 table (A11)
   // ---- doses and energies, adults ----
   { path: 'numbers.adult.adrenalineMg', type: 'number', unit: 'mg', above: 0, max: 100 }, // adult adrenaline dose
   { path: 'numbers.adult.amiodaroneFirstMg', type: 'number', unit: 'mg', above: 0, max: 5000 }, // adult first amiodarone dose
@@ -533,7 +534,7 @@ export function checkRuleSet(file, { relationshipRules = RELATIONSHIPS_ON_BY_DEF
       let previous, previousRow;
       N.childBands.forEach((row, i) => {
         const where = `numbers.childBands.${i}`;
-        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'magnesiumMmol', 'shockJ']);
+        const r = group(where, row, ['maxKg', 'adrenalineMg', 'amiodaroneFirstMg', 'magnesiumMmol', 'shockJ', 'fluidsTableMl']);
         if (!r) return;
         const maxKg = number(`${where}.maxKg`, r.maxKg);
         if (maxKg !== undefined && previous !== undefined && maxKg <= previous) say(`${where}.maxKg`, `bands must go in rising order, one row per band (${maxKg} follows ${previous})`);

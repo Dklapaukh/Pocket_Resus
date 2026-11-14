@@ -3,6 +3,7 @@
 // numbers and wording into the rules file can be proved to change nothing on screen.
 // The golden file (tests/golden/step3a-v21-output.json) was recorded from v21 (commit 97db27d).
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { buildSync } from 'esbuild';
 import { openApp } from './dom-app.mjs';
@@ -112,7 +113,10 @@ export const SCENARIOS = {
 const ENTRY = path.join(path.dirname(new URL(import.meta.url).pathname), 'step3a-entry.mjs');
 function loader(w, dir, srcs, dom) {
   w.scrollTo = () => {};
-  const code = buildSync({ entryPoints: [ENTRY], bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' }, ...rulesBundleOptions,
+  // The entry is built as if it sat in the app folder being run (dir/tests/helpers), so its '../../src/...'
+  // imports take the code of THAT folder, not always the main one (needed for an app copy, A11).
+  const stdin = { contents: readFileSync(ENTRY, 'utf8'), resolveDir: path.join(dir, 'tests', 'helpers'), sourcefile: 'step3a-entry.mjs' };
+  const code = buildSync({ stdin, bundle: true, format: 'iife', write: false, banner: { js: '"use strict";' }, ...rulesBundleOptions,
   }).outputFiles[0].text;
   new vm.Script(code, { filename: 'step3a-bundle.js' }).runInContext(dom.getInternalVMContext());
 }

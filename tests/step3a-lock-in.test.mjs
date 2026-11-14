@@ -59,7 +59,7 @@ test('no guideline sentence from the rules file is also typed into the app or en
 // Values the app supplies itself when it shows these entries (everything else comes from the rules file).
 const APP_VALUES = {
   adultDoseBasis: { adultAboveKg: 40 }, childDoseBasis: { band: 20 }, childMagnesiumBasis: { band: 20 }, noMagnesiumDoseBasis: { band: 5 },
-  childFluidBasis: { minPerKg: 20, maxPerKg: 40 }, amiodaroneNotYetDue: { first: 3, second: 6 }, amiodaroneSecondNotYetDue: { second: 6 },
+  childFluidBasis: { band: 20, min: 400, maxPerKg: 40, max: 800 }, amiodaroneNotYetDue: { first: 3, second: 6 }, amiodaroneSecondNotYetDue: { second: 6 },
   invalidWeight: { maxKg: 500 }, estimatedWeightSource: { age: 7 }, amiodaroneReviewAt: { shocks: 3 }, maxDosesRecorded: { maxDoses: 2 },
   amiodaroneChildPopupDose: { first: 100 }, amiodaroneAdultPopupDose: { first: 300, second: 150 }, drugPopupFooter: { guideline: '14.3' },
   tubeSizeUnderOne: { minMm: 3, maxMm: 4 }, tubeLengthUnderOne: { timesSize: 3 }, tubeSizeFormula: { mm: 5.3 }, tubeLengthFormula: { cm: 15.5 },

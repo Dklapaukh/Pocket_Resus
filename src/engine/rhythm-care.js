@@ -38,14 +38,17 @@ export function magnesiumReference(session) {
   return { dose: band?.magnesiumMmol ?? null, basis };
 }
 
-/* Fluid volume reference in mL: adult range, or 20-40 mL/kg of the ACTUAL child weight.
-   Same comma quirk as magnesium (see above). */
+/* Fluid volume reference in mL: adult range, or for a child the weight BAND (rounded up, change A11):
+   lower = the band's EAS 7.2 table volume (20 mL/kg), upper = 40 mL/kg x the band weight (EAS 3.14 formula),
+   with the working shown in the basis line. Same comma quirk as magnesium (see above). */
 export function fluidReference(session) {
   if (!R.validWeight(session.weight)) return { min: null, max: null, basis: R.wording('noWeightFluidBasis') };
   if (R.isPaediatric(session)) {
-    const kg = +session.weight;
-    const perKg = { minPerKg: RULES.numbers.child.fluidsMinMlPerKg, maxPerKg: RULES.numbers.child.fluidsMaxMlPerKg };
-    return { min: perKg.minPerKg * kg, max: perKg.maxPerKg * kg, basis: R.wording('childFluidBasis', perKg) };
+    const band = R.childBand(+session.weight);
+    if (!band) return { min: null, max: null, basis: R.wording('noWeightFluidBasis') }; // cannot happen: a saved comma weight is converted on load
+    const maxPerKg = RULES.numbers.child.fluidsMaxMlPerKg;
+    const min = band.fluidsTableMl, max = maxPerKg * band.maxKg;
+    return { min, max, basis: R.wording('childFluidBasis', { band: band.maxKg, min, maxPerKg, max }) };
   }
   return { min: RULES.numbers.adult.fluidsMinMl, max: RULES.numbers.adult.fluidsMaxMl, basis: R.wording('adultFluidBasis') };
 }
