@@ -158,6 +158,8 @@ export const CODE_CHANGES = [
   { row: 'A15', file: 'src/engine/core.js', before: "    reversibleCauses: RULES.sources.reversibleCauses,\n    igel: RULES.sources.igel,\n", after: "    reversibleCauses: RULES.sources.reversibleCauses,\n" },
   { row: 'A15', file: 'src/app/views.js', before: OLD_LMA_SHEET, after: NEW_LMA_SHEET },
   { row: 'A15', file: 'src/app/views.js', before: OLD_IGEL_LINES, after: NEW_IGEL_LINES },
+  // A17 (approved 14 Nov 2026): "Use age" with an empty box, a non-number or a negative age saves nothing (code only)
+  { row: 'A17', file: 'src/app/events.js', before: "    const a = Number($('referenceAge').value);\n    if (!Number.isFinite(a) || a < 0 || a > 120) return error(T('errors.age'));\n", after: "    const typed = $('referenceAge').value.trim(), a = Number(typed);\n    // A17: an empty box, a non-number or a negative age saves nothing; the pop-up shows what applies without it\n    if (typed === '' || !Number.isFinite(a) || a < 0) return referenceSheet('tubes');\n    if (a > 120) return error(T('errors.age'));\n" },
 ];
 
 /* Put a value back into a group directly after the name it followed (keeps the order of names). */
