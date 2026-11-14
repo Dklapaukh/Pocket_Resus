@@ -2,7 +2,7 @@
 "header": {
  "what": "What the app saved on the phone after every step, and any complete JSON record downloaded. Kept apart from the screens on purpose.",
  "rule": "Never edit or re-record to make a test pass. Re-record only for an owner-approved A-table change (tests/reference/README.md).",
- "madeFromCommit": "24e73f197ac3b9f970f32392ac19efd837994330",
+ "madeFromCommit": "ba1304d46d921f0f97b058aa785bf2efd7c0a286",
  "generatorVersion": 3,
  "seedBase": 20261112,
  "themes": [
