@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { original, ported, giveOriginalTheA1Energy, giveOriginalTheA10ChildSecondDose, giveOriginalTheA11BandFluids } from './helpers/engines.mjs';
+import { original, ported, giveOriginalTheA1Energy, giveOriginalTheA10ChildSecondDose, giveOriginalTheA11BandFluids, giveOriginalTheA16AgeBands } from './helpers/engines.mjs';
 import { runAll } from './helpers/scenarios.mjs';
 const golden = readFileSync(new URL('./golden/engine.golden.json', import.meta.url), 'utf8');
 const text = o => JSON.stringify(runAll(o), null, 1) + '\n';
@@ -19,11 +19,13 @@ test('ported engine matches the golden file except shock-energy / pads values (A
   giveOriginalTheA1Energy();
   giveOriginalTheA10ChildSecondDose();
   giveOriginalTheA11BandFluids();
+  giveOriginalTheA16AgeBands();
   assert.equal(text(ported), text(original));
   const changed = diffs(JSON.parse(golden), runAll(ported));
   assert.ok(changed.length > 0, 'sanity: A1 does change some energy values');
   assert.ok(changed.some((p) => /amio2/.test(p)), 'sanity: A10 does change a child second amiodarone value');
-  for (const p of changed) assert.match(p, /joules|energy|padsPaed|pads|amio2|fluid/i, 'unexpected change at ' + p); // A1, A10, A11
+  assert.ok(changed.some((p) => /^\/estimate\//.test(p)), 'sanity: A16 does change a weight from age');
+  for (const p of changed) assert.match(p, /joules|energy|padsPaed|pads|amio2|fluid|^\/estimate\/\d+\/est$/i, 'unexpected change at ' + p); // A1, A10, A11, A16
 });
 // The readable rewrite (11 Nov 2026) shares three small helpers between engine files; nothing else may be added or lost.
 const ADDED_BY_REWRITE = ['childBand', 'invalidEnergy', 'rhythmDetails'];
@@ -33,6 +35,8 @@ const ADDED_BY_STEP_2 = ['RULES', 'wording', 'restoreSaved', 'latestLowerRhythm'
   'childAmiodaroneAdvice', 'childSecondAmiodarone', 'secondAmiodaroneEarly', 'doseFor', 'lockLeft'];
 // Doc 18 step 3a (12 Nov 2026): helpers that fill rules-file wording and calculate reference values.
 const ADDED_BY_STEP_3A = ['ageEstimateGaps', 'rsiDoses', 'tubeReference', 'wordingGaps', 'guideText'];
+// A16 (owner-approved 14 Nov 2026): the adult-age check for the weight pop-up (age 14 = adult).
+const ADDED_BY_A16 = ['adultAge'];
 test('ported engine exposes the same functions and constants as the original (plus the named helpers)', () => {
-  assert.deepEqual(Object.keys(ported).sort(), [...Object.keys(original), ...ADDED_BY_REWRITE, ...ADDED_BY_STEP_2, ...ADDED_BY_STEP_3A].sort());
+  assert.deepEqual(Object.keys(ported).sort(), [...Object.keys(original), ...ADDED_BY_REWRITE, ...ADDED_BY_STEP_2, ...ADDED_BY_STEP_3A, ...ADDED_BY_A16].sort());
 });

@@ -122,29 +122,39 @@ export function childBand(kg) {
   return RULES.numbers.childBands.find((band) => kg <= band.maxKg);
 }
 
-/* Paediatric weight estimate from age in years, or null when no rule applies. */
-export function estimate(age) {
+/* Age from the EAS 7.2 band table headings (change A16): an age under 1 year stays as typed; an age of 1 year
+   or more is ROUNDED UP to the next whole year (1.1 -> 2). null for a blank or non-number entry, 0 or less,
+   or above numbers.ageEstimate.adultUpToAge (no estimate). */
+function roundedUpAge(age) {
   const years = Number(age);
-  const rules = RULES.numbers.ageEstimate;
-  if (String(age).trim() === '' || !Number.isFinite(years) || years <= 0 || years > rules.elevenToFourteenYears.maxAge) return null;
-  if (years < 1) return rules.underOneYearKg;
-  if (!Number.isInteger(years)) return null; // between 1 and 14, only whole years have a rule
-  if (years <= rules.oneToTenYears.maxAge) return (years + rules.oneToTenYears.addYears) * rules.oneToTenYears.multiplyBy;
-  return years * rules.elevenToFourteenYears.multiplyBy;
+  if (String(age).trim() === '' || !Number.isFinite(years) || years <= 0 || years > RULES.numbers.ageEstimate.adultUpToAge) return null;
+  return years < 1 ? years : Math.ceil(years);
 }
 
-/* The numbers the age-estimate wording shows, all taken from numbers.ageEstimate. */
+/* Paediatric weight estimate from age in years (change A16): under 1 year = underOneYearKg; otherwise the
+   weightKg of the first band whose maxAge the rounded-up age does not pass. null when no weight is given:
+   an age outside the rules, or an adult age (see adultAge). */
+export function estimate(age) {
+  const rules = RULES.numbers.ageEstimate, years = roundedUpAge(age);
+  if (years === null) return null;
+  if (years < 1) return rules.underOneYearKg;
+  return rules.bands.find((band) => years <= band.maxAge)?.weightKg ?? null;
+}
+
+/* The rounded-up age when it is above every band but not above adultUpToAge (age 14 = adult, owner decision
+   8): the weight pop-up then says to enter the weight. null for any other age. */
+export function adultAge(age) {
+  const years = roundedUpAge(age);
+  return years !== null && years >= 1 && estimate(age) === null ? years : null;
+}
+
+/* The numbers and phrases the age-estimate wording shows, all built from numbers.ageEstimate:
+   ageBandList "1 year: 10 kg. 2–5 years: 20 kg. ...", adultAges "14 years", ageMaxYears 14. */
 export function ageEstimateGaps() {
-  const { underOneYearKg, oneToTenYears: ten, elevenToFourteenYears: fourteen } = RULES.numbers.ageEstimate;
-  return {
-    underOneYearKg,
-    tenMaxAge: ten.maxAge,
-    tenAddYears: ten.addYears,
-    tenMultiplyBy: ten.multiplyBy,
-    fourteenFromAge: ten.maxAge + 1,
-    fourteenMaxAge: fourteen.maxAge,
-    fourteenMultiplyBy: fourteen.multiplyBy,
-  };
+  const { underOneYearKg, bands, adultUpToAge } = RULES.numbers.ageEstimate;
+  const ages = (from, to) => (from === to ? wording(from === 1 ? 'ageOneYear' : 'ageManyYears', { age: from }) : wording('ageYearRange', { from, to }));
+  const ageBandList = bands.map((band, i) => wording('ageBandWeight', { ages: ages(i === 0 ? 1 : bands[i - 1].maxAge + 1, band.maxAge), kg: band.weightKg })).join(' ');
+  return { underOneYearKg, ageBandList, adultAges: ages(bands.at(-1).maxAge + 1, adultUpToAge), ageMaxYears: adultUpToAge };
 }
 
 /* Every number the wording can show, taken from part 1 of the rules file (stored once there), plus

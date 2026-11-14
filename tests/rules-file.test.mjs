@@ -62,14 +62,15 @@ test('double-tap locks (A5): adrenaline 3 min 30 s, magnesium and fluids 5 s', (
   assert.deepEqual(RULES.numbers.doubleTapLockMs, { adrenaline: 210000, magnesium: 5000, fluids: 5000 });
 });
 
-const AGE_GAPS = ['underOneYearKg', 'tenMaxAge', 'tenAddYears', 'tenMultiplyBy', 'fourteenFromAge', 'fourteenMaxAge', 'fourteenMultiplyBy'];
+const AGE_GAPS = ['underOneYearKg', 'ageBandList', 'adultAges']; // A16: the age rows are listed by the engine
 test('reference wording is plain text, and every {gap} is one the app fills', () => {
   const gaps = { adultDoseBasis: ['adultAboveKg'], childDoseBasis: ['band'], childMagnesiumBasis: ['band'], noMagnesiumDoseBasis: ['band'],
     childFluidBasis: ['band', 'min', 'maxPerKg', 'band', 'max'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'],
     weightSheetAgeEstimate: AGE_GAPS, tubeSheetAgeEstimate: AGE_GAPS,
     tubeSizeUnderOne: ['minMm', 'maxMm'], tubeLengthUnderOne: ['timesSize'], tubeSizeFormula: ['mm'], tubeLengthFormula: ['cm'],
     // step 3a sub-step 4: wording moved from the app; gaps filled from part 1 by the engine (wordingGaps)
-    headerEnergyTitle: ['joulesPerKg', 'adultShockJ'], padsPromptWithLimit: ['padsUpToJ'], estimateAgeError: ['fourteenMaxAge'],
+    headerEnergyTitle: ['joulesPerKg', 'adultShockJ'], padsPromptWithLimit: ['padsUpToJ'], estimateAgeError: ['ageMaxYears'], estimateAgeAdult: ['age'],
+    ageBandWeight: ['ages', 'kg'], ageOneYear: ['age'], ageManyYears: ['age'], ageYearRange: ['from', 'to'], // A16
     estimatedWeightSource: ['age'], adrenalineOverdue: ['adrenalineEveryMin'], adrenalineUntilReview: ['adrenalineEveryMin'],
     amiodaroneReviewAt: ['shocks'], maxDosesRecorded: ['maxDoses'], magnesiumMaxDosesStatus: ['magnesiumMaxDoses'], fluidsCardTitle: ['fluidShort'],
     amiodaroneChildPopupDose: ['first'], amiodaroneAdultPopupDose: ['first', 'second'],

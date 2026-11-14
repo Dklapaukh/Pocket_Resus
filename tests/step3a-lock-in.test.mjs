@@ -63,6 +63,8 @@ const APP_VALUES = {
   invalidWeight: { maxKg: 500 }, estimatedWeightSource: { age: 7 }, amiodaroneReviewAt: { shocks: 3 }, maxDosesRecorded: { maxDoses: 2 },
   amiodaroneChildPopupDose: { first: 100 }, amiodaroneAdultPopupDose: { first: 300, second: 150 }, drugPopupFooter: { guideline: '14.3' },
   tubeSizeUnderOne: { minMm: 3, maxMm: 4 }, tubeLengthUnderOne: { timesSize: 3 }, tubeSizeFormula: { mm: 5.3 }, tubeLengthFormula: { cm: 15.5 },
+  // A16: the adult-age message (app) and the age-row phrases (filled by the engine's ageEstimateGaps)
+  estimateAgeAdult: { age: 14 }, ageBandWeight: { ages: '2–5 years', kg: 20 }, ageOneYear: { age: 1 }, ageManyYears: { age: 14 }, ageYearRange: { from: 2, to: 5 },
 };
 
 // Gaps the app itself supplies for the stage 2 entries (anything else must come from the rules file).

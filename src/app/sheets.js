@@ -79,7 +79,7 @@ export function openWeight() {
     T('weightSheet.title'),
     `<label>${T('weightSheet.weightLabel')}<input id="weightInput" type="text" inputmode="decimal" value="${esc(st.s.weight)}" autocomplete="off"></label>` +
       `<div class="number-pad">${numberKeys}</div>` +
-      `<details><summary>${T('weightSheet.estimateSummary')}</summary><label>${T('weightSheet.ageLabel')}<input id="ageInput" type="number" inputmode="decimal" min="0.01" max="${R.RULES.numbers.ageEstimate.elevenToFourteenYears.maxAge}" step="any" value="${esc(st.s.age)}"></label>` +
+      `<details><summary>${T('weightSheet.estimateSummary')}</summary><label>${T('weightSheet.ageLabel')}<input id="ageInput" type="number" inputmode="decimal" min="0.01" max="${R.RULES.numbers.ageEstimate.adultUpToAge}" step="any" value="${esc(st.s.age)}"></label>` +
       `<button data-action="estimate">${T('weightSheet.useAgeEstimateButton')}</button><p class="caption">${R.wording('weightSheetAgeEstimate', R.ageEstimateGaps())}</p></details>` +
       `<p id="weightBasis" class="caption">${esc(st.s.weightSource)}</p>` +
       `<p id="weightPadPrompt" class="pads-entry" ${R.needsPaediatricPads(st.s.weight) ? '' : 'hidden'}>▰ ▰ ${R.guideText('padsPromptWithLimit')}</p>` +

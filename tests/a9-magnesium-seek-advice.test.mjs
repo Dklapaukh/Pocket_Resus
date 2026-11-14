@@ -4,6 +4,7 @@
 // review". Unchanged: the source line, "Other…" still records a dose, 20/30/40 kg = 4/6/8 mmol, adult 10 mmol.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { isDeepStrictEqual } from 'node:util';
 import { readFileSync } from 'node:fs';
 import { openApp } from './helpers/dom-app.mjs';
 import { ROOT } from './helpers/engines.mjs';
@@ -63,7 +64,8 @@ test('approved changes list: each "after" is in the rules file and each "before"
     assert.deepStrictEqual(at(frozenJson, c.path), value(c.before), `${c.row} ${c.path} in the frozen JSON copy`);
     if (Array.isArray(c.path)) continue; // notes are not in the v22 baseline (its comments became notes)
     const inBaseline = at(FROZEN_BASELINE, c.path);
-    assert.ok(inBaseline === value(c.before) || (inBaseline === undefined && additions[c.path] === c.before), `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
+    assert.ok(isDeepStrictEqual(inBaseline, value(c.before)) || (inBaseline === undefined && additions[c.path] === c.before), // deep: A16 swaps a whole group
+      `${c.row} ${c.path} in the v22 baseline or the stage 2 additions`);
   }
-  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11', 'A12'], 'only approved rows (doc 07): add a row here only after the owner approves it');
+  assert.deepEqual([...new Set(APPROVED_CHANGES.map((c) => c.row))], ['A9', 'A10', 'A11', 'A12', 'A16'], 'only approved rows (doc 07): add a row here only after the owner approves it');
 });

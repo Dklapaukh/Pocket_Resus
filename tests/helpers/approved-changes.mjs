@@ -32,6 +32,13 @@ const OLD_RSI_CODE = "/* RSI dose references from the exact weight in kg (not th
 const NEW_RSI_CODE = "/* RSI dose references looked up in the EAS 9.3 dose summary tables (change A12). Reference only; records nothing.\n   A child (weight.adultAboveKg or less) uses the column of its weight band, rounded up (decision 2). The 5 kg band\n   has no column, so null is returned and the pop-up shows \"Seek clinical advice\" (decision 7 rule 3).\n   An adult uses the first adult column at or above the weight; above the last column, the last (\"≥ 100 kg\").\n   Returns a copy of the column: { columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg }, or null. */\nexport function rsiDoses(weightKg) {\n  const { paediatric, adult } = RULES.numbers.rsi.tables;\n  const column = weightKg <= RULES.numbers.weight.adultAboveKg\n    ? paediatric.find((c) => c.columnKg === childBand(weightKg)?.maxKg)\n    : adult.find((c) => weightKg <= c.columnKg) ?? adult.at(-1);\n  return column ? { ...column } : null;\n}\n\n";
 const OLD_RSI_SHEET = "    const d = R.rsiDoses(w);\n    const doseList = w\n      ? `<p><b>${T('weightHeader.weightKg', { weight: w })}</b> · ${R.guideText('rsiNotRecorded')}</p><dl>` +\n        `<dt>${T('referenceSheets.fentanylName')}</dt><dd>${T('referenceSheets.doseMcgIv', { dose: d.fentanylMcg })}</dd>` +\n        `<dt>${T('referenceSheets.ketamineUsualName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.ketamineMg })}</dd>` +\n        `<dt>${T('referenceSheets.ketamineReducedName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.reducedKetamineMg })}</dd>` +\n        `<dt>${T('referenceSheets.blockerName')}</dt><dd>${T('liveCards.doseMgIv', { dose: d.blockerMg })}</dd></dl>`\n";
 const NEW_RSI_SHEET = "    const d = R.rsiDoses(w);\n    // A12: no table column for this weight (5 kg band) shows \"Seek clinical advice\" and no number\n    const dose = (phrase, value) => (d ? T(phrase, { dose: d[value] }) : R.guideText('rsiNoDose'));\n    const doseList = w\n      ? `<p><b>${T('weightHeader.weightKg', { weight: w })}</b> · ${R.guideText('rsiNotRecorded')}</p><dl>` +\n        `<dt>${T('referenceSheets.fentanylName')}</dt><dd>${dose('referenceSheets.doseMcgIv', 'fentanylMcg')}</dd>` +\n        `<dt>${T('referenceSheets.ketamineUsualName')}</dt><dd>${dose('liveCards.doseMgIv', 'ketamineMg')}</dd>` +\n        `<dt>${T('referenceSheets.ketamineReducedName')}</dt><dd>${dose('liveCards.doseMgIv', 'reducedKetamineMg')}</dd>` +\n        `<dt>${T('referenceSheets.blockerName')}</dt><dd>${dose('liveCards.doseMgIv', 'blockerMg')}</dd></dl>`\n";
+/* A16: weight from age from the EAS 7.2 band table headings (code before and after). */
+const OLD_AGE_CODE = "/* Paediatric weight estimate from age in years, or null when no rule applies. */\nexport function estimate(age) {\n  const years = Number(age);\n  const rules = RULES.numbers.ageEstimate;\n  if (String(age).trim() === '' || !Number.isFinite(years) || years <= 0 || years > rules.elevenToFourteenYears.maxAge) return null;\n  if (years < 1) return rules.underOneYearKg;\n  if (!Number.isInteger(years)) return null; // between 1 and 14, only whole years have a rule\n  if (years <= rules.oneToTenYears.maxAge) return (years + rules.oneToTenYears.addYears) * rules.oneToTenYears.multiplyBy;\n  return years * rules.elevenToFourteenYears.multiplyBy;\n}\n\n/* The numbers the age-estimate wording shows, all taken from numbers.ageEstimate. */\nexport function ageEstimateGaps() {\n  const { underOneYearKg, oneToTenYears: ten, elevenToFourteenYears: fourteen } = RULES.numbers.ageEstimate;\n  return {\n    underOneYearKg,\n    tenMaxAge: ten.maxAge,\n    tenAddYears: ten.addYears,\n    tenMultiplyBy: ten.multiplyBy,\n    fourteenFromAge: ten.maxAge + 1,\n    fourteenMaxAge: fourteen.maxAge,\n    fourteenMultiplyBy: fourteen.multiplyBy,\n  };\n}\n\n";
+const NEW_AGE_CODE = "/* Age from the EAS 7.2 band table headings (change A16): an age under 1 year stays as typed; an age of 1 year\n   or more is ROUNDED UP to the next whole year (1.1 -> 2). null for a blank or non-number entry, 0 or less,\n   or above numbers.ageEstimate.adultUpToAge (no estimate). */\nfunction roundedUpAge(age) {\n  const years = Number(age);\n  if (String(age).trim() === '' || !Number.isFinite(years) || years <= 0 || years > RULES.numbers.ageEstimate.adultUpToAge) return null;\n  return years < 1 ? years : Math.ceil(years);\n}\n\n/* Paediatric weight estimate from age in years (change A16): under 1 year = underOneYearKg; otherwise the\n   weightKg of the first band whose maxAge the rounded-up age does not pass. null when no weight is given:\n   an age outside the rules, or an adult age (see adultAge). */\nexport function estimate(age) {\n  const rules = RULES.numbers.ageEstimate, years = roundedUpAge(age);\n  if (years === null) return null;\n  if (years < 1) return rules.underOneYearKg;\n  return rules.bands.find((band) => years <= band.maxAge)?.weightKg ?? null;\n}\n\n/* The rounded-up age when it is above every band but not above adultUpToAge (age 14 = adult, owner decision\n   8): the weight pop-up then says to enter the weight. null for any other age. */\nexport function adultAge(age) {\n  const years = roundedUpAge(age);\n  return years !== null && years >= 1 && estimate(age) === null ? years : null;\n}\n\n/* The numbers and phrases the age-estimate wording shows, all built from numbers.ageEstimate:\n   ageBandList \"1 year: 10 kg. 2–5 years: 20 kg. ...\", adultAges \"14 years\", ageMaxYears 14. */\nexport function ageEstimateGaps() {\n  const { underOneYearKg, bands, adultUpToAge } = RULES.numbers.ageEstimate;\n  const ages = (from, to) => (from === to ? wording(from === 1 ? 'ageOneYear' : 'ageManyYears', { age: from }) : wording('ageYearRange', { from, to }));\n  const ageBandList = bands.map((band, i) => wording('ageBandWeight', { ages: ages(i === 0 ? 1 : bands[i - 1].maxAge + 1, band.maxAge), kg: band.weightKg })).join(' ');\n  return { underOneYearKg, ageBandList, adultAges: ages(bands.at(-1).maxAge + 1, adultUpToAge), ageMaxYears: adultUpToAge };\n}\n\n";
+const OLD_AGE_EVENT = "  if (w === null) return error(R.guideText('estimateAgeError'));\n";
+const NEW_AGE_EVENT = "  if (w === null) {\n    const adult = R.adultAge($('ageInput').value); // A16: age 14 = adult, no weight is filled\n    return error(adult === null ? R.guideText('estimateAgeError') : R.guideText('estimateAgeAdult', { age: adult }));\n  }\n";
+const OLD_AGE_ESTIMATE = {"underOneYearKg": 5, "oneToTenYears": {"maxAge": 10, "addYears": 4, "multiplyBy": 2}, "elevenToFourteenYears": {"maxAge": 14, "multiplyBy": 3}};
+const NEW_AGE_ESTIMATE = {"underOneYearKg": 5, "bands": [{"maxAge": 1, "weightKg": 10}, {"maxAge": 5, "weightKg": 20}, {"maxAge": 10, "weightKg": 30}, {"maxAge": 13, "weightKg": 40}], "adultUpToAge": 14};
 /* A12: the EAS 9.3 dose summary tables (cpg-rsi.pdf page 2), one row per column. */
 const column = (columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg) => ({ columnKg, fentanylMcg, ketamineMg, reducedKetamineMg, blockerMg });
 const RSI_TABLES = {
@@ -59,6 +66,22 @@ export const APPROVED_CHANGES = [
   { row: 'A12', path: 'wording.rsiNotRecorded', before: 'calculated references, not recorded administrations', after: 'guideline table references, not recorded administrations' },
   { row: 'A12', path: 'wording.rsiNoDose', before: REMOVED, after: 'Seek clinical advice', follows: 'rsiConditions' },
   { row: 'A12', path: ['notes', 'numbers.rsi'], before: "RSI dose references (EAS 9.3), shown on the Guidance tab from the EXACT entered weight (not the band). Each dose = weight x perKg, capped at max. Above the adult threshold (weight.adultAboveKg) the blocker is first rounded to the nearest roundAdultToMg. Shown to displayDecimals places.", after: "RSI dose references (EAS 9.3), shown on the Guidance tab. Change A12 (owner-approved 14 Nov 2026): the doses are looked up in the EAS 9.3 dose summary tables (tables.paediatric and tables.adult, cpg-rsi.pdf page 2), not calculated. A child (weight.adultAboveKg or less) uses the column of its weight band, rounded up; the 5 kg band has no column, so the pop-up shows \"Seek clinical advice\" (decision 7 rule 3). An adult uses the first adult column at or above the weight (rounded up to the next 10 kg); above the last column the last (\"≥ 100 kg\") is used. The per-kg doses, maximums and roundAdultToMg fill the Guidance-tab RSI extract wording only." },
+  // A16 (approved 14 Nov 2026, decision 8): weight from age from the EAS 7.2 band table headings; age 14 = adult.
+  // New wording is added before the swaps it follows, so each name it follows is still found; notes likewise.
+  { row: 'A16', path: 'numbers.ageEstimate', before: OLD_AGE_ESTIMATE, after: NEW_AGE_ESTIMATE },
+  { row: 'A16', path: 'wording.estimateAgeAdult', before: REMOVED, after: 'Age {age}: adult. Enter the weight.', follows: 'estimateAgeError' },
+  { row: 'A16', path: 'wording.estimateAgeError', before: "Use an infant age in years or whole years 1–{fourteenMaxAge}.", after: "Enter an age from under 1 year to {ageMaxYears} years." },
+  { row: 'A16', path: 'wording.weightSheetAgeEstimate', before: "Under 1 year: {underOneYearKg} kg. 1–{tenMaxAge} years: (age + {tenAddYears}) × {tenMultiplyBy}. {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy}. CPG 7.2; estimates may underestimate. Excludes newborn resuscitation.", after: "Under 1 year: {underOneYearKg} kg. {ageBandList} {adultAges}: adult. Age rounded up to the next whole year. CPG 7.2; estimates may underestimate." },
+  { row: 'A16', path: 'wording.ageBandWeight', before: REMOVED, after: '{ages}: {kg} kg.', follows: 'tubeSheetAgeEstimate' },
+  { row: 'A16', path: 'wording.ageOneYear', before: REMOVED, after: '{age} year', follows: 'ageBandWeight' },
+  { row: 'A16', path: 'wording.ageManyYears', before: REMOVED, after: '{age} years', follows: 'ageOneYear' },
+  { row: 'A16', path: 'wording.ageYearRange', before: REMOVED, after: '{from}–{to} years', follows: 'ageManyYears' },
+  { row: 'A16', path: 'wording.tubeSheetAgeEstimate', before: "Under 1 year: {underOneYearKg} kg. Ages 1–{tenMaxAge}: (age + {tenAddYears}) × {tenMultiplyBy} kg. Ages {fourteenFromAge}–{fourteenMaxAge}: age × {fourteenMultiplyBy} kg. Estimates may underestimate actual weight.", after: "Under 1 year: {underOneYearKg} kg. {ageBandList} {adultAges}: adult. Age rounded up to the next whole year. CPG 7.2; estimates may underestimate." },
+  { row: 'A16', path: ['notes', 'numbers.ageEstimate'], before: "Paediatric weight estimate from age, in years (EAS 7.2). Ages outside these rules give no estimate.", after: "Paediatric weight estimate from age, in years, from the EAS 7.2 band table headings (cpg-paediatric-equipment.pdf pages 5-15; change A16, owner-approved 14 Nov 2026). An age of 1 year or more is ROUNDED UP to the next whole year first. Ages of 0 or less, or above adultUpToAge, give no estimate." },
+  { row: 'A16', path: ['notes', 'numbers.ageEstimate.bands'], before: REMOVED, after: "Rounded-up age up to maxAge (and above the previous row) gives weightKg, the band weight: 1 year 10 kg, 2-5 years 20 kg, 6-10 years 30 kg, 11-13 years 40 kg", follows: 'numbers.ageEstimate.elevenToFourteenYears' },
+  { row: 'A16', path: ['notes', 'numbers.ageEstimate.adultUpToAge'], before: REMOVED, after: "a rounded-up age above the last band and up to this age is treated as adult (owner decision 8: age 14 = adult): no weight is filled and the weight must be entered", follows: 'numbers.ageEstimate.bands' },
+  { row: 'A16', path: ['notes', 'numbers.ageEstimate.oneToTenYears'], before: "(age + 4) x 2, whole years only", after: REMOVED, follows: 'numbers.ageEstimate.underOneYearKg' },
+  { row: 'A16', path: ['notes', 'numbers.ageEstimate.elevenToFourteenYears'], before: "age x 3, whole years only", after: REMOVED, follows: 'numbers.ageEstimate.oneToTenYears' },
 ];
 
 /* The exact code edits of approved rows: file, code before, code after (each "after" must occur once). */
@@ -68,6 +91,9 @@ export const CODE_CHANGES = [
   { row: 'A11', file: 'src/engine/rhythm-care.js', before: OLD_FLUIDS, after: NEW_FLUIDS },
   { row: 'A12', file: 'src/engine/core.js', before: OLD_RSI_CODE, after: NEW_RSI_CODE },
   { row: 'A12', file: 'src/app/views.js', before: OLD_RSI_SHEET, after: NEW_RSI_SHEET },
+  { row: 'A16', file: 'src/engine/core.js', before: OLD_AGE_CODE, after: NEW_AGE_CODE },
+  { row: 'A16', file: 'src/app/events.js', before: OLD_AGE_EVENT, after: NEW_AGE_EVENT },
+  { row: 'A16', file: 'src/app/sheets.js', before: 'max="${R.RULES.numbers.ageEstimate.elevenToFourteenYears.maxAge}"', after: 'max="${R.RULES.numbers.ageEstimate.adultUpToAge}"' },
 ];
 
 /* Put a value back into a group directly after the name it followed (keeps the order of names). */
@@ -133,6 +159,10 @@ export function withApprovedChangesFlat(map) {
   return copy;
 }
 
+const isObject = (v) => v !== null && typeof v === 'object';
+/* A value written as the frozen JSON file writes it: two spaces per level, starting at the indent of its line. */
+const pretty = (value, indent) => JSON.stringify(value, null, 2).split('\n').join(`\n${indent}`);
+
 /* The same swaps on the TEXT of the frozen JSON file (tests/baseline/nz-eas-before-yaml.json), keeping its
    layout, for tests that edit that text. Each swap must match exactly one line, and the result must read as
    exactly withApprovedChanges of the original. */
@@ -150,11 +180,21 @@ export function withApprovedChangesInJsonText(text) {
     }
     if (change.before === REMOVED) {
       // a new value: put its line straight after the line of the value it follows, in the same group
-      const names = namesOf(change.path), group = names.slice(0, -1).reduce((node, name) => node[name], JSON.parse(text));
+      // (the value it follows is read from the text as changed so far, so one new value may follow another: A16)
+      const names = namesOf(change.path), group = names.slice(0, -1).reduce((node, name) => node[name], JSON.parse(result));
       const after = `"${change.follows}": ${JSON.stringify(group[change.follows])}`;
       const line = new RegExp(`(\\n[ ]*)${escape(after)}(,?)(?=\\n)`, 'g');
       assert.equal((result.match(line) || []).length, 1, `${change.row} ${shown(change.path)}: the line "${after}" must appear exactly once`);
       result = result.replace(line, (all, indent, comma) => `${indent}${after},${indent}"${key}": ${JSON.stringify(change.after)}${comma}`);
+      continue;
+    }
+    if (isObject(change.before) && change.after !== REMOVED) {
+      // a whole group swapped for another (A16): the group is written over several lines, indented as in the file
+      const at = [...result.matchAll(new RegExp(`\\n( *)"${escape(key)}": `, 'g'))]
+        .filter((m) => result.startsWith(pretty(change.before, m[1]), m.index + m[0].length));
+      assert.equal(at.length, 1, `${change.row} ${shown(change.path)}: the group must appear exactly once`);
+      const [m] = at, start = m.index + m[0].length;
+      result = result.slice(0, start) + pretty(change.after, m[1]) + result.slice(start + pretty(change.before, m[1]).length);
       continue;
     }
     const find = `"${key}": ${JSON.stringify(change.before)}`;

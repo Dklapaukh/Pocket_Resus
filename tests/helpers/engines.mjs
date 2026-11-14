@@ -51,3 +51,10 @@ export function giveOriginalTheA10ChildSecondDose() {
 export function giveOriginalTheA11BandFluids() {
   original.fluidReference = ported.fluidReference;
 }
+
+// A16 (owner-approved 14 Nov 2026, decision 8): weight from age comes from the EAS 7.2 band table headings (age
+// rounded up; 1 = 10 kg, 2-5 = 20, 6-10 = 30, 11-13 = 40 kg; 14 = adult, no weight). Same treatment as A1: the
+// ORIGINAL object gets the new estimate rule, nothing else.
+export function giveOriginalTheA16AgeBands() {
+  original.estimate = ported.estimate;
+}

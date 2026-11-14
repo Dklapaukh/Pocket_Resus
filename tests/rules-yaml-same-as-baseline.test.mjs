@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { RULES } from '../src/rules/load.js';
 import { RULES as FROZEN_BASELINE } from './baseline/nz-eas-v22-a8.js';
-import { withApprovedChanges, withApprovedChangesFlat } from './helpers/approved-changes.mjs';
+import { APPROVED_CHANGES, REMOVED, withApprovedChanges, withApprovedChangesFlat } from './helpers/approved-changes.mjs';
 import { baselineComments } from './helpers/rules-comments.mjs';
 import { readYamlStrict } from '../src/rules/parse.js';
 import { rulesFileText } from '../src/rules/write.js';
@@ -66,7 +66,7 @@ test('the baseline has 425 values and every one is still in the rule set, identi
   assert.deepEqual(Object.keys(RULES), PARTS, 'the app gets the five parts only (about and notes are not passed on)');
   assert.deepEqual(Object.keys(BASELINE), PARTS);
   assert.equal(flatten(FROZEN_BASELINE).length, 425, 'the frozen baseline has 425 values');
-  assert.equal(flatten(BASELINE).length, 425 - 5 + 5 - 1 + 50 + 1, 'less the five child second amiodarone doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the 50 EAS 9.3 table doses and the "Seek clinical advice" wording');
+  assert.equal(flatten(BASELINE).length, 425 - 5 + 5 - 1 + 50 + 1 - 6 + 10 + 5, 'less the five child second amiodarone doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the 50 EAS 9.3 table doses and the "Seek clinical advice" wording; A16: the 6 age-formula values become 10 age-row values, plus 5 new wording entries');
   assert.deepEqual(baselineProblems(RULES, BASELINE), []);
   for (const part of PARTS) assert.deepEqual(baselineProblems({ [part]: file[part] }, { [part]: BASELINE[part] }), [], part);
 });
@@ -82,7 +82,11 @@ test('rule set = baseline + exactly the pinned stage 2 additions, nothing else (
   // the notes: the file's notes are the baseline notes followed by exactly the pinned new notes
   const baselinePlaces = new Set(baselineComments(baselineSource).slice(1).map((c) => c.path));
   const newNotes = Object.entries(file.notes).filter(([place]) => !baselinePlaces.has(place));
-  assert.deepEqual(newNotes, pinnedNotes, 'the new notes differ from the pinned ones');
+  // notes added by approved A-table rows (A16) sit among the baseline notes; every other new note is a pinned one
+  const approvedNotes = APPROVED_CHANGES.filter((c) => Array.isArray(c.path) && c.path[0] === 'notes' && c.before === REMOVED).map((c) => [c.path[1], c.after]);
+  const isApproved = ([place]) => approvedNotes.some(([p]) => p === place);
+  assert.deepEqual(newNotes.filter((n) => !isApproved(n)), pinnedNotes, 'the new notes differ from the pinned ones');
+  assert.deepEqual(newNotes.filter(isApproved), approvedNotes, 'the notes added by approved rows differ from the approved list');
 });
 
 test('the comparison itself can see a changed value, a changed type, a swapped order, a missing key, an extra value and a changed addition', () => {
@@ -130,7 +134,7 @@ test('the YAML file read the strict way equals the frozen JSON file from before 
   assert.deepEqual(Object.keys(file), ['about', ...PARTS, 'notes']);
   const places = everyPlace(frozenJson);
   assert.equal(everyPlace(JSON.parse(frozenJsonText)).length, 1168, 'the comparison covers every value and group of the frozen file');
-  assert.equal(places.length, 1168 - 5 + 5 - 1 + 63 + 1, 'less the five child second doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the tables (2 lists, 10 columns, 50 doses, their 13 groups and lists = 63 places) and one wording');
+  assert.equal(places.length, 1168 - 5 + 5 - 1 + 63 + 1 - 8 + 15 + 5, 'less the five child second doses deleted by A10, plus the five band fluid volumes added by A11; A12: less the RSI rounding setting, plus the tables (2 lists, 10 columns, 50 doses, their 13 groups and lists = 63 places) and one wording; A16: the 8 age-formula places (2 groups, 6 values) become 15 (the rows list, 4 rows, 8 values, the oldest age, the first value kept), plus 5 new wording entries; 2 notes replaced by 2');
   assert.deepEqual(everyPlace(file), places);
 });
 

@@ -10,7 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { CASE_LIMITS, compareRuleSets, fastCaseIds, formatReport, parseCaseList, readable } from './reference/lib/rules-diff.mjs';
+import { CASE_LIMITS, compareRuleSets, fastCaseIds, formatReport, parseCaseList, readable, readRulesSpec } from './reference/lib/rules-diff.mjs';
 import { Pool } from './reference/lib/run.mjs';
 import { ROOT } from './reference/lib/reference-app.mjs';
 import { readYamlStrict } from '../src/rules/parse.js';
@@ -259,10 +259,10 @@ test('the command line still reads a rules file in the older JSON layout, and gi
     assert.match(fromJson.stdout, /No screen differs and the saved session does not differ/);
     const OLD_COMMIT = '8dc32e2'; // the last commit before the YAML change: its rules file is nz-eas.json
     if (spawnSync('git', ['cat-file', '-e', OLD_COMMIT + '^{commit}'], { cwd: ROOT }).status === 0) {
-      // that commit's nz-eas.json is the frozen JSON copy (before any approved change), so the two read the same
-      const fromGit = cli('git:' + OLD_COMMIT, frozen, '--cases', '1');
-      assert.equal(fromGit.status, 0, fromGit.stderr);
-      assert.match(fromGit.stdout, /No screen differs and the saved session does not differ/);
+      // that commit's nz-eas.json is the frozen JSON copy (before any approved change), so the two read the same.
+      // Checked by reading, not by playing: since A16 today's app cannot play a rule set without the age rows.
+      assert.deepStrictEqual(readRulesSpec('git:' + OLD_COMMIT), JSON.parse(frozenText));
+      assert.deepStrictEqual(readRulesSpec(frozen), JSON.parse(frozenText));
     }
     const missing = cli('git:' + 'no-such-commit', same, '--cases', '1');
     assert.notEqual(missing.status, 0);

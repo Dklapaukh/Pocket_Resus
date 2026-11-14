@@ -44,7 +44,9 @@ const BAD = [
   ['quick start choices out of order', 'numbers', '"quickChoicesMin": [5, 10, 15, 20]', '"quickChoicesMin": [5, 15, 10, 20]', 'numbers.resusStart.quickChoicesMin.2', 'must rise'],
   ['the "prepare" message after the warning', 'numbers', '"prepareAtMs": 15000,', '"prepareAtMs": 45000,', 'numbers.timing.prepareAtMs', 'warning time'],
   ['a warning that is not a whole number of seconds', 'numbers', '"warningAtMs": 30000,', '"warningAtMs": 30500,', 'numbers.timing.warningAtMs', 'whole number of seconds'],
-  ['the second age range ending before the first', 'numbers', '"elevenToFourteenYears": {\n        "maxAge": 14,', '"elevenToFourteenYears": {\n        "maxAge": 9,', 'numbers.ageEstimate.elevenToFourteenYears.maxAge', 'must be above'],
+  // A16 (14 Nov 2026): the age formulas became age rows from the EAS 7.2 band table headings; same kind of fault, re-pointed
+  ['age rows out of order', 'numbers', '"maxAge": 10,\n          "weightKg": 30', '"maxAge": 4,\n          "weightKg": 30', 'numbers.ageEstimate.bands.2.maxAge', 'rising order'],
+  ['the oldest accepted age not above the last age row', 'numbers', '"adultUpToAge": 14', '"adultUpToAge": 13', 'numbers.ageEstimate.adultUpToAge', 'must be above'],
   ['a rhythm that is both shockable and not', 'numbers', '"shock": ["VF", "VT", "Torsades"],\n      "noshock": ["PEA",', '"shock": ["VF", "VT", "Torsades"],\n      "noshock": ["VF",', 'numbers.rhythms.noshock.0', 'both shockable and not'],
   ['hole e: an unknown event type in the interventions list', 'numbers', '"equipment",\n        "note"\n', '"equipment",\n        "notes"\n', 'numbers.log.interventionEventTypes.12', 'not a kind of event the app records', 'e'],
   ['hole f: "mg" removed from the medicine units', 'numbers', '"units": ["mg", ', '"units": [', 'numbers.medicineForm.units', 'must include "mg"', 'f'],
