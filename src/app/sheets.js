@@ -429,7 +429,9 @@ export function peaSnippet() {
 export function supportAdministration(type) {
   if (type === 'fluids') {
     const ref = R.fluidReference(st.s);
-    const volume = ref.min === null ? T('liveCards.enterWeight') : T('liveCards.volumeMlIv', { min: ref.min, max: ref.max });
+    const volume = ref.min === null ? T('liveCards.enterWeight')
+      : ref.max === null ? T('liveCards.volumeMlIvTableOnly', { min: ref.min }) // A19: a child has the table volume only
+        : T('liveCards.volumeMlIv', { min: ref.min, max: ref.max });
     sheet(
       T('administration.fluidsTitle'),
       `${peaSnippet()}<p><b>${volume}</b> · ${formatGuidelineReference(ref.basis)}</p>` +

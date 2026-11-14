@@ -25,13 +25,13 @@ const CHILD = [['0.5', 5, 100, 200], ['3', 5, 100, 200], ['5', 5, 100, 200], ['5
   ['20.1', 30, 600, 1200], ['25', 30, 600, 1200], ['30', 30, 600, 1200], ['30.1', 40, 800, 1600], ['35', 40, 800, 1600], ['40', 40, 800, 1600]];
 
 for (const [kg, band, lower, upper] of CHILD) {
-  test(`A11: ${kg} kg child: ${lower}–${upper} mL from the ${band} kg band, working shown in the pop-up`, () => {
+  test(`A11 (as updated by A19): ${kg} kg child: ${lower} mL from the ${band} kg band (table volume only)`, () => {
     const a = fluidsCase(kg);
-    assert.match(card(a), new RegExp(`<div class="drug-dose">${lower}–${upper} mL IV</div>`), 'card volume');
+    assert.match(card(a), new RegExp(`<div class="drug-dose">${lower} mL IV</div>`), 'card volume'); // A19: no upper number
     const sh = popup(a);
-    assert.match(sh, new RegExp(`<b>${lower}–${upper} mL IV</b>`), 'pop-up volume');
+    assert.match(sh, new RegExp(`<b>${lower} mL IV</b>`), 'pop-up volume'); // A19
     // the app shows each "EAS x.y" source as an italic "EAS guideline x.y" (formatGuidelineReference)
-    assert.ok(sh.includes(`Child · ${band} kg CPG band (rounded up) · ${lower} mL from the <em>EAS guideline 7.2</em> table; 40 mL/kg × ${band} kg = ${upper} mL (<em>EAS guideline 3.14</em>)`), 'pop-up working and sources');
+    assert.ok(sh.includes(`Child · ${band} kg CPG band (rounded up) · ${lower} mL from the <em>EAS guideline 7.2</em> table (20 mL/kg); <em>EAS guideline 3.14</em> allows up to 40 mL/kg`), 'pop-up source line (A19 wording)');
   });
 }
 

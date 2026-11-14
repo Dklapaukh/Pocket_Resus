@@ -45,7 +45,7 @@ const ENGINE_GAPS = [
 const WORDING = {
   adultDoseBasis: ['text', 'adultAboveKg'], childDoseBasis: ['text', 'band'], adultMagnesiumBasis: ['text'], childMagnesiumBasis: ['text', 'band'],
   noMagnesiumDoseBasis: ['text', 'band'], invalidWeightMagnesiumBasis: ['text'], adultFluidBasis: ['text'],
-  childFluidBasis: ['text', 'band', 'min', 'maxPerKg', 'max'], noWeightFluidBasis: ['text'], amiodaroneNotYetDue: ['text', 'first', 'second'],
+  childFluidBasis: ['text', 'band', 'min', 'minPerKg', 'maxPerKg'], noWeightFluidBasis: ['text'], amiodaroneNotYetDue: ['text', 'first', 'second'],
   amiodaroneSecondNotYetDue: ['text', 'second'], childSecondAmiodarone: ['text'], invalidWeight: ['text', 'maxKg'],
   headerEnergyTitle: ['text', 'joulesPerKg', 'adultShockJ'], padsPrompt: ['text'], padsPromptWithLimit: ['text', 'padsUpToJ'],
   estimateAgeError: ['text', 'ageMaxYears'], estimateAgeAdult: ['text', 'age'], estimatedWeightSource: ['text', 'age'], adrenalineOverdue: ['text', 'adrenalineEveryMin'],
@@ -100,7 +100,7 @@ const WORDING = {
     energy: ['text', 'energy'], energyEstimated: ['text', 'energy'], specialFlag: ['text'],
   },
   liveCards: {
-    enterWeight: ['text'], doseMgIv: ['text', 'dose'], doseMmolIv: ['text', 'dose'], volumeMlIv: ['text', 'min', 'max'],
+    enterWeight: ['text'], doseMgIv: ['text', 'dose'], doseMmolIv: ['text', 'dose'], volumeMlIv: ['text', 'min', 'max'], volumeMlIvTableOnly: ['text', 'min'],
     recordDoseMgIv: ['text', 'dose'], recordMmolIv: ['text', 'dose'], recordFluid: ['text'], recordRepeat: ['text'], reviewDose: ['text'],
     notYetDue: ['text'], manualReview: ['text'], roscRecorded: ['text'], sessionEnded: ['text'], weightNeeded: ['text'], selectDose: ['text'],
     doseClinicalReview: ['text'], administrationAria: ['text', 'name'], administrationLink: ['text'], otherLink: ['text'],

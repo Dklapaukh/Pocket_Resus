@@ -460,7 +460,8 @@ export function supportCard(type) {
   const stats = R.supportStats(st.s, type);
   let value;
   if (mag) value = ref.dose === null ? T('liveCards.doseClinicalReview') : T('liveCards.doseMmolIv', { dose: ref.dose });
-  else value = ref.min === null ? T('liveCards.enterWeight') : T('liveCards.volumeMlIv', { min: ref.min, max: ref.max });
+  else if (ref.min === null) value = T('liveCards.enterWeight');
+  else value = ref.max === null ? T('liveCards.volumeMlIvTableOnly', { min: ref.min }) : T('liveCards.volumeMlIv', { min: ref.min, max: ref.max }); // A19: a child has the table volume only
 
   const enabled = !st.s.special && !['ROSC', 'Ended'].includes(st.s.phase);
   const maxDoses = R.RULES.numbers.magnesium.maxDoses;

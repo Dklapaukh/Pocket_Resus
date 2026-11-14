@@ -65,7 +65,7 @@ test('double-tap locks (A5): adrenaline 3 min 30 s, magnesium and fluids 5 s', (
 const AGE_GAPS = ['underOneYearKg', 'ageBandList', 'adultAges']; // A16: the age rows are listed by the engine
 test('reference wording is plain text, and every {gap} is one the app fills', () => {
   const gaps = { adultDoseBasis: ['adultAboveKg'], childDoseBasis: ['band'], childMagnesiumBasis: ['band'], noMagnesiumDoseBasis: ['band'],
-    childFluidBasis: ['band', 'min', 'maxPerKg', 'band', 'max'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'],
+    childFluidBasis: ['band', 'min', 'minPerKg', 'maxPerKg'], amiodaroneNotYetDue: ['first', 'second'], amiodaroneSecondNotYetDue: ['second'], invalidWeight: ['maxKg'],
     weightSheetAgeEstimate: AGE_GAPS, tubeSheetAgeEstimate: AGE_GAPS,
     tubeAdult: ['adultAboveKg', 'adultAges'], tubeSizeBand: ['sizes'], tubeSizeOr: ['first', 'second'], tubeLengthBand: ['cm'], // A18
     // step 3a sub-step 4: wording moved from the app; gaps filled from part 1 by the engine (wordingGaps)
