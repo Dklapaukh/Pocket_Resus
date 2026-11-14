@@ -162,6 +162,34 @@ before its items and `cmH2O` written without subscripts. The 9.2 introductory
 sentence is shortened in the app. This is a transcription comparison, not
 clinical validation or an assessment of the checklist workflow.
 
+## Where each patient-specific number comes from (checked 14 Nov 2026)
+Read from the engine (`src/engine`), the rule set (`src/rules/nz-eas.yaml`) and the packaged PDFs; nothing
+in the app was changed. "Looked up" = the app reads a value stored in the rule set. "Calculated" = the app
+does arithmetic on the weight or age while it runs. Pages are PDF pages.
+
+| Output | Looked up or calculated | Guideline source | Finding |
+|---|---|---|---|
+| Child adrenaline, first amiodarone, magnesium | **Looked up** by weight band (5, 10, 20, 30, 40 kg, weight rounded up): `numbers.childBands` | EAS 7.2 band tables, `cpg-paediatric-equipment.pdf` pages 5, 8, 10, 12, 14 (magnesium: 7, 9, 11, 13, 15) | All 15 values match. Magnesium at 5 and 10 kg is "-" in the tables; the app shows "Dose: clinical review" |
+| Child shock energy | **Looked up** by weight band: 20, 40, 80, 120, 160 J | EAS 7.2 "Manual defibrillation" rows, same pages: 20-25, 40-50, 80-100, 120-150, 160-200 J | Nothing is multiplied while the app runs. The stored value is the bottom of each table range (change A1) and equals band × 4 J/kg (EAS 7.2 page 1). `shock.joulesPerKg` is used only in wording and in a checker rule |
+| Adult adrenaline, amiodarone 300 / 150 mg, magnesium, 200 J, fluids 1–2 L | **Fixed values** (`numbers.adult`) | EAS 3.14, `cpg-cardiac-arrest.pdf` pages 1–2; EAS 14.4 page 2 | Match |
+| Child second amiodarone dose | Not shown: the card reads "Seek clinical advice" (C6b) | **None.** EAS 7.2 has one amiodarone row per band | The rule set still stores 12.5 to 100 mg (half the first dose) with no guideline source |
+| Child fluid volume | **Calculated:** entered weight × 20 and × 40 mL/kg, not rounded to a band, no upper limit | EAS 3.14 page 2 gives "20-40 ml/kg". EAS 7.2 band tables give the 20 mL/kg volume: 100, 200, 400, 600, 800 mL (pages 7, 9, 12, 14, 16) | The table is not in the rule set. The guideline has no table for the 40 mL/kg end |
+| Weight estimated from age | **Calculated** with the guideline's formula: under 1 year 5 kg; 1–10 years (age + 4) × 2; 11–14 years age × 3 | EAS 7.2 page 1 (a formula, not a table) | Matches the formula. Note: the band tables are headed "20 kg / 2-5 years" and "30 kg / 6-10 years", but the formula gives 20 kg at age 6 |
+| Tube size and length at lips | **Calculated** from age with the guideline's formula (under 1 year: 3–4 mm, size × 3 cm; otherwise age ÷ 4 + 3.5 mm, age ÷ 2 + 12 cm; shown up to age 14) | EAS 7.2 page 1 (formula). The band tables also list ETT size and length: 3 / 9 cm, 3 or 4 / 12 cm, 4 or 5 / 15 cm, 5 or 6 / 17 cm, 6 or 7 / 19 cm (pages 6, 8, 10, 12, 14) | The table is not in the rule set. The newborn formula (6 + weight) is not in the app |
+| RSI doses: fentanyl, ketamine, reduced ketamine, rocuronium / suxamethonium | **Calculated:** entered weight × dose per kg, limited to 200; above 40 kg the blocker is rounded to the nearest 50 mg | EAS 9.3, `cpg-rsi.pdf` page 2: adult table (50 to 100 kg in 10 kg steps) and paediatric table (10, 20, 30, 40 kg) | The tables are not in the rule set. The app agrees with them at the table weights; in between it shows values the tables do not list (15 kg: 30 mcg, 30 mg) |
+| iGel sizes | Fixed list of weight ranges, shown whole (not picked for the patient): `equipment.igelRanges` | Intersurgical product information, not an EAS guideline. EAS 7.2 lists LMA sizes per band instead | Source is outside the guidelines |
+
+**Does "the app reads from tables and does not calculate" hold?** Yes for every arrest drug dose and the
+shock energy. No for four outputs, each calculated: child fluid volume, weight from age, tube size and
+length, RSI doses. All four use the guideline's own formula or per-kg dose, but they are arithmetic done by
+the app.
+
+**Paediatric tables.** EAS 7.2 and EAS 9.3 are in the repo, so no PDF is missing. Tables the guideline has
+and the rule set lacks: fluid volume at 20 mL/kg per band; ETT size and length per band; RSI doses for 10,
+20, 30 and 40 kg; LMA size per band. Values no packaged guideline gives (owner to supply a source or a
+ruling): a child's second amiodarone dose; RSI doses for the 5 kg band and for 41 to 49 kg; the fluid
+volume at 40 mL/kg per band. Owner decision 14 Nov 2026 (doc 07): fluids, tube sizes and RSI doses move to table look-ups, one approved change at a time.
+
 ## Review still required
 
 ### Software edge case: comma in a stored weight

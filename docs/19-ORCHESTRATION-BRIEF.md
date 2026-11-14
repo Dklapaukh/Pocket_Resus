@@ -48,11 +48,13 @@ under scheduled tasks. Every chat, attended or not:
    a snapshot on the scratch branch `rules-editor-wip` only; half-finished work never goes on
    `rules-editor`.
 3. If doc 07 shows that everything left is waiting for the owner, stop at once (say so in one line).
+   When a chat finishes with everything committed and pushed, its last act is
+   `sh tools/build-progress.sh save "IDLE: <what is next>"`, so the next chat can start at once.
 4. Before every push run `git pull --rebase origin rules-editor` (another chat may have pushed docs).
 5. **Usage limits.** If an agent fails with a limit error, do not retry in a loop and do not swap in a
    different model on your own: note it in doc 07 (which model, when it resets), carry on with work
    that does not need that model, or stop. Opus hit its weekly limit on 13 Nov 2026 (resets 17 Nov
-   4 pm NZ time); who reviews until then is an owner decision in doc 07.
+   4 pm NZ time); the owner's answer on who reviews until then is in doc 07.
 6. An unattended chat **never pushes to `main`** and never makes a clinical or design choice: it writes
    the question under "Waiting for the owner" in doc 07 (full text of every option, one recommended)
    and moves to other work that is not blocked, or stops.
@@ -76,7 +78,8 @@ ready to put the previous version back with one commit.
   extended as more moves into data.
 - Ask the owner before: deleting files, installing packages, anything outside the current stage.
 - The app is plain static files with no build step, works offline, portrait phone. Keep it that way.
-- The rule set is plain JSON data: no code, no functions. Logic is rule tables read by the engine.
+- The rule set is plain YAML data (decision 9; `src/rules/nz-eas.yaml`, which must end with the line `...`): no code, no functions,
+  no anchors, aliases or tags. Logic is rule tables read by the engine.
 - Name blocks generally where it costs nothing ("counted event", not "shock"): decision 24.
 - Comments in plain English; the owner is a clinician, not a programmer.
 - The offline store name in `sw.js` carries a fingerprint of every shipped file. After changing any
@@ -90,9 +93,8 @@ Otherwise keep going (decision 25: few checkpoints). Reports to the owner: short
 was done, what was proved, what is next; one decision at a time with the full text of every option.
 
 ## Before stage 0
-A8 (doc 07 A-table) is on branch `a8-rosc-other`, waiting for the owner's answer about one
-comparison test. If the owner has approved, merge it into `rules-editor` first; v22 plus A8 is then
-the reference for every proof below. If not, leave it and use v22.
+A8 (doc 07 A-table) was merged before stage 0 and is live in v23. v22 plus A8 is the reference for
+every proof below.
 
 ## Stages
 Proof for all: tests pass before and after; recorded screens and random-case comparisons identical to
@@ -101,9 +103,9 @@ the reference; reviewer has no blocking findings.
 | # | Goal | Extra proof | Worker |
 |---|---|---|---|
 | 0 | **Wider safety net.** Record the reference Live screens, cards, status lines and pop-ups step by step across thousands of generated cases (weights, ages, rhythms, doses, voids, undo, ROSC, re-arrest, special situation, timer moments). New recordings only; existing golden files untouched | Planted behaviour changes (at least 10 different kinds) are each caught | Opus · high |
-| 1 | **Rule set becomes JSON** (decision 9): `nz-eas.json`, loader, offline list updated, first checker for the five existing parts | Every value and sentence identical; app works offline | Sonnet · medium |
+| 1 | **Rule set becomes a data file** (JSON at the time; YAML from step E1b): `nz-eas.json`, loader, offline list updated, first checker for the five existing parts | Every value and sentence identical; app works offline | Sonnet · medium |
 | 2 | **Remaining text and settings into data:** card status lines, labels, titles, messages, disclaimers, timer thresholds, rhythm display names, correction-form rhythm lists, resus-start choices, equipment form questions, log "intervention" list (inventory F, 31, 34, 37, 39, 40) | Lock-in test extended to these | Sonnet · medium |
-| 2b (done) | **Safer update, then publish v23.** `sw.js` fix from doc 07 "Go-live must do" (new-version files never saved into the old version's store; old complete set served until the new set is fully installed); new cache name and pins; publish `rules-editor` to `main` as v23 (A8 + JSON rule set + stage 2). **Owner phone check of the live app** | Test: rules file fails during update, then offline, and the old version still works; real-browser check | Sonnet · medium |
+| 2b (done) | **Safer update, then publish v23.** `sw.js` fix from doc 07 "Go-live must do" (new-version files never saved into the old version's store; old complete set served until the new set is fully installed); new cache name and pins; publish `rules-editor` to `main` as v23 (A8 + JSON rule set + stage 2). Owner phone check of the live app passed 14 Nov 2026 | Test: rules file fails during update, then offline, and the old version still works; real-browser check | Sonnet · medium |
 | 3 | **Facts, flags and rule tables.** Engine reads ordered tables. Move into tables: lower slot, torsades flag, amiodarone due and visibility, second-dose and child-advice cases and their precedence, special situation, after-ROSC states, locks (inventory A). Save the "card has appeared" memory in the session | Table-driven engine equals the current engine on every generated case | Fable · high |
 | 4 | **Drugs as data and one general card builder.** Drug definitions; dose-method menu (fixed, band table, per kg with cap, per kg with rounding, dose sequence); any number of cards with layout by rule (decision 14); units, routes, maximum doses, intervals (inventory A, C). **Owner phone check after this stage** | With the two reference cards the screen markup is identical; a test-only third card renders and records correctly | Fable · high |
 | 5 | **Pop-ups, triggered prompts, situations, on-demand cards.** Pop-ups built from blocks with triggers; situations as data replacing the single switch (built with only today's behaviour); on-demand cards; addable checklists with "where it appears" (inventory B, E; decision 16) | Identical screens; test-only examples of each new block work | Opus · high |
@@ -113,7 +115,7 @@ the reference; reviewer has no blocking findings.
 | 9 | **Approve, publish, rollback** (decisions 18, 21): approval record (editor's name, date, reason, source), version name on screen, previous rule set kept, one-step rollback; trial with a second, deliberately different rule set to find anything still NZ-EAS-specific in code | Second rule set runs with no code change; rollback restores the reference exactly | Opus · high |
 | 10 | **First native additions** through the editor only, no code: G1, G2, G3, G10, G11 (doc 18), **one at a time, each needing the owner's approval of the exact content, its own A-table row and its own scenario tests.** Anything that cannot be done in the editor is reported as a missing block, not typed into code | Each addition appears in the difference report and nowhere else | Sonnet · medium, clinical cross-check Opus · high |
 
-| 11 | **Store apps** (owner goal 13 Nov 2026: Android and iPhone apps). Not designed yet: needs a short design note and owner decisions first (doc 07 "Store apps"). Likely shape: the same files wrapped in a thin native shell, built by GitHub Actions, rule set still updatable without a store release | To be set | To be set |
+| 11 | **Store apps** (owner goal 13 Nov 2026: Android and iPhone apps). Developer accounts under the owner's personal name (14 Nov 2026), so Google needs a closed test with 12 testers for 14 days; Apple rule 1.4.2 is still open (doc 07 "Store apps"). Not designed yet: needs a short design note first. Likely shape: the same files wrapped in a thin native shell, built by GitHub Actions, rule set still updatable without a store release | To be set | To be set |
 
 Reviewer after every stage: Opus · high, fresh agent. Orchestrator: Fable · high.
 
@@ -124,8 +126,9 @@ what the editor can change (the full stages 7, 8 and 9 are finished as those arr
 | # | Goal | Extra proof | Worker |
 |---|---|---|---|
 | E1 | **Checker for today's rule set, and the what-changed report.** Tighten `src/rules/check.js` for all five parts as they are now (doc 07 "Carried forward" list; decision 18 limits: every number has a type, unit and allowed range, lists in order, wording uses exactly its own gaps and only bold, italic, line break). No rule tables or formulas yet. A tool that runs the generated cases through two rule sets and lists every screen that differs. Checker rules that encode a clinical relationship are listed for the owner, not switched on | Checker rejects a library of at least 30 deliberately bad rule sets and accepts the reference; the report finds planted changes and reports nothing for identical rule sets | Sonnet · high |
-| E2 | **Editor page, Rules view** (decisions 20, 23, 24; doc 18 lines 250 to 277): a separate offline page of the same site; tabs Rules, Tests, Publish (App view and Appearance come later); edit every value of the five parts with its plain-English note; checker runs as you type and blocks saving an invalid rule set; a large change needs a typed confirmation; what-changed view; saves a rule-set file. Read the `frontend-design` guidance. **Owner tries it after this step** | Round trip: open the reference rule set, save without edits, file identical; every value in the five parts reachable; the live app unchanged | Opus · high |
-| E3 | **Approve, publish, rollback** (decisions 18, 21): approval record (editor's name, date, reason, source), rule-set version name on screen, previous rule set kept, one-step rollback, publish steps a non-programmer can follow (needs a short design note and an owner decision first: how the saved file reaches GitHub) | Rollback restores the previous rule set exactly; the difference report is part of the approval record | Opus · high |
+| E1b (done) | **Rule set becomes YAML** (decision 9 as changed 13 Nov 2026). `src/rules/nz-eas.yaml` replaces `nz-eas.json`: the same five parts plus `about` and `notes`, every value, type and order identical (a frozen JSON copy stays in `tests/baseline/`). Reader: js-yaml, exact version pinned, copied as one file into `src/vendor/` with its licence (a test proves the copy equals the npm package), used in its strictest mode: plain values only (no dates, anchors, aliases or tags), a repeated name is refused, one document only. One shared writer gives the file a standard layout, so the editor can later save it byte for byte. Loader, offline list, store name, tests and tools re-pointed; the start-up message says YAML. No release | Read YAML equals the frozen JSON (values, types, order); writing the read file gives the identical file; a library of at least 15 YAML traps (yes/no, dates, 012, 1e3, repeated name, anchor, tab, two documents, unquoted colon) is each refused or read exactly as typed, never silently changed; real-browser start, offline, slow and failing rules file; all recordings identical | Sonnet · high |
+| E2 | **Editor page, Rules view** (decisions 20, 23, 24; doc 18 lines 250 to 277): a separate offline page of the same site; tabs Rules, Tests, Publish (App view and Appearance come later); edit every value of the five parts with its plain-English note; checker runs as you type and blocks saving an invalid rule set; a large change needs a typed confirmation; what-changed view; no version-history screens, only the current version number (decision 26); saves a rule-set file. Read the `frontend-design` guidance. **Owner tries it after this step** | Round trip: open the reference rule set, save without edits, file identical; every value in the five parts reachable; the live app unchanged | Opus · high |
+| E3 | **Approve, publish, rollback** (decisions 18, 21): approval record (editor's name, date, reason, source), rule-set version name on screen, previous rule set kept, one-step rollback, a rule set goes live when confirmed in the editor (decision 20 as changed 14 Nov 2026; needs a short design note first: how the editor publishes) | Rollback restores the previous rule set exactly; the difference report is part of the approval record | Opus · high |
 
 ## Going live
 Nothing reaches `main` during stages 0 to 9 unless the owner asks. When the owner says yes: new cache
@@ -137,7 +140,7 @@ ready to put the previous version back with one commit.
 - A stop hook asks for uncommitted work to be committed and pushed. Commit to `rules-editor` once your own test run passes, labelled "awaiting independent review"; fixes follow as further commits. Never commit a half-edited or untested tree.
 - If an agent stops on a usage limit, resume the same agent with a message after the reset if still in the same chat; a new chat restores the saved snapshot instead ("Running unattended").
 - Reviewer briefs that worked: re-run tests; diff scope; plant new faults in a scratch copy (never in the repo); from stage 1 on, a real-browser check with the pre-installed Playwright Chromium (start, a short case compared with the reference, offline, slow and failing rules file). `tools/check-offline-browser.cjs` exists. The fake-browser tests bypass `src/rules/load.js`, so only a real browser proves the loader.
-- When a stage moves text or values into the JSON: planted-change search texts must be re-pointed (same change, found once); new wording keys go into the checker's table; the lock-in test scans `src/app`, `src/engine` and `src/rules/*.js`.
+- When a stage moves text or values into the rule set: planted-change search texts must be re-pointed (same change, found once); new wording keys go into the checker's table; the lock-in test scans `src/app`, `src/engine` and `src/rules/*.js`.
 - Carried-forward items and what is waiting for the owner are listed in doc 07 under the progress table.
 - Agents always start in the background and report back by themselves; wait for the report. Run the deep run in the foreground with a 10-minute time limit (a background run was stopped half-way on 13 Nov 2026).
 - Stage 2 cost: worker about 25 minutes, reviewer similar. Reviewer brief that worked is in doc 09's stage 2 entry in outline: test-loosening check on every changed test, both directions of the move (JSON to old code, old code to JSON), 8 or more new planted faults in a scratch copy, real-browser run against 91843ae.
@@ -145,4 +148,6 @@ ready to put the previous version back with one commit.
 - The owner sometimes edits files on `main` directly on GitHub. At the start of every chat run `git fetch origin main` and, if `main` has commits the branch lacks, merge them into `rules-editor` first (keep the branch's version of a doc where they clash and record the owner's text for reconciling, as in doc 18's last section).
 - A release: merge `main` in, run the full tests on the merged commit, update docs, push `rules-editor`, then `git push origin HEAD:main` (fast-forward only, never force).
 - A worker's `build-progress.sh save` also marks the build as busy, so a scheduled run that starts while a worker is busy stops by itself; that is intended.
+- E1 (14 Nov 2026): worker 14 min, fixes 17 min, reviewer 11 min, re-check 2 min. The reviewer's best finding came from following rule-set text to where the app writes it into the page; ask every reviewer to trace edited text to the screen, not only to read the checker. A chat that stops mid-review leaves no reviewer to resume: the next chat fixes the noted findings, then starts a fresh reviewer on the whole stage.
+- E1b (14 Nov 2026): first worker ran out of chat time; second worker 7 min, fix 10 min, reviewer 12 min, re-check 5 min. A restored snapshot's note ("all done except the final test") was wrong: always run the full tests on restored work before believing the note. Run `npm test` (5 min) and the deep run (9 min) as two separate commands; together they pass the 10-minute limit. The reviewer's blocking finding came from serving a damaged rules file to a real browser: when a file format changes, ask what kinds of damage the new format tolerates that the old one did not. Tests that build YAML text must end it with `...`.
 - Start a new chat at a stage boundary, never mid-review (agents cannot be resumed from another chat). The owner has a standard prompt that reads doc 07 and this page; update both first.
