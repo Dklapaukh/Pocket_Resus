@@ -1,7 +1,7 @@
 # 06. Guiding principle and owner decisions (current only)
 
 This page holds what is true **now**. When a decision changes, its row is rewritten, not added to.
-Earlier wording is in git history (tag `docs-before-audit-2026-11-15`). Editor design decisions are
+Earlier wording is in git history (commit 5760f47 is the last one with the old docs). Editor design decisions are
 in doc 18; this page wins if the two ever disagree.
 
 ## Guiding principle (owner, 15 Nov 2026)
