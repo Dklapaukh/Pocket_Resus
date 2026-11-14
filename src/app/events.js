@@ -728,8 +728,10 @@ document.addEventListener('click', (e) => {
     sheet(c.name, `<h3>${c.plain}</h3><p>${c.text}</p>`);
   }
   if (b.hasAttribute('data-save-age')) {
-    const a = Number($('referenceAge').value);
-    if (!Number.isFinite(a) || a < 0 || a > 120) return error(T('errors.age'));
+    const typed = $('referenceAge').value.trim(), a = Number(typed);
+    // A17: an empty box, a non-number or a negative age saves nothing; the pop-up shows what applies without it
+    if (typed === '' || !Number.isFinite(a) || a < 0) return referenceSheet('tubes');
+    if (a > 120) return error(T('errors.age'));
     commit(() => (st.s.age = String(a)));
     referenceSheet('tubes');
   }
