@@ -117,14 +117,27 @@ edited and none is skipped: the pretend clock means long cases take no longer to
 owner said not to skip them if it saves no time.
 
 **Waiting for the owner:**
-- **Dose sources: owner chose Option A (14 Nov 2026).** Child fluid volume, tube size and length, and
-  RSI doses are to be read from the guideline's weight-band tables (EAS 7.2 and EAS 9.3; doc 11 lists
-  the tables and pages) instead of being calculated. Weight from age stays as the guideline's formula.
-  **Not built.** Each is a clinical change: its own A-table row with the exact values and the screens
-  that change, the owner's approval of that row, and its own test, one at a time, in a chat the owner
-  started (never an unattended run). First to prepare: child fluid volume.
-  **Needed from the owner** (no packaged guideline gives these): a child's second amiodarone dose; RSI
-  doses for the 5 kg band and for 41 to 49 kg; the fluid volume at 40 mL/kg per band.
+- **Dose sources: owner's rules (14 Nov 2026). Not built; each is a clinical change needing its own
+  A-table row with exact values, the owner's approval of that row, and its own test, in a chat the
+  owner started.** (1) The entered weight is rounded to a guideline weight band and that band is used
+  for every dose (**exact rounding rule to confirm, question below**). (2) Where the guideline gives a
+  dose formula (for example 2 mg/kg, 20–40 mL/kg), a simple calculation is acceptable if the screen
+  shows how it was worked out and the guideline it came from. This replaces "read fluids, tube sizes
+  and RSI doses from tables only" (Option A, earlier the same day). (3) Where a dose is unclear or
+  missing in the guideline, the app says "Seek clinical advice" and shows no number. Under (3): a
+  child's second amiodarone dose (already so; the unsourced stored numbers should be removed) and
+  magnesium at 5 and 10 kg (today reads "Dose: clinical review").
+- **QUESTION TO ANSWER NEXT (weight rounding; asked 14 Nov 2026).** The owner wrote "rounded to the
+  nearest 10". The guideline (EAS 7.2 page 1) rounds a child's weight **up** to 5, 10, 20, 30 or 40 kg,
+  which is what the app does now (owner decision 2). "Nearest 10" would put a 12 kg child on the 10 kg
+  doses (the guideline says 20 kg) and has no 5 kg band.
+  - **Option A (recommended):** Children: round up to the guideline bands 5, 10, 20, 30, 40 kg (as now).
+    Adults (over 40 kg), for RSI doses only: round up to the next 10 kg, matching the columns of the
+    EAS 9.3 adult table (50 to 100 kg); 100 kg or more uses the last column.
+  - **Option B:** Round to the nearest 10 kg for everyone, as written (12 kg uses 10 kg doses; under
+    5 kg has no band). This differs from the guideline.
+  - **Option C:** Round up to the next 10 kg for everyone, with no 5 kg band (a 3 kg baby uses the
+    10 kg doses). This differs from the guideline.
 - Reviewer (answered 13 Nov 2026): Opus · high; Fable · high if Opus is stopped by a limit again.
 - **Store apps (owner 14 Nov 2026): developer accounts go under the owner's personal name.** So Google
   requires a closed test with 12 testers for 14 days before public release (organisation accounts are
