@@ -28,14 +28,16 @@ goes live.
 | 15 | 12 Nov 2026 | **Fix the ROSC "Other" mistake now as A8** (Option A), own test, on a branch; live only on the owner's yes. Built on branch `a8-rosc-other`; see doc 07. |
 | 16 | 12 Nov 2026 | **Named situations as data** (Option A), replacing the single switch; built empty first (identical to v22), then filled one approved item at a time. |
 | 17 | 12 Nov 2026 | **Guideline gaps become candidates added through the editor** (Option A), each approved and tested separately. Owner removed G4, G5, G6, G7, G8, G9 and G12, and from G11 any situation that is only a 15:2 ratio. |
-| 18 | 12 Nov 2026 | **Strict limits** (Option A): impossible values blocked; a large change needs a typed confirmation; every clinical change needs a reason and a source. Owner: changes can be made by **any approved person, who is by definition an "editor"**; the future program will not be clinically focused, so the role is named generally. Until there are accounts (decision 20), the approval record holds the editor's typed name and going live still passes through GitHub. |
+| 18 | 12 Nov 2026 | **Strict limits** (Option A): impossible values blocked; a large change needs a typed confirmation; every clinical change needs a reason and a source. Owner: changes can be made by **any approved person, who is by definition an "editor"**; the future program will not be clinically focused, so the role is named generally. Until there are accounts, the approval record holds the editor's typed name (going live: decision 20). |
 | 19 | 12 Nov 2026 | **Scenario tests are recorded by tapping through the preview** (Option B), saved as form steps that can be edited later. |
-| 20 | 12 Nov 2026 | **Editor is a separate page of the same site** (Option A): works offline in the browser, no logins, saves a rule-set file that goes live through GitHub after the checks. |
+| 20 | 14 Nov 2026 | **Editor is a separate page of the same site** (Option A): works offline in the browser, no logins. **A rule set goes live when it is confirmed in the editor, after the checks and tests pass** (owner; replaces "saves a rule-set file that goes live through GitHub", 12 Nov 2026). How the editor publishes is a short design note at step E3. Each service has its own URL. |
 | 21 | 12 Nov 2026 | **One rule set built into each published version** (Option A); version name on screen; nothing changes silently. |
 | 22 | 12 Nov 2026 | **Appearance: Option A now** (colours, text sizes, card order, pop-up style, labels, icons, with contrast and size checks). Free layout (Option B) is wanted for the future program, so appearance settings must be built so B can be added later. |
 | 23 | 12 Nov 2026 | **Five tabs:** App view, Rules, Appearance, Tests, Publish (Option A). |
 | 24 | 12 Nov 2026 | **Build the Pocket Resus editor with general blocks** that can become the platform later (Option A). |
 | 25 | 12 Nov 2026 | **Few owner checkpoints** (Option A): the owner is not technical; stop only when the owner's input really helps (phone checks after screen-changing stages, clinical approvals, anything going to `main`). |
+| 26 | 14 Nov 2026 | **No version-history screens.** The editor and the app show only the current version number (owner; replaces the list of earlier versions in the 12 Nov plan). Unchanged: before a draft is confirmed the editor still shows what it will change (a safety check, not history), and the previous rule set is kept out of sight for one-step rollback. |
+| 27 | 14 Nov 2026 | **Design principle (owner): the app is not a clinical calculator.** It shows only recommendations taken from the guideline dose tables, so the check required is that it matches the guidelines; clinical decisions are made only by the clinician using it. Intended principle: the check of 14 Nov 2026 (doc 11, "Where each patient-specific number comes from") found four outputs that are still calculated. |
 | 2 | 12 Nov 2026 | **Five parts, divided by kind, each with its own checks** (Option A): 1 clinical numbers and rules; 2 clinical wording; 3 checklists and reversible causes; 4 equipment; 5 sources. Each number is stored once; text gets numbers only through `{gaps}`. |
 
 ## Step 3a: gather and partition (before the editor)
@@ -385,16 +387,14 @@ Three levels, cheapest first:
 ## Decisions
 All of 11 to 25 are made (table at the top). The build brief is `docs/19-ORCHESTRATION-BRIEF.md`.
 
-## Owner's answers written on `main`, 13 Nov 2026 (to be reconciled, one decision at a time)
+## Owner's answers written on `main`, 13 Nov 2026 (all reconciled 14 Nov 2026)
 The owner answered the old "Editor decisions still to make (after 3a)" list in the copy of this page on
-`main`. That list had already been replaced on `rules-editor` by decisions 9 to 25 above, so the
-answers are kept here word for word and compared with those decisions. Nothing below changes the
-build until the owner has confirmed it in a chat (doc 07 "Waiting for the owner").
+`main`. The answers are kept word for word; the last column says where each is now recorded.
 
 | Question | Owner's answer on `main` (13 Nov 2026) | Compared with the decisions above |
 |---|---|---|
 | Where the editor runs and who can use it | "The editor will run as a standalone webpage. An organisation will decide who has access and those allocated people will use it" | Fits decisions 18 and 20 (separate page; any approved person is an "editor"). Access control by an organisation needs accounts, which decision 20 left for later |
-| How the "what changed" view is shown and how approval is recorded | "the user never needs to see previous versions or version history. They only need to see the current version number" | Changes the editor: no history screens. To confirm: the editor still shows what a draft will change before it is confirmed (a safety check, not history), and the previous rule set is still kept out of sight for rollback |
-| How a rule set goes live; how the app chooses a service's rule set | "Rule sets go live when confirmed in the editor after appropriate testing. Each service will have a different URL." | **Changes decision 20** (a saved file goes live through GitHub). Going live from the editor needs a way for the editor to publish (design note for step E3). One URL per service fits decision 21 |
+| How the "what changed" view is shown and how approval is recorded | "the user never needs to see previous versions or version history. They only need to see the current version number" | Confirmed 14 Nov 2026: decision 26 |
+| How a rule set goes live; how the app chooses a service's rule set | "Rule sets go live when confirmed in the editor after appropriate testing. Each service will have a different URL." | Confirmed 14 Nov 2026: decision 20 (changed) |
 | How the automatic tests apply to a new service's rule set | "We will need to identify tests which are purely functional and therefore applicable everywhere. Beyond that we will need to develop bespoke tests for each service's rule set as part of the creation/ editing process" | Fits section 3 above (general tests for every rule set; service-specific tests stay with their rule set) |
 

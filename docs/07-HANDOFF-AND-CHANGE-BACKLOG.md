@@ -29,13 +29,14 @@ independent clinical review is deferred until the code and other key goals are r
 - **Token efficiency:** when a chat gets long or slow, give the owner a ready-to-paste prompt to
   start a new chat (objective, state, next steps). Keep docs tidy so new chats start cheaply.
 
-## Current state (12 Nov 2026)
+## Current state (14 Nov 2026)
 - **Live: v23** (store name `resus-pocket-v23-bbd0202f01`, published 13 Nov 2026) = v22 plus A8 (ROSC
   "Other" fix), the rule set as a data file (stage 1), remaining screen text in the rule set (stage 2)
-  and the safer update step (stage 2b). Screens identical to v22 except A8. **Owner phone check of v23:
-  waiting.** v22 phone check passed (owner, 12 Nov 2026).
-  v21 phone check passed (owner, 12 Nov 2026). The separate A7 check ("Other" triggers
-  fluids, doc 09 11 Nov entry) has not been confirmed on its own.
+  and the safer update step (stage 2b). **Confirmed on phones (owner, 14 Nov 2026):** starts in
+  airplane mode, Start works, ROSC "Other" gives no "Continue CPR" pop-up (A8). The separate A7 check
+  ("Other" triggers fluids, doc 09 11 Nov entry) has not been confirmed on its own.
+- **Not live yet (branch `rules-editor`):** steps E1 and E1b; the rule set there is YAML
+  (`src/rules/nz-eas.yaml`). The live v23 still loads `nz-eas.json` until the next release.
 - **Step 2 done (12 Nov 2026):** every drug-card rule is now in the engine
   (`src/engine/drug-cards.js`) with its numbers and wording in `src/rules/nz-eas.js`; no value or
   text changed (3000-session old-vs-new test). Saved-session fixes (doc 17, doc 11 comma weight)
@@ -56,9 +57,8 @@ so rules can be updated, and new rule sets made for other services, without touc
    number, guideline sentence, checklist, equipment list and source is in `src/rules/nz-eas.js`
    (five parts); screens proved identical to v21 (278 recorded screens); lock-in test stops them
    creeping back. 182 tests pass. **Sub-step 9:** owner chose to publish first, then phone-check
-   the live app (published as v22, 12 Nov 2026). **Next: owner's v22 phone check, and the
-   remaining editor decisions in doc 18, one at a time.** Owner: format YAML (doc 18
-   decision 9, changed 13 Nov 2026); editor must cover any clinically relevant function plus visual settings
+   the live app (published as v22, 12 Nov 2026). Owner: format YAML (doc 18
+   decision 9, changed 13 Nov 2026, built in step E1b); editor must cover any clinically relevant function plus visual settings
    (decision 10). **Re-plan drafted 12 Nov 2026 in doc 18** (inventory of behaviour still in
    code, revised plan, stages); nothing built. Decision 11 made (menus and rule tables). Owner goals added (decision 12):
    two ways into the editor (tap a card in an app view; technical rules view) and, long term, a
@@ -75,11 +75,11 @@ so rules can be updated, and new rule sets made for other services, without touc
 | 0 Wider safety net | Done 13 Nov 2026. `tests/reference/` (read its README): 3,609 recorded cases from 91843ae; first 249 replayed by `npm test`, all by `npm run test:deep`; 51 planted faults caught; two independent reviews, no blocking findings. 246 tests pass |
 | 1 Rule set becomes JSON | Done 13 Nov 2026. `src/rules/nz-eas.json` (five parts + `about` + `notes`), `load.js`, `parse.js`, `check.js` (first checker, tests only); old file kept as `tests/baseline/nz-eas-v22-a8.js`. 425 values identical incl. order; real-browser start, offline, slow network and failure cases checked; review: no blocking findings. 318 tests pass |
 | 2 Remaining text and settings into data | Done 13 Nov 2026 (commit 097ee00). 506 values added to `nz-eas.json` (labels, messages, timer thresholds, rhythm button names, correction-form lists, resus-start choices, equipment form questions, log intervention list, export labels); additions frozen in `tests/baseline/stage2-additions.json`; all 425 earlier values identical. 359 tests and the deep run pass; real-browser check matched the reference on 21 screens and offline; 25 new planted faults caught; review: no blocking findings |
-| 2b Safer update (`sw.js`), then publish v23 | Done and **published as v23 on 13 Nov 2026** (commits c770cb8, b028bdc; release d28f809 plus docs). New `sw.js`: a complete new set is downloaded and checked against the fingerprint in its store name before anything changes; answers come from the version's own store; nothing is saved while the app runs; a new version takes over only at a fresh open. `tools/set-cache-name.mjs` sets the name; a test fails if a shipped file changes without a new name. 375 tests and the deep run pass; review (Opus, high, two passes): no blocking findings, 31 planted faults caught after fixes, real-browser v22 → v23 update clean. **Waiting: owner phone check** |
+| 2b Safer update (`sw.js`), then publish v23 | Done and **published as v23 on 13 Nov 2026** (commits c770cb8, b028bdc; release d28f809 plus docs). New `sw.js`: a complete new set is downloaded and checked against the fingerprint in its store name before anything changes; answers come from the version's own store; nothing is saved while the app runs; a new version takes over only at a fresh open. `tools/set-cache-name.mjs` sets the name; a test fails if a shipped file changes without a new name. 375 tests and the deep run pass; review (Opus, high, two passes): no blocking findings, 31 planted faults caught after fixes, real-browser v22 → v23 update clean. Owner phone check passed 14 Nov 2026 |
 | E1 Checker for today's rule set + what-changed report | Done 14 Nov 2026 (commits df08202, a58c974, 328b76d). `src/rules/check.js`: every number has a type and an allowed range, lists in order, wording uses exactly its own gaps and only bold, italic and line break (checklists included), no double quotes in any rule-set text, web addresses `https://` only; over 70 deliberately bad rule sets rejected, reference accepted. `tools/rules-diff.mjs` plays the generated cases through two rule sets and lists every screen and saved-session difference; it never says "no differences" when nothing was compared. 494 tests and the deep run pass; review (Opus, high): no blocking findings after two rounds of fixes; app behaviour unchanged (the app never loads the checker) |
 | E1b Rule set becomes YAML | Done 14 Nov 2026 (commits e41d850, 36f9a53; not live). `src/rules/nz-eas.yaml` replaces `nz-eas.json`: all 991 values identical in value, type and order to the frozen copy `tests/baseline/nz-eas-before-yaml.json`. Reader `src/rules/parse.js` uses js-yaml 5.5.0 (one file in `src/vendor/`, proved equal to the published package) in its strictest mode: look-alike numbers, dates, repeated names, anchors, tags, comments, tabs and a second document are refused; `yes`, `no`, `~` stay text. The file must hold exactly the seven parts in order and end with the line `...`, so a file cut short anywhere is refused (tested at every character). Writer `src/rules/write.js` rewrites the file byte for byte. 627 tests and the deep run pass; review (Opus, high): one blocking finding (cut-short file could start the app) fixed and re-checked, 19 of 19 effective planted faults caught, real-browser start, offline, slow, broken file and update from the previous store all clean |
-| E2 Editor page, Rules view | **Next, but waiting for the owner:** the question at the top of "Waiting for the owner" must be answered first |
-| E3 Approve, publish, rollback | After E2; needs a short design note and one owner decision first |
+| E2 Editor page, Rules view | **Next.** The editor points are answered (doc 18 decisions 20 and 26). One question is still to be asked before it starts: the checker's clinical-relationship rules (under "Waiting for the owner") |
+| E3 Approve, publish, rollback | After E2; needs a short design note first: how a rule set confirmed in the editor goes live (doc 18 decision 20) |
 | 3 to 6, then full 7 to 10, 11 store apps | After the first editor is published (owner chose "editor first", 13 Nov 2026) |
 
 **Carried forward from the stage 2b review (not blocking; do before the next release, v24):**
@@ -117,36 +117,35 @@ edited and none is skipped: the pretend clock means long cases take no longer to
 owner said not to skip them if it saves no time.
 
 **Waiting for the owner:**
-- **QUESTION TO ANSWER NEXT (blocks step E2, the editor page; written by the unattended chat, 14 Nov 2026).**
-  You wrote on `main`: "the user never needs to see previous versions or version history. They only need
-  to see the current version number". Which of these do you mean for the editor?
-  - **Option A (recommended):** No history screens; the editor shows only the current version number.
-    Before a draft is confirmed, the editor still shows a "what this will change" list (every screen and
-    number that would differ), as a safety check. The previous rule set is kept out of sight so it can be
-    put back in one step if something is wrong.
-  - **Option B:** No history screens and no "what this will change" list. Only the current version
-    number is shown. The previous rule set is still kept out of sight for putting back.
-  - **Option C:** Keep the earlier plan: the "what this will change" list and a screen listing earlier
-    versions.
-  Recommended: A, because the "what this will change" list is the main guard against a slip such as a
-  tenfold dose, and it is not history.
-  After this, still to ask one at a time before E2 and E3: the checker's six clinical-relationship rules
-  (item below), and "rule sets go live when confirmed in the editor" (changes decision 20; E3).
-- **Phone check of v23 (asked 13 Nov 2026).** With good signal: open the app, wait 30 seconds, close it
-  fully (swipe it away); open and close it twice more; turn on airplane mode and open it: it must start
-  and Start must work. Then check A8: record ROSC with rhythm "Other"; no "Continue CPR" pop-up should
-  follow. Do not rely on the app offline for a case until this has worked.
+- **QUESTION TO ANSWER NEXT (dose sources; asked 14 Nov 2026).** The check in doc 11 ("Where each
+  patient-specific number comes from") found that the arrest drug doses and shock energy are read from
+  the guideline tables, but four outputs are calculated by the app: child fluid volume, weight from age,
+  tube size and length, and the RSI doses. The guideline PDFs in the repo already hold tables for three
+  of them, so no new guideline is needed. Which do you want?
+  - **Option A (recommended):** Change the app so child fluid volume, tube size and length, and RSI doses
+    are read from the guideline's weight-band tables (EAS 7.2 and EAS 9.3), each as its own approved
+    change with its own test, one at a time. Weight from age stays as the guideline's own formula
+    (EAS 7.2 gives a formula, not a table). The screen will change for in-between weights (example: a
+    15 kg child shows fluids 300–600 mL today; the 20 kg table row says 400 mL).
+  - **Option B:** Leave the app as it is. The calculated outputs stay calculated, and the store listing
+    and design notes say plainly which outputs are calculated from the guideline's formulas.
+  - **Option C:** Remove the calculated reference outputs (RSI doses, tube sizes, child fluid volume)
+    from the app, leaving only what is read from tables.
+  Recommended: A, because it matches your principle (the app only shows what the guideline tables say).
+  Also needed from you, because the guideline has no table for them (doc 11 lists each): a child's
+  second amiodarone dose; RSI doses for the 5 kg band; the upper (40 mL/kg) fluid volume per band.
 - Reviewer (answered 13 Nov 2026): Opus · high; Fable · high if Opus is stopped by a limit again.
-- **Store apps (told 13 Nov 2026).** Apple's review rule 1.4.2: dose calculators must come from a
-  hospital, university, manufacturer or similar approved body, or have regulator approval. Google: a
-  new personal developer account must run a closed test with 12 testers for 14 days before public
-  release; organisation accounts are exempt. Both need a paid developer account in the owner's or a
-  service's name. Owner to decide whose name the apps go under (asked next, one decision at a time).
-  The app already installs from the web link on both kinds of phone. Told 13 Nov 2026: the features
-  that make it a "medical" app for the stores are the patient-specific calculations and prompts (drug
-  doses from weight, shock energy, tube sizes, "amiodarone due"); timers, the log, checklists and
-  guideline PDFs alone would not. Whether it is a medical device under NZ law is a question for Medsafe.
-- A8: confirm "Option A" meant updating the step 2 comparison test (doc 09).
+- **Store apps (owner 14 Nov 2026): developer accounts go under the owner's personal name.** So Google
+  requires a closed test with 12 testers for 14 days before public release (organisation accounts are
+  exempt). Apple's review rule 1.4.2 (dose calculators must come from a hospital, university,
+  manufacturer or similar approved body, or have regulator approval) is **still open, not satisfied**.
+  **Owner's design principle (intended, not yet fully true):** the app is not a clinical calculator; it
+  only shows recommendations taken from the guideline dose tables, so the only check needed is that it
+  matches the guidelines; clinical decisions (for example diagnosing torsades) are made only by the
+  clinician. Checked 14 Nov 2026 (doc 11): true for the arrest drug doses and shock energy; not true
+  for child fluid volume, weight from age, tube sizes and RSI doses, which are calculated (question
+  above). The app already installs from the web link on both kinds of phone. Whether it is a medical
+  device under NZ law is a question for Medsafe.
 - New start-up message if the rule set cannot be read (stage 1; wording in `src/rules/parse.js`): owner may reword.
 - Checker rules that encode clinical relationships (child value not above adult; band shock = band weight × J/kg; last child band reaches the adult limit; six in all) have been switched on since stage 1, though E1 said to list them only. Example of what they refuse: a band energy rounded to a defibrillator step (20 J typed as 21 J). Keep them on, or list only? To be asked before E2.
 - Three existing app behaviours found while recording (unchanged, recorded as they are; each a possible A-table row, one decision at a time): (1) a manual entry timed later than now is saved as the previous day; (2) closing the rhythm pop-up with × leaves "Rhythm not recorded"; (3) Tube sizes "Use age" with an empty or non-number box saves age 0 and shows infant sizes.
@@ -167,7 +166,7 @@ owner said not to skip them if it saves no time.
 | A2 | **Amiodarone card must not show from the start.** Proposed rule: appears when due (3 shocks in VF/VT including previous shocks; second dose at 6), stays once shown. Uses existing `amioDue` logic. Needs a decision on what fills the space before then | **Applied 3 Nov 2026** (grey tile confirmed on phone). Gate corrected by **A2b** (3 Nov 2026, needs upload + phone check) |
 | A2c | **Fluids after any non-shockable rhythm** (PEA or Asystole at the latest check); VF/VT bring amiodarone/magnesium back; neutral fluids wording and pop-up for both rhythms (owner Option 1) | **Applied 3 Nov 2026; lost in the C6b-2 upload and restored 4 Nov 2026**, needs upload + phone check |
 | A7 | **"Other" triggers fluids** like PEA and Asystole (fluids card, pop-up, caption names the rhythm) | **Applied 11 Nov 2026** (owner ruling), needs upload + phone check |
-| A8 | **A rhythm recorded with ROSC never triggers fluids.** Before: ROSC recorded as "Other" opened the "Non-shockable rhythm · fluid guidance" pop-up ("Continue CPR") and showed the fluids card after a re-arrest (side effect of A7). "Other" at a no-shock check is unchanged. After PEA or Asystole → ROSC "Other" → re-arrest the fluids line names the earlier rhythm ("PEA · review fluid volume"), as it already did after ROSC "Sinus rhythm" | **Approved 12 Nov 2026 (doc 18 decision 15). Merged into `rules-editor` 12 Nov 2026, NOT live.** Owner agreed to update the step 2 comparison test: old code kept word for word; engine must equal "old code + A8" on 3000 cases; new test proves A8 is the only difference. Independent review: no blocking findings. 189 tests pass. Still needs: owner's yes to publish as v23 (new cache name), then phone check |
+| A8 | **A rhythm recorded with ROSC never triggers fluids.** Before: ROSC recorded as "Other" opened the "Non-shockable rhythm · fluid guidance" pop-up ("Continue CPR") and showed the fluids card after a re-arrest (side effect of A7). "Other" at a no-shock check is unchanged. After PEA or Asystole → ROSC "Other" → re-arrest the fluids line names the earlier rhythm ("PEA · review fluid volume"), as it already did after ROSC "Sinus rhythm" | **Approved 12 Nov 2026 (doc 18 decision 15).** Owner agreed to update the step 2 comparison test (confirmed 14 Nov 2026 that this is what "Option A" meant): old code kept word for word; engine must equal "old code + A8" on 3000 cases; new test proves A8 is the only difference. Independent review: no blocking findings. 189 tests pass. **Live in v23 (13 Nov 2026); owner phone check passed 14 Nov 2026** |
 | A3 | Portrait lock: add `"orientation":"portrait"` to `manifest.webmanifest` (works for the installed app, not for a normal browser tab) | **Applied; confirmed working on phone 3 Nov 2026** |
 | A4 | Countdown digits look too small in v16 (really: on shorter screens and in a Chrome tab); enlarge without re-creating the "+ Previous shock" overlap | **Applied 4 Nov 2026** as a short-screen layout change (shock block beside the digits), because the size number alone could not do it (see State). Owner phone check passed 4 Nov 2026 with tweaks (A4b); A4b passed with one more tweak, applied as **A4c** (needs upload + phone check) |
 | A5 | Guard against double-tap recording a drug twice: adrenaline greyed out 3 min 30 s; magnesium and fluids 5 s, not greyed | **Applied 4 Nov 2026** (owner ruling), needs upload + phone check |
