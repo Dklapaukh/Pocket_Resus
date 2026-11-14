@@ -19,7 +19,8 @@ verify sources and applicability before changing any clinical rule.
    `log-view.js` derives log entries. `src/engine/index.js` assembles exports.
 5. `views.js` renders screens and updates clocks. `format.js` provides display
    formatting; `data.js` holds the tutorial slides. Checklists, equipment, guideline wording and
-   links are in the rules file `src/rules/nz-eas.js` (five parts, doc 18).
+   links are in the rule set `src/rules/nz-eas.yaml` (doc 18), read at start-up by
+   `src/rules/load.js` and `parse.js`.
 
 The app uses shared state. Read the call sites
 before moving a function: a display function can also update screen-only state,
@@ -52,11 +53,28 @@ current readability work retains the existing module paths and cache list.
 
 The source references above identify where to investigate; they are not an
 exhaustive source-to-rule audit or evidence of independent clinical validation.
-`docs/11-CLINICAL-RULE-INVENTORY.md` maps clinical references and recording paths, with review gaps. `docs/06-DECISIONS-LOG.md` and `docs/07-HANDOFF-AND-CHANGE-BACKLOG.md` record
-decisions and history. Later dated decisions supersede older narrative notes.
+`docs/11-CLINICAL-RULE-INVENTORY.md` traces each clinical value to its guideline page;
+doc 06 holds the guiding principle and owner decisions.
 
-The engine (`src/engine/`) is readable code; all its clinical numbers are in the rules file
-`src/rules/nz-eas.js`. See [the engine and rules guide](12-READING-THE-ENGINE.md).
+## Engine and rule-set files
+
+The engine works out counts, timers and the log, and looks doses, energies and sizes up in the
+rule set. It never records a clinical event by itself.
+
+| File | What it holds |
+|---|---|
+| `src/rules/nz-eas.yaml` | Every clinical number and sentence (plain data; one place to check against the CPG) |
+| `src/rules/load.js`, `parse.js`, `write.js`, `check.js` | Loader, strict YAML reader, byte-for-byte writer, checker (the app never loads the checker) |
+| `src/engine/core.js` | Session record, weight checks and bands, adrenaline and amiodarone references, shock energy, counts, timers, undo, saved-session repair |
+| `src/engine/drug-cards.js` | Which drug card shows and what it says (amiodarone gate, lower card, locks) |
+| `src/engine/rhythm-care.js` | Torsades, magnesium and fluid references, two-step rhythm checks, "+ Previous shock", checklist prompt |
+| `src/engine/log-view.js` | Log filters shared by the log screen and text export |
+| `src/engine/index.js` | Combines these into the `Resus` object the app uses |
+
+How correctness is proven: `tests/reference/` (thousands of recorded cases, read its README);
+the side-by-side test against the original engine; the golden recordings of the original app; and
+`tests/rules-file.test.mjs`, which checks rule-set values against the guideline tables. The
+engine's own `careMode` is the original PEA-only rule, kept only for the side-by-side test.
 
 ## Session storage and recovery
 
@@ -78,10 +96,8 @@ recovery message. `main.js` then saves and draws the selected session.
 The cross-tab storage handler uses a different, narrower check: version 1 and
 an event array. It replaces the in-memory session and redraws, without running
 the startup recovery path. Undo restores a previous snapshot and saves it.
-Neither path is a JSON import feature or a general session repair tool. See the
-comma-weight investigation in doc 11 and the incomplete-session reproduction
-in [doc 17](17-STORAGE-RECOVERY-INVESTIGATION.md) before changing how stored
-data is read.
+Neither path is a JSON import feature or a general session repair tool. See
+[doc 17](17-STORAGE-RECOVERY-INVESTIGATION.md) before changing how stored data is read.
 
 ## Example traces
 
@@ -113,19 +129,15 @@ data is read.
   simulated offline install/fetch path are tested; they cannot establish
   device behavior. A storage event from another tab is handled in
   `events.js`, which replaces the active in-memory session and redraws.
-  Undo restores a snapshot through `R.undo` and then saves it. Neither
-  startup, cross-tab loading nor undo normalizes every saved field; see
-  the comma-weight compatibility investigation in doc 11.
+  Undo restores a snapshot through `R.undo` and then saves it (doc 17).
 
 ## Safe refactoring
 
-- Engine changes must keep `tests/side-by-side.test.mjs` (3000 random sequences
-  against the original engine), the golden tests and `tests/rules-file.test.mjs`
-  passing. These replaced the exact-line fidelity check on 11 Nov 2026.
+- Engine changes must keep the reference recordings (`tests/reference/`), the side-by-side
+  test, the golden tests and `tests/rules-file.test.mjs` passing.
 - Run the full suite before and after a coherent change. Read failing tests;
   do not regenerate golden outputs to hide differences.
 - Keep event occurrence, displayed suggestions, clinical actions actually
   recorded, corrections and undo distinct. Preserve offline and storage paths.
-- A future guideline pack needs its own version, source, reviewed rules and
-  scenario checks. Engine numbers are already in `src/rules/nz-eas.js`; rules in the
-  app layer still need moving there before editable packs are possible (doc 07).
+- A rule set for another service needs its own packaged guideline, citations, checks and
+  scenario tests (doc 18).
