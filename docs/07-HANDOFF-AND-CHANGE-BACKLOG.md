@@ -42,7 +42,7 @@ reviewer. Independent clinical review comes after the deviation rulings (doc 11)
 | E1b Rule set as YAML, strict reader and byte-for-byte writer | Done |
 | A9 to A12, A15 to A19 (guideline tables instead of calculations) | Done, not live |
 | P1 Trace check of doc 11 | **Next** (no owner input needed) |
-| P2 Deviation rulings D1 to D8, each built as its own A-row | Waiting for the owner, one at a time |
+| P2 Deviation rulings D1 to D12, each built as its own A-row | Waiting for the owner, one at a time |
 | P3 Citations in the rule set; word-for-word extract test | Waiting for the owner (question 2) |
 | E2 Editor page, Rules view | After the checker question (question 3) |
 | E3 Approve, publish, rollback | After E2; needs a short design note first |
@@ -51,8 +51,27 @@ reviewer. Independent clinical review comes after the deviation rulings (doc 11)
 | 3 to 10 Deeper editor stages | After store publication unless the owner says otherwise (question 4) |
 
 ## Waiting for the owner (ask in this order, one at a time)
-1. **Deviations D1 to D8** (doc 11 section 5): one ruling each, D1 first. Option A is recommended
-   for every one.
+1. **Deviations D1 to D12** (doc 11 section 5): one ruling each, D1 first. Option A is recommended
+   for every one. D9 to D12 were found by the P1 trace check (15 Nov 2026):
+   - **D9** child second amiodarone (now "Seek clinical advice", A10; EAS 3.14 says "See the
+     paediatric drug dose tables for a child"). **A (recommended):** show the guideline's sentence
+     "See the paediatric drug dose tables for a child" with the band's table amiodarone dose, as for
+     the first dose. **B:** keep "Seek clinical advice" (A10), with the source line quoting that
+     EAS 3.14 sentence and saying the tables print one amiodarone dose per band.
+   - **D10** child magnesium time not shown (EAS 7.2: "over approximately 15 minutes, preferably
+     into a running line"). **A (recommended):** show EAS 7.2 dilution 13 word for word, including
+     that administration sentence. **B:** keep the time out, with the line "Administration time: see
+     EAS 7.2, dilution 13".
+   - **D11** adult doses above 40 kg and with no weight, without EAS 7.2's caution. **A
+     (recommended):** above 40 kg, show the EAS 7.2 sentence ("Children weighing greater than 40 kg
+     can usually be administered adult doses, but clinical judgement must be used… If there is any
+     doubt, a paediatric dose should be administered.") word for word with the adult dose; with no
+     weight entered, label the dose with EAS 3.14's own words "for an adult" instead of "weight band
+     above 40 kg". **B:** keep today's label.
+   - **D12** two magnesium sentences (adult dilution to 10 mL; avoid the adrenaline-infusion line)
+     with no packaged source (EAS 14.27 is online only). **A (recommended):** package the EAS 14.27
+     export, check both sentences against it word for word, and quote them as written. **B:** remove
+     both sentences until EAS 14.27 is packaged.
 2. **Citations (P3, recommended yes):** every clinical value and sentence in the rule set carries
    its guideline and page, the checker refuses one without, and a test compares every extract with
    the PDF text. Yes or no.
