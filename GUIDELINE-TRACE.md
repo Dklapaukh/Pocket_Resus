@@ -1,6 +1,8 @@
-# 11. Guideline trace: where everything clinical on screen comes from
+# Guideline trace: where everything clinical on screen comes from
 
-This is the evidence for the guiding principle (doc 06): the app shows what the NZ EAS CPGs say and
+Old references in rows: "doc 06" and "doc 07" are now `DECISIONS.md`; "doc 17" is `README.md`.
+
+This is the evidence for the guiding principle (DECISIONS.md section 1): the app shows what the NZ EAS CPGs say and
 calculates only what a guideline tells it to. **Every clinical number, sentence and trigger must
 have a row here. A change that adds or alters one updates this page in the same commit.**
 
@@ -74,9 +76,9 @@ Band = the child's weight rounded up to 5, 10, 20, 30 or 40 kg (EAS 7.2 page 1 s
    4), none for the reduced dose.
 
 ## 5. Deviations: where the app is not "the guideline, as written, at the right time"
-D1 to D8 were ruled by the owner on 15 Nov 2026; each ruling is an approved A-table row in doc 07
+D1 to D8 were ruled by the owner on 15 Nov 2026; each ruling is an approved A-table row in DECISIONS.md section 7
 (A20 to A31), not yet built. Until a row is built, sections 1 to 3 still describe the app as it is.
-D9 to D12 (found by the P1 check) still wait for a ruling, one at a time (doc 07).
+D9 to D12 (found by the P1 check) still wait for a ruling, one at a time (DECISIONS.md section 6).
 
 | # | The app today | The guideline | Options |
 |---|---|---|---|
@@ -99,7 +101,7 @@ checklist reminder (cycle running, at least 1 min 30 s left, adrenaline given); 
 (adrenaline 3 min 30 s, magnesium and fluids 5 s; A5); the special-situation switch (turns routine
 prompts off); "+ Previous shock"; "Other…" manual entry (records what was given, suggests nothing;
 a child's second amiodarone dose can only be entered this way); corrections, voids, undo; the log
-and its exports; saving and recovery (doc 17); the Guidance caption "Local protocol takes
+and its exports; saving and recovery (README "Session storage and recovery"); the Guidance caption "Local protocol takes
 precedence. This extracted app requires clinical validation before patient-care use." Equipment
 lists, sites, laryngoscopy grades, tube confirmation methods, and iGel sizes and colours are things
 that can be **recorded**, not recommendations (iGel data: Intersurgical).
