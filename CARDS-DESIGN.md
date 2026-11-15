@@ -3,8 +3,8 @@
 The idea: one **card** for each guideline instruction the app acts on. The rule file becomes a short
 list of cards plus the verified dose tables, the engine becomes one routine that asks "which cards
 show now?", and the editor becomes "tap a card, change a field, see what changed, publish". Nothing
-here changes the app yet. Inputs: CLAUDE.md, doc 06 (principle, decisions 2, 7, 8, 14), doc 07,
-doc 11, `src/rules/nz-eas.yaml`, `src/engine/*.js`, `src/app/*.js`, and the packaged PDF text.
+here changes the app yet. Inputs: CLAUDE.md, DECISIONS.md sections 1, 3 and 9,
+GUIDELINE-TRACE.md, `src/rules/nz-eas.yaml`, `src/engine/*.js`, `src/app/*.js`, and the packaged PDF text.
 
 ## 1. Every instruction the app acts on
 | # | Instruction (EAS text) | Source | Ruling | Card |
@@ -153,7 +153,7 @@ With torsades then PEA, magnesium and fluids both show (A20): a third card on sc
 | Today | Becomes |
 |---|---|
 | CPR clock, 30 s / 15 s warnings, rhythm check only at zero, two-step shock then rhythm, torsades confirm pop-up | code; the times stay settings |
-| Record, undo, void, correct, "+ Previous shock", earlier counts, saving and repair (doc 17), log, export | code (mechanics, unchanged) |
+| Record, undo, void, correct, "+ Previous shock", earlier counts, saving and repair (README "Recovery"), log, export | code (mechanics, unchanged) |
 | Band and column look-up, rounding (decisions 2, 7, 8; D7, D8) | code, one look-up routine; the tables stay data |
 | Rhythm choices, correction lists, input limits (500 kg, 1000 J, 12 mm), medicine units, log filter, locks, checklist reminder | settings |
 | ~450 lines of labels, toasts, errors, tutorial text (`wording` minus guidance) | a separate app-text file, not clinical |
@@ -172,9 +172,9 @@ pop-up trigger); `sheets.js` 161 (child amiodarone pop-up dose) and 85, 561 plus
 **Recommendation: A, keep the screens and rewire them.** The clinical logic sits in one corner: the
 drug cards and their pop-ups. That corner is replaced by one routine that draws whatever card the
 engine returns. The rest of the screens (log, corrections, export, saving and recovery, checklists,
-forms) holds no clinical decisions, works on phones, and is guarded by 735 tests and 3,609 recorded
+forms) holds no clinical decisions, works on phones, and is guarded by 673 tests and 3,609 recorded
 cases. Rebuilding it (B) would redo working, phone-checked parts and risk new faults for no
-clinical gain, and would push the December goal back.
+clinical gain, and would push the December goal (decision 12) back.
 
 ## 5. Size, stages and plan
 **Size.** Clinical file about 450 lines (about 570 with checklists), down from 1,196: the cards
@@ -182,7 +182,7 @@ about 250 lines (12 cards), the EAS 7.2 and EAS 9.3 tables about 130 (copied unc
 list and settings about 90. App text and equipment move to two non-clinical files. Engine: one
 routine of about 150 to 200 lines in place of about 720 plus the 150 to 200 in the screens.
 
-**Stages 3 to 10 (doc 19):** 3 (rule tables) and 4 (drug cards as data) are no longer needed: the
+**Stages 3 to 10 (DECISIONS.md section 5):** 3 (rule tables) and 4 (drug cards as data) are no longer needed: the
 cards are both. 5 shrinks to named situations (decision 16). 7 shrinks to checking card fields,
 citations and word-for-word text; there are no rule tables to prove complete, and the formula box
 (decision 13) is not needed (an owner decision to drop it). 6, 8, 9 stay, smaller. 10 becomes
@@ -199,6 +199,6 @@ patched into the old file one by one; each row keeps its named test and phone ch
 4. Rewire the drug-card corner of the screens; delete the duplicated logic; move app text and
    equipment to their own files. Old engine kept until step 5 passes (deleting asks first).
 5. Once: replay `tests/reference` on the new app. Every difference must belong to one approved
-   A-row; any other difference is a fault to fix. Note: v24 does not exist yet; the recordings are of
-   the reference app (v23 plus A9 to A19), the version v24 would start from. Then re-record.
-6. Owner phone check (all A20 to A32 checks at once), then E2 editor, E3, v24.
+   A-row; any other difference is a fault to fix. The recordings are of v24 (live), so this is the
+   one comparison of the new engine against v24. Then re-record from the new commit.
+6. Owner phone check (all A20 to A32 checks at once), then E2 editor, E3, v25.
