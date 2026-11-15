@@ -41,8 +41,8 @@ reviewer. Independent clinical review comes after the deviation rulings (doc 11)
 | E1 Checker and what-changed tool (`src/rules/check.js`, `tools/rules-diff.mjs`) | Done |
 | E1b Rule set as YAML, strict reader and byte-for-byte writer | Done |
 | A9 to A12, A15 to A19 (guideline tables instead of calculations) | Done, not live |
-| P1 Trace check of doc 11 | **Next** (no owner input needed) |
-| P2 Deviation rulings D1 to D12, each built as its own A-row | Waiting for the owner, one at a time |
+| P1 Trace check of doc 11 (found D9 to D12) | Done |
+| P2 Deviation rulings D1 to D12, each built as its own A-row | **Next**: waiting for the owner, one at a time |
 | P3 Citations in the rule set; word-for-word extract test | Waiting for the owner (question 2) |
 | E2 Editor page, Rules view | After the checker question (question 3) |
 | E3 Approve, publish, rollback | After E2; needs a short design note first |
@@ -54,18 +54,21 @@ reviewer. Independent clinical review comes after the deviation rulings (doc 11)
 1. **Deviations D1 to D12** (doc 11 section 5): one ruling each, D1 first. Option A is recommended
    for every one. D9 to D12 were found by the P1 trace check (15 Nov 2026):
    - **D9** child second amiodarone (now "Seek clinical advice", A10; EAS 3.14 says "See the
-     paediatric drug dose tables for a child"). **A (recommended):** show the guideline's sentence
-     "See the paediatric drug dose tables for a child" with the band's table amiodarone dose, as for
-     the first dose. **B:** keep "Seek clinical advice" (A10), with the source line quoting that
+     paediatric drug dose tables for a child"). **A (recommended):** at the second-dose point show
+     the EAS 3.14 sentence "See the paediatric drug dose tables for a child" and the band's EAS 7.2
+     table row exactly as printed, without the app calling it the second dose. A reverses
+     owner-approved A10 and needs the owner's clinical sign-off. **B:** keep "Seek clinical advice" (A10), with the source line quoting that
      EAS 3.14 sentence and saying the tables print one amiodarone dose per band.
    - **D10** child magnesium time not shown (EAS 7.2: "over approximately 15 minutes, preferably
      into a running line"). **A (recommended):** show EAS 7.2 dilution 13 word for word, including
      that administration sentence. **B:** keep the time out, with the line "Administration time: see
      EAS 7.2, dilution 13".
    - **D11** adult doses above 40 kg and with no weight, without EAS 7.2's caution. **A
-     (recommended):** above 40 kg, show the EAS 7.2 sentence ("Children weighing greater than 40 kg
-     can usually be administered adult doses, but clinical judgement must be used… If there is any
-     doubt, a paediatric dose should be administered.") word for word with the adult dose; with no
+     (recommended):** above 40 kg, show in full, word for word, the EAS 7.2 sentences "Children
+     weighing greater than 40 kg can usually be administered adult doses, but clinical judgement
+     must be used if the dose may be potentially harmful, for example when administering
+     paracetamol. If there is any doubt, a paediatric dose should be administered." with the adult
+     dose; with no
      weight entered, label the dose with EAS 3.14's own words "for an adult" instead of "weight band
      above 40 kg". **B:** keep today's label.
    - **D12** two magnesium sentences (adult dilution to 10 mL; avoid the adrenaline-infusion line)
@@ -165,6 +168,9 @@ Withdrawn: A13, A14 (showing the working on screen; decision 7 rule 4).
   checker. Should the phone run the checker, or check a fingerprint of the rules file?
 
 **Later**
+- `src/engine/core.js` lines 274 to 276: the comment on the child second amiodarone dose ("EAS 7.2
+  gives none") differs from D9's reading; update it with the D9 ruling.
+- EAS 14.27 (magnesium) is not packaged, so two magnesium sentences cannot be checked (D12).
 - `tests/a19-child-fluids-table-only.test.mjs` (lines 47 to 51) does not prove that the 20 and 40
   in the source line come from the rule set (A11's test has the same gap): change the rule-set
   value in a test and check the line follows. `tests/a11-child-fluids-band.test.mjs` still carries
