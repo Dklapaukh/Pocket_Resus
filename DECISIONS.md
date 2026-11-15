@@ -66,7 +66,7 @@ Numbers 2, 7 and 8 are quoted in code and tests: never renumber them.
 | 2 | **Weight rounding.** Weights are entered in whole kg only (ruling D7, 15 Nov 2026). Children: weight rounded **up** to the EAS 7.2 bands 5, 10, 20, 30, 40 kg (EAS 7.2 page 1 states this). Over 40 kg: adult doses. RSI doses for adults: the next 10 kg column up in the EAS 9.3 adult table (50 to 90 kg); over 90 kg uses the "≥ 100 kg" column; the RSI pop-up says "weight rounded up to the next column" (ruling D8). Weights under 5 kg use the 5 kg band. |
 | 3 | "+ Previous shock" adds 1 to the shock count (no time, no rhythm). App mechanic. |
 | 4 | Portrait only. |
-| 5 | Clinical changes are made one at a time, each an approved row in the A-table (section 7) with its own test. |
+| 5 | Clinical changes are approved one at a time, each a row in the A-table (section 7) with its own named test and phone check. **Cards plan (owner, 15 Nov 2026):** rows A20 to A32 and P3 are written straight into the new card rule set (`CARDS-DESIGN.md`), not built one at a time on the old file. The one comparison of the new app against v24 (plan step 5) must show only differences that belong to approved A-rows; any other difference is a fault. |
 | 7 | **Dose rules.** (1) The band weight (decision 2) is used for every dose. (2) A calculation is allowed only where the guideline gives a formula and prints no value, and its trace is in GUIDELINE-TRACE.md (principle 2 and 4). (3) A dose that is missing or unclear in the guideline shows "Seek clinical advice" and no number. (4) The screen shows the outcome; the working is in GUIDELINE-TRACE.md for reviewers. |
 | 8 | **Band tables are the authority.** The EAS 7.2 band tables (`cpg-paediatric-equipment.pdf` pages 5 to 15) are the source for child drug doses, tube size and length, shock energy and airway device (LMA). Weight from age uses the table headings; age is entered in whole years only, plus "under 1 year" (ruling D7); age 14 is adult. RSI doses use EAS 9.3. |
 | 9 | **Test-case limits (testing only, not app rules):** new generated or recorded test cases run at most 90 minutes of case time and at most 10 adrenaline doses. Existing recordings are not edited or skipped. |
@@ -77,7 +77,7 @@ Numbers 2, 7 and 8 are quoted in code and tests: never renumber them.
 | 14 | **Deviation rulings, 15 Nov 2026 (D1 to D8).** D1 fluids only while the latest rhythm is PEA, no-shock choices PEA and Asystole; D2 pads prompt removed; D3 shock energy as printed (child range, "Maximum joule setting for an adult"), nothing pre-filled; D4 amiodarone card only in VF or VT once the shock count is met, magnesium holds the card once torsades is recorded; D5 EAS 3.14 p13 reversible causes; D6 every guidance sentence word for word, a summary or omission only by an owner ruling (shown "Summary: see EAS [number] [title]" with its link), fentanyl SBP threshold and all amiodarone contraindications shown; D7 whole years and whole kg; D8 adult RSI rounding kept and stated. Detail: GUIDELINE-TRACE.md section 5; rows A20 to A31 in section 7. D9 to D12 still wait. |
 | 15 | **Citations (Q9).** Every clinical value and sentence in the rule set carries its guideline number and page, and the checker refuses one without; a test compares every extract with the guideline text. Where the app follows an owner ruling it cites "Owner ruling 15 Nov 2026" plus the guideline it rests on. On screen: one short source line per card or pop-up (for example "EAS 3.14 Cardiac Arrest, p1"). The settings tab links each guideline used, by number and title (website online, packaged PDF offline). May be revised if screens become hard to read. Guidelines are named by number and title; the official source is the NZ CPG website, built from the PDFs. |
 | 16 | **Checker relationship rules (Q10).** All stay switched on except "each child band shock energy equals the band weight times the joules per kg", which goes (D3). The two rules that compare the adult shock energy as a number wait for one owner answer (waiting list 1). |
-| 17 | **Order of work (Q11).** Make the app match the principle (rows A20 to A32 and step P3), then the first editor (E2, E3), then release v24, then store apps; editor stages 3 to 10 after store publication. |
+| 17 | **Order of work (Q11; cards plan 15 Nov 2026).** Build the card rule set, engine and checker from the guideline (`CARDS-DESIGN.md` plan steps C1 to C6, with A20 to A32 and P3 inside it), then the first editor (E2, E3), then release v25, then store apps; the remaining editor stages after store publication. The live rule set and engine do not change until step C5. |
 
 **Rulings made before the principle** (fluids after Asystole and "Other"; pads prompt; single
 shock energies; amiodarone card whatever the rhythm; ANZCOR causes; shortened wording) were
@@ -93,6 +93,9 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
   the YAML rule set (`src/rules/nz-eas.yaml`) and includes A9 to A12 and A15 to A19. **Owner phone
   checks due:** the standard release checks (README "Release" step 6) and the "Phone check" column of
   the first A-table below. Owner decision 17's "release v24" is now the next release, v25.
+- **Cards plan approved** (15 Nov 2026, `CARDS-DESIGN.md`): a new card rule file, engine and checker
+  built from the guideline replace building A20 to A32 one row at a time; the formula box is dropped.
+  The live rule set and engine stay unchanged until step C5.
 
 ## 5. Build queue (README "How the build is run" has the method; commit messages hold each step's proof)
 | Step | State |
@@ -104,26 +107,32 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
 | E1b Rule set as YAML, strict reader and byte-for-byte writer | Done |
 | A9 to A12, A15 to A19 (guideline tables instead of calculations) | Done, live in v24; phone checks due |
 | P1 Trace check of GUIDELINE-TRACE.md (found D9 to D12) | Done |
-| P2 Deviation rulings | D1 to D8 ruled 15 Nov 2026: rows A20 to A26 approved, **next: build A20**, one row per chat. D9 to D12 wait for the owner |
-| P3 Citations in the rule set; word-for-word extract test | Approved (owner ruling Q9). After A26, before A27 |
-| P2 continued: A27 to A31 (word-for-word wording, D6), then A32 (source lines and guideline links, Q9) | Approved. After P3 (A32 also needs the web addresses, waiting list 3) |
-| E2 Editor page, Rules view | After A32. Checker rules settled (Q10) except one point (waiting list 1) |
+| P2 Deviation rulings | D1 to D8 ruled 15 Nov 2026 (rows A20 to A31 approved). D9 to D12 wait for the owner |
+| C1 Cards plan step 1: card format and card checker (`src/cards/`) | **In progress** (owner approved the cards plan 15 Nov 2026) |
+| C2 to C6 Cards plan steps 2 to 6 (A20 to A32 and P3 written into the cards; one comparison against v24 at C5) | After C1, in order. A32 also needs the web addresses (waiting list 3) |
+| E2 Editor page, Rules view | After C6. Checker rules settled (Q10) except one point (waiting list 1) |
 | E3 Approve, publish, rollback | After E2; needs a short design note first |
-| v25 release | After P2 rulings are built and E3 |
+| v25 release | After C6 and E3 |
 | S Store apps | Owner actions can start now (below); build after v25 |
 | 3 to 10 Deeper editor stages | After store publication (owner ruling Q11) |
 
 ### Work plan, step by step
-Order is the owner's (owner decision 17): rows A20 to A26, P3, A27 to A32, E2, E3, v25, store apps. Proof for every step: tests pass before and
-after; screens identical to the reference except where an approved A-row says otherwise; reviewer
-has no blocking findings.
+Order is the owner's (owner decision 17): cards plan C1 to C6 (A20 to A32 and P3 inside it), E2, E3, v25,
+store apps. Proof for every step: tests pass before and after; screens identical to the reference
+except where an approved A-row says otherwise; reviewer has no blocking findings.
 
 | Step | Goal | Extra proof | Worker |
 |---|---|---|---|
+| C1 | **Card format and checker** (`CARDS-DESIGN.md` section 2). `src/cards/check.js`: fields, the seven conditions, citation required, every guideline `text` compared with the packaged PDF text (`src/cards/guideline-text.json`, made by `tools/extract-guideline-text.mjs`). Live app untouched | Accepts a good test card file; refuses at least 30 deliberately bad card files, each with its own message | Opus · high |
+| C2 | **New rule file** `src/cards/nz-eas-cards.yaml` written from the PDFs and the approved A20 to A31 text; EAS 7.2 and 9.3 tables copied unchanged; D9 to D12 keep today's behaviour (the two D12 magnesium sentences cite EAS 14.27, which is online only, so the checker cannot pass them as guideline text: settle how they are held, with the owner, at the start of C2). Owner reads every card | Card checker passes; existing table test passes on the copied tables | Opus · high |
+| C3 | **New engine** (one routine: which cards show now) with unit tests, plus each A20 to A31 row's named test | Every condition and field tested; each A-row test passes | Opus · high |
+| C4 | **Rewire the drug-card corner of the screens**; duplicated clinical logic removed; app text and equipment to their own files; old engine kept | Full tests pass except the screens the A-rows change | Opus · high |
+| C5 | **One comparison against v24:** replay `tests/reference` on the new app; every difference must belong to an approved A-row. Then re-record from the new commit; old engine deleted (asks first) | Difference report, each line named to its A-row | Opus · high |
+| C6 | **Owner phone check** of all A20 to A32 checks at once | Owner | Owner |
 | A-row (rows from P2) | Build one approved row from section 7 exactly as written. Add its test and its entry in `tests/helpers/approved-changes.mjs`; never edit the frozen copies. Run the what-changed report on all cases; the reference is re-recorded from the change's commit only after the report shows every difference is the approved change (in an owner-started chat: see "Running unattended"). Shrink the row in section 7 to one line; update GUIDELINE-TRACE.md | What-changed report lists only the row's screens; no saved session differs unless the row says so | Sonnet · high |
 | P1 | **Trace check.** Read GUIDELINE-TRACE.md and the rule set against the text of each packaged PDF (`pdftotext -layout`), cell by cell for sections 1 to 3. Then search the rule set's `wording` and `checklists` for any clinical sentence or number with no row in GUIDELINE-TRACE.md. Correct GUIDELINE-TRACE.md; list anything new as a further deviation (D9 onward) with options, under section 6 question 1. No app change | Every row of GUIDELINE-TRACE.md marked checked, with the page; reviewer re-checks 15 cells chosen at random | Opus · high |
 | P2 | **Deviations.** For each owner ruling on D1 to D12: write the full A-row, then build it as an A-row step. One ruling, one row, one chat | As for an A-row | Sonnet · high |
-| P3 | **Citations** (approved, owner decision 15). Each clinical value and sentence in the rule set gets its guideline and page (a parallel `citations` block beside `notes`, so no existing value moves); checker rule: none missing; new test compares every sentence marked as an extract with the PDF text. Read section 9 "What the guiding principle requires" | All existing values identical; a planted missing citation and a planted one-word change to an extract are both caught | Sonnet · high |
+| P3 | **Citations** (approved, owner decision 15): now part of the cards plan. Every card line carries its source (C1 checker refuses one missing); every guideline `text` is compared with the PDF text (C1) | As C1 and C2 | as C1 |
 | E2a | **Editor page, read-only.** A separate offline page of the same site that opens the rule set and shows every value of the five parts with its note and citation; tabs Rules, Tests, Publish (shells). Read editor decisions 20, 23, 24, 26 and the `frontend-design` guidance. Start with a one-page design note; reviewer checks the note before any code | Every value reachable; live app files unchanged | Opus · high |
 | E2b | **Editing and saving.** Edit any value; the checker runs as you type and blocks saving an invalid rule set; do the "before the editor saves files" items in section 8 first | Open the reference rule set and save without edits: file identical byte for byte; invalid edits cannot be saved | Opus · high |
 | E2c | **What-changed view and large-change confirmation** (editor decision 18). **Owner tries the editor after this step** | Planted edits appear in the view; a doubled dose needs the typed confirmation | Opus · high |
@@ -138,11 +147,11 @@ a design note reviewed before code, and is cut into steps of at most one chat ea
 
 | Stage | Goal | Extra proof | Worker |
 |---|---|---|---|
-| 3 | Facts, flags and rule tables: the engine reads ordered tables for the lower slot, torsades flag, amiodarone due and visibility, second-dose and child-advice cases and their precedence, special situation, after-ROSC states, locks (section 9 list A, D). Save the "card has appeared" memory | Table-driven engine equals the current engine on every generated case | Opus · xhigh, 3 steps |
-| 4 | Drugs as data and one general card builder; dose methods per section 9 principle point 3; any number of cards (editor decision 14). **Owner phone check** | With the two reference cards the screen markup is identical; a test-only third card works | Opus · xhigh, 3 steps |
+| 3 | Not needed: the cards are the rule tables (cards plan) | | |
+| 4 | Not needed: the cards are the drugs as data (cards plan); a third card still needs an owner phone check (editor decision 14) | | |
 | 5 | Pop-ups, triggered prompts, situations, on-demand cards, addable checklists (list B, E; editor decision 16) | Identical screens; test-only examples of each block work | Opus · high, 3 steps |
 | 6 | Appearance settings (editor decision 22). **Owner phone check** | Default settings give identical screens and styles | Opus · medium |
-| 7 | Full checker (every table ends in "otherwise", no unreachable row, exactly one answer), formula box within its limits (editor decision 13), scenario runner | Rejects at least 30 deliberately bad rule sets and accepts the reference | Opus · xhigh, 3 steps |
+| 7 | Checker for card fields, citations and word-for-word text (most of it built in C1; no formula box, editor decision 13), scenario runner | Rejects at least 30 deliberately bad rule sets and accepts the reference | Opus · xhigh, 3 steps |
 | 8 | Editor: App view, Appearance and Tests tabs, scenario recorder by tapping (editor decisions 12, 19). **Owner tries it** | Round trip identical; every item of section 9's list reachable from both views | Opus · high, 3 steps |
 | 9 | Trial with a second, deliberately different rule set to find anything still NZ-EAS-specific in code | Second rule set runs with no code change | Opus · high |
 | 10 | Guideline candidates G1, G2, G3, G10, G11 through the editor only, one at a time, each an owner-approved A-row with GUIDELINE-TRACE.md rows | Each appears in the what-changed report and nowhere else | Sonnet · medium; clinical cross-check Opus · high |
@@ -236,8 +245,8 @@ A9 to A19 went live in v24 (15 Nov 2026); each stays listed until its phone chec
 | A18 | Tube size and length from the EAS 7.2 band table (24e73f1) | 15 kg: "4 or 5 mm", "15 cm"; 60 kg: adult line |
 | A19 | Child fluids: the EAS 7.2 table volume only (100, 200, 400, 600, 800 mL by band); the pop-up's source line adds "EAS 3.14 allows up to 40 mL/kg"; nothing calculated (99388e2; recordings 5760f47) | 15 kg, PEA: card "400 mL IV"; pop-up "400 mL from the *EAS guideline 7.2* table (20 mL/kg); *EAS guideline 3.14* allows up to 40 mL/kg" |
 
-**Approved 15 Nov 2026 (owner rulings), not built.** Build in this order, one row per chat: A20 to
-A26, then step P3, then A27 to A31, then A32. Every row: tests named below; extracts compared with
+**Approved 15 Nov 2026 (owner rulings), not built.** Written straight into the card rule set
+(cards plan C2 to C5, owner decision 5), not built one at a time on the old file. Every row: tests named below; extracts compared with
 the packaged PDF text; GUIDELINE-TRACE.md rows updated; source cited "EAS [number] [title], p[n]" or "Owner
 ruling 15 Nov 2026" plus the guideline it rests on. Rows superseding an earlier row (A1, A2b, A2c,
 A7) update that row's test to the new approved behaviour; that is not a loosening.
@@ -321,8 +330,8 @@ The editor is where the principle could be broken, because an editor can type an
 3. **Dose methods, in order of preference:** a printed value (fixed, band table, column table);
    "Seek clinical advice" with no number; a guideline formula only where the cited guideline prints
    a formula and no value. "Per kg with cap" and "per kg with rounding" exist only as the last kind.
-4. **The advanced formula box (decision 13) is not available for doses, energies or sizes.** It may
-   only combine facts for *when* something shows. (Owner to confirm when stage 7 is reached.)
+4. **No formula box (editor decision 13).** When a card shows is set only by the fixed list of
+   conditions (`CARDS-DESIGN.md` section 2); doses, energies and sizes are never formulas.
 5. **For another service,** "the guideline" means that service's own published guideline, packaged
    with its rule set. The approval record names the guideline edition the rule set was checked against.
 
@@ -352,7 +361,7 @@ sentence is typed into `src/app` or `src/engine`.
 | 10 | **Scope:** the owner must be able to edit any clinically relevant function without touching code (values, wording, decision logic, pop-ups) and visual settings, in one interface. |
 | 11 | **Logic is edited through menus and rule tables:** "when" picked from a list of facts, "then" from a list of results, first match wins, last row "otherwise". |
 | 12 | **Two ways into the editor:** a technical Rules view, and an App view (tap a card in a phone preview and see every rule attached to it). Long term the blocks become a no-code "flowchart to app" tool. Guideline gaps are added through the editor, not typed into code. |
-| 13 | **New blocks at three levels** (below) **plus an advanced formula box**, limited by principle point 4 above. The box accepts listed facts, numbers, comparisons, and / or / not, never code; the checker reads it; it is marked "advanced" in the what-changed view; each formula needs at least one scenario test. |
+| 13 | **New blocks at three levels** (below). **No formula box** (owner, 15 Nov 2026, cards plan): a card shows by the fixed list of conditions in `CARDS-DESIGN.md` section 2, all of which must be true; a new kind of condition is a new block (level 3). |
 | 14 | **Any number of drug cards, layout set by rules.** With today's two cards the screen must stay identical; the checker warns when cards no longer fit a small phone; owner phone check the first time a third card is used. |
 | 16 | **Named situations as data,** replacing the single special-situation switch; built empty first, then filled one approved item at a time. |
 | 17 | **Guideline candidates are added through the editor,** each approved and tested separately: G1, G2, G3, G10, G11 (below). |

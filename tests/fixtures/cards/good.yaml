@@ -1,0 +1,129 @@
+about: "TEST FIXTURE for the card checker (tests/cards-checker.test.mjs). Not the app's rule set: the cards are the CARDS-DESIGN.md section 3 examples, enough to exercise every field and condition. The table holds only the columns these cards use."
+guidelines:
+  "3.14":
+    title: Cardiac Arrest
+    pdf: cpg-cardiac-arrest.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas"
+  "7.2":
+    title: Paediatric Equipment and Drug Doses
+    pdf: cpg-paediatric-equipment.pdf
+  "14.3":
+    title: Adrenaline
+    pdf: cpg-drugs/eas-14-3.pdf
+  "14.4":
+    title: Amiodarone
+    pdf: cpg-drugs/eas-14-4.pdf
+  "14.27":
+    title: Magnesium sulphate
+    pdf: null
+settings:
+  rhythms:
+    shock: [VF, VT, Torsades]
+    noshock: [PEA, Asystole]
+    rosc: [Sinus rhythm, Organised rhythm, AF, Other, Unknown]
+tables:
+  eas72:
+    source: "EAS 7.2 p5-15"
+    key: maxKg
+    rows:
+      - {maxKg: 5, adrenalineMg: 0.05, amiodaroneFirstMg: 25, magnesiumMmol: null, fluidsTableMl: 100}
+      - {maxKg: 10, adrenalineMg: 0.1, amiodaroneFirstMg: 50, magnesiumMmol: null, fluidsTableMl: 200}
+      - {maxKg: 20, adrenalineMg: 0.2, amiodaroneFirstMg: 100, magnesiumMmol: 4, fluidsTableMl: 400}
+cards:
+  - id: adrenaline
+    title: Adrenaline
+    place: top
+    show_when: [arrest_running]
+    lines:
+      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1}
+    dose:
+      adult: {text: "1 mg IV for an adult.", source: EAS 3.14 p1}
+      child: {table: eas72, column: adrenalineMg, source: "EAS 7.2 p5, p8, p10, p12, p14"}
+    record: {drug: adrenaline, amount: dose, unit: mg}
+    timer: {every_min: 4, from: last_dose}
+    lock_s: 210
+    details:
+      - {text: "Cardiac arrest:", source: EAS 14.3 p2}
+      - {text: "Adults and children whose weight has been rounded to 50 kg or more: administer undiluted as an IV bolus.", source: EAS 14.3 p2}
+      - {text: "Children whose weight has been rounded to 40 kg or less: dilute 1 mg of adrenaline to a total of 10 ml using 0.9% sodium chloride. This solution is 1:10,000 and contains 0.1 mg/ml. Draw up the dose from this solution and administer as an IV bolus.", source: EAS 14.3 p2}
+  - id: amiodarone-2
+    title: Amiodarone
+    group: amiodarone
+    place: lower
+    show_when: [arrest_running, {latest_rhythm: [VF, VT]}, {never_recorded: Torsades}, {shocks_at_least: 6}, {doses_at_least: 1}]
+    lines:
+      - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1}
+    dose:
+      adult: {text: "150 mg IV for an adult.", source: EAS 3.14 p1}
+      child: {app_text: "Seek clinical advice", source: "Owner ruling A10 · EAS 3.14 p1"}
+    record: {drug: amiodarone, amount: dose, unit: mg}
+    repeat: {max: 2}
+    details:
+      - {text: "Cardiac arrest: administer IV undiluted as a bolus.", source: EAS 14.4 p3}
+      - {text: "Contraindications", source: EAS 14.4 p1}
+      - {text: "Known severe allergy.", source: EAS 14.4 p1}
+    note: D9 waits for the owner; today's behaviour (A10) kept.
+  - id: amiodarone-1
+    title: Amiodarone
+    group: amiodarone
+    place: lower
+    show_when: [arrest_running, {latest_rhythm: [VF, VT]}, {never_recorded: Torsades}, {shocks_at_least: 3}]
+    lines:
+      - {text: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:", source: EAS 3.14 p1}
+      - {text: "Administer amiodarone:", source: EAS 3.14 p1}
+    dose:
+      adult: {text: "300 mg IV for an adult.", source: EAS 3.14 p1}
+      child: {table: eas72, column: amiodaroneFirstMg, source: "EAS 7.2 p5, p8, p10, p12, p14"}
+    record: {drug: amiodarone, amount: dose, unit: mg}
+    repeat: {max: 1}
+    details: []
+  - id: magnesium
+    title: Magnesium
+    place: lower
+    show_when: [arrest_running, {ever_recorded: Torsades}]
+    lines:
+      - {text: "If torsades de pointes is present or has occurred", source: EAS 3.14 p2}
+      - {text: "Withhold amiodarone.", source: EAS 3.14 p2}
+      - {text: "Administer magnesium IV:", source: EAS 3.14 p2}
+    dose:
+      adult: {text: "10 mmol (2.5 g) over 1-2 minutes for an adult.", source: EAS 3.14 p2}
+      child: {table: eas72, column: magnesiumMmol, source: "EAS 7.2 p7, p9, p11, p13, p15"}
+    record: {drug: magnesium, amount: dose, unit: mmol}
+    repeat:
+      max: 2
+      confirm:
+        - {app_text: "One dose is already recorded."}
+        - {text: "Repeat once if torsades de pointes recurs or persists.", source: EAS 3.14 p2}
+    lock_s: 5
+    details: []
+  - id: fluids
+    title: Fluids
+    place: lower
+    show_when: [arrest_running, {latest_rhythm: [PEA]}]
+    pop_up_on_show: true
+    lines:
+      - {text: "If the patient is in PEA", source: EAS 3.14 p2}
+      - {text: "Correct immediately reversible causes.", source: EAS 3.14 p2}
+      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2}
+    dose:
+      adult: {text: "1-2 litres IV for an adult.", source: EAS 3.14 p2}
+      child:
+        - {table: eas72, column: fluidsTableMl, source: "EAS 7.2 p7, p9, p12, p14, p16"}
+        - {text: "20-40 ml/kg IV for a child.", source: EAS 3.14 p2}
+    record: {drug: fluids, amount: typed, unit: mL}
+    lock_s: 5
+    details:
+      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2}
+  - id: reversible-causes
+    title: Reversible causes
+    place: guidance
+    show_when: [on_request]
+    lines:
+      - {text: "Potentially reversible causes of PEA include:", source: EAS 3.14 p13}
+checklists:
+  - id: arrest
+    title: Cardiac arrest checklist
+    items:
+      - {text: "Team leader identified.", source: EAS 3.14 p2}
+      - {text: "Roles allocated and confirmed.", source: EAS 3.14 p2}
+...

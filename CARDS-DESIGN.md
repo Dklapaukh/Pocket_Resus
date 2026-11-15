@@ -1,9 +1,9 @@
-# Cards design note (proposal, not approved)
+# Cards design note (approved by the owner 15 Nov 2026; owner decisions 5 and 17, editor decision 13)
 
 The idea: one **card** for each guideline instruction the app acts on. The rule file becomes a short
 list of cards plus the verified dose tables, the engine becomes one routine that asks "which cards
 show now?", and the editor becomes "tap a card, change a field, see what changed, publish". Nothing
-here changes the app yet. Inputs: CLAUDE.md, DECISIONS.md sections 1, 3 and 9,
+here changes the live app until plan step C5. Inputs: CLAUDE.md, DECISIONS.md sections 1, 3 and 9,
 GUIDELINE-TRACE.md, `src/rules/nz-eas.yaml`, `src/engine/*.js`, `src/app/*.js`, and the packaged PDF text.
 
 ## 1. Every instruction the app acts on
@@ -31,23 +31,33 @@ D2 (pads prompt) and the "Other" no-shock rhythm (D1) have no card: they go. Not
 (G1, G2, G3, backup request): each would be one new card later, through the editor.
 
 ## 2. Card fields and the fixed list of conditions
+A card file has these parts, in this order, and ends with the line `...` (same strict reader as
+today's rule set: no comments, anchors or tags): `about`, `guidelines` (number → title, packaged PDF
+or `null` if online only, optional `https://` link), `settings` (rhythm lists), `tables` (each with
+`source`, the `key` column and `rows`), `cards`, `checklists` (`id`, `title`, `items` as lines).
+The checker is `src/cards/check.js` (README "Code map").
+
 | Field | Holds |
 |---|---|
 | `id`, `title` | name; the title is app text |
 | `place` | `top`, `lower`, `header` or `guidance` (where it is drawn) |
 | `group` | optional: only the first matching card of a group shows (amiodarone-2 before -1) |
 | `show_when` | conditions from the list below, all must be true |
-| `lines` | each `{text, source}`, word for word from the PDF; or `{app_text}`, drawn differently |
-| `dose` | `adult: {text, source}` and `child:` a table cell `{table, column, source}` and/or text lines; an empty ("-") cell shows "Seek clinical advice" |
+| `lines` | each `{text, source}`, found word for word on a cited page of the packaged PDF (spacing, quote and dash style ignored; a sentence across a page break needs both pages cited); or `{app_text}` with an optional source, drawn differently |
+| `dose` | `adult:` one line and `child:` a table cell `{table, column, source}` and/or lines; a dose in app text needs a source citing an owner ruling; an empty ("-") cell shows "Seek clinical advice" |
 | `record` | what tapping records: drug, amount (`dose` or `typed`), unit; never pre-filled when `typed` |
 | `timer` | clock on the card, e.g. `every_min: 4, from: last_dose` |
 | `repeat` | `max` doses; optional `confirm` lines before a repeat |
 | `details` | the "Administration ⓘ" pop-up: `{text, source}` lines |
-| `pop_up_on_show` | open `details` the moment the card first appears (fluids after PEA) |
+| `pop_up_on_show` | open `details` the moment the card first appears (fluids after PEA); needs at least one `details` line |
 | `lock_s` | double-tap lock after recording (app mechanic, A5) |
 | `note` | plain-English note for the owner; never shown |
 
-**Conditions (seven; no "or" between conditions, no formulas):**
+**Sources** are parts joined by " · ": `EAS 3.14 p1`, `EAS 7.2 p5, p8-9`, `Owner ruling A10`. A guideline
+sentence or table cell needs at least one EAS part. Card text is plain: no `{gaps}`, no bold or italic.
+
+**Conditions (seven; no "or" between conditions, no formulas; each at most once per card; exactly one
+of `arrest_running` and `on_request`, and an `on_request` card has no other condition):**
 1. `arrest_running`: CPR started, no ROSC or end since.
 2. `latest_rhythm: [list]`: the latest rhythm recorded at a rhythm check (ROSC rhythms ignored, A8; "not recorded" changes nothing).
 3. `shocks_at_least: n`: shocks so far, counting "+ Previous shock" and earlier counts.
@@ -146,6 +156,9 @@ one app setting that turns every automatic card to "Manual review".
   record: {drug: fluids, amount: typed, unit: mL}
   lock_s: 5
 ```
+The checked copy of these examples is `tests/fixtures/cards/good.yaml`: it adds the titles and a fluids
+`details` line the format requires, and uses `note` in place of `#` comments.
+
 With torsades then PEA, magnesium and fluids both show (A20): a third card on screen, which decision
 14 says needs an owner phone check the first time.
 
@@ -185,11 +198,11 @@ routine of about 150 to 200 lines in place of about 720 plus the 150 to 200 in t
 **Stages 3 to 10 (DECISIONS.md section 5):** 3 (rule tables) and 4 (drug cards as data) are no longer needed: the
 cards are both. 5 shrinks to named situations (decision 16). 7 shrinks to checking card fields,
 citations and word-for-word text; there are no rule tables to prove complete, and the formula box
-(decision 13) is not needed (an owner decision to drop it). 6, 8, 9 stay, smaller. 10 becomes
+is dropped (editor decision 13). 6, 8, 9 stay, smaller. 10 becomes
 "add one card" per candidate. A20 to A31 and P3 are written straight into the cards instead of being
 patched into the old file one by one; each row keeps its named test and phone check.
 
-**Plan (fresh, from the guideline, not converted):**
+**Plan (fresh, from the guideline, not converted; steps C1 to C6 in DECISIONS.md section 5):**
 1. Card format and new checker: fields, the seven conditions, citation required, every `text`
    compared with the PDF text; tested on deliberately bad cards.
 2. New rule file written from the PDFs and the approved A20 to A31 text; the EAS 7.2 and 9.3 tables

@@ -83,6 +83,13 @@ before changing any clinical rule.
    links are in the rule set `src/rules/nz-eas.yaml` (DECISIONS.md section 9), read at start-up by
    `src/rules/load.js` and `parse.js`.
 
+**Cards (being built, not used by the app yet; `CARDS-DESIGN.md`).** `src/cards/check.js` is the
+card checker: fields, the seven conditions, citations, and every guideline sentence compared word for
+word with `src/cards/guideline-text.json` (the packaged PDFs' text, page by page, made by
+`node tools/extract-guideline-text.mjs`; re-run it when a PDF changes). Tests:
+`tests/cards-checker.test.mjs` (good file `tests/fixtures/cards/good.yaml` and the bad files),
+`tests/cards-guideline-text.test.mjs`. `src/cards/` is not in the `sw.js` list until step C5.
+
 The app uses shared state. Read the call sites
 before moving a function: a display function can also update screen-only state,
 and recording has persistence and redraw side effects.
