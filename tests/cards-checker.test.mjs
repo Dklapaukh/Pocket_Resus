@@ -55,6 +55,15 @@ const BAD = [
   ['a one-word change to a sentence', (f) => { card(f, 'adrenaline').lines[0].text = 'Administer adrenaline IV every three minutes:'; }, /not found word for word on EAS 3.14 p1/],
   ['a changed dose number', (f) => { card(f, 'adrenaline').dose.adult.text = '2 mg IV for an adult.'; }, /\.dose\.adult: not found word for word/],
   ['the right sentence on the wrong page', (f) => { card(f, 'magnesium').lines[1].source = 'EAS 3.14 p1'; }, /\(magnesium\)\.lines\[1\]: not found word for word on EAS 3.14 p1/],
+  // Fragments: a sentence must start and end where a guideline sentence or line does (reviewer's planted faults)
+  ['a dose cut from inside a larger dose', (f) => { card(f, 'amiodarone-2').dose.adult.text = '50 mg IV for an adult.'; }, /\.dose\.adult: not found word for word/],
+  ['a sentence starting inside a word', (f) => { card(f, 'adrenaline').lines[0].text = 'renaline IV every four minutes:'; }, /not found word for word/],
+  ['a sentence with its "Do not" cut off', (f) => { card(f, 'fluids').details.push({ text: 'administer amiodarone because it can be associated with severe worsening of shock', source: 'EAS 3.14 p1-19' }); }, /not found word for word/],
+  ['the first words of a sentence only', (f) => { card(f, 'fluids').details.push({ text: 'Resuscitation should start', source: 'EAS 3.14 p1-19' }); }, /not found word for word/],
+  ['a number cut short', (f) => { card(f, 'fluids').details.push({ text: 'Administer 1 mg/kg of ketamine IV, up to a maximum of 15', source: 'EAS 3.14 p2' }); }, /not found word for word/],
+  ['the export header as guideline text', (f) => { card(f, 'fluids').details.push({ text: 'Uncontrolled document exported 24.09.2026', source: 'EAS 3.14 p1' }); }, /not found word for word/],
+  ['the page footer as guideline text', (f) => { card(f, 'fluids').details.push({ text: 'Page 1 of 19', source: 'EAS 3.14 p1' }); }, /not found word for word/],
+  ['single-mark italics in the text', (f) => { card(f, 'fluids').details[0] = { app_text: 'Give *fluids* now' }; }, /has \* or _/],
   ['a sentence citing an online-only guideline', (f) => { card(f, 'magnesium').details.push({ text: 'Dilute to 10 ml.', source: 'EAS 14.27 p1' }); }, /EAS 14.27 has no packaged PDF/],
   ['a guideline sentence cited only to an owner ruling', (f) => { card(f, 'fluids').lines[1].source = 'Owner ruling D1'; }, /must name the guideline and page/],
   ['a {gap} left in the text', (f) => { card(f, 'fluids').details[0] = { app_text: 'Give {fluid} mL' }; }, /has \{ or \}/],
@@ -112,6 +121,15 @@ test('a sentence that runs across a page break is found when both pages are cite
   assert.deepEqual(withLine('EAS 7.2 p1-2'), []);
   assert.deepEqual(withLine('EAS 7.2 p1, p2'), []);
   assert.ok(withLine('EAS 7.2 p1').some((p) => /not found word for word/.test(p)));
+});
+
+test('a whole sentence or line is found; a heading line without a full stop counts as a line', () => {
+  const f = good();
+  card(f, 'fluids').details.push(
+    { text: 'Administer 1 mg/kg of ketamine IV, up to a maximum of 150 mg.', source: 'EAS 3.14 p2' },
+    { text: 'If patient movement is interfering with resuscitation', source: 'EAS 3.14 p2' },
+    { text: 'If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:', source: 'EAS 3.14 p1' });
+  assert.deepEqual(check(f), []);
 });
 
 test('word-for-word ignores only spacing, quote style and dash style', () => {

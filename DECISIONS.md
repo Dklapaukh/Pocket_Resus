@@ -108,8 +108,8 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
 | A9 to A12, A15 to A19 (guideline tables instead of calculations) | Done, live in v24; phone checks due |
 | P1 Trace check of GUIDELINE-TRACE.md (found D9 to D12) | Done |
 | P2 Deviation rulings | D1 to D8 ruled 15 Nov 2026 (rows A20 to A31 approved). D9 to D12 wait for the owner |
-| C1 Cards plan step 1: card format and card checker (`src/cards/`) | **In progress** (owner approved the cards plan 15 Nov 2026) |
-| C2 to C6 Cards plan steps 2 to 6 (A20 to A32 and P3 written into the cards; one comparison against v24 at C5) | After C1, in order. A32 also needs the web addresses (waiting list 3) |
+| C1 Cards plan step 1: card format and card checker (`src/cards/`) | Done (reviewed; commit message has the proof) |
+| C2 to C6 Cards plan steps 2 to 6 (A20 to A32 and P3 written into the cards; one comparison against v24 at C5) | **Next: C2**, then in order. A32 also needs the web addresses (waiting list 3) |
 | E2 Editor page, Rules view | After C6. Checker rules settled (Q10) except one point (waiting list 1) |
 | E3 Approve, publish, rollback | After E2; needs a short design note first |
 | v25 release | After C6 and E3 |
@@ -276,6 +276,12 @@ Withdrawn: A13, A14 (showing the working on screen; decision 7 rule 4).
   checks for updates while "offline"): wait for that install to end.
 - Nothing runs the tests on GitHub before a release (a GitHub Actions check would).
 - Not checked anywhere: real phones beyond the owner's, iPhone Safari, the bytes GitHub Pages serves.
+
+**Card checker (from the C1 review; do before the step named)**
+- Before C3: a group's card order is not checked (amiodarone-1 placed before amiodarone-2 would hide the
+  second-dose card); settle with the engine's group rule.
+- Before C2: table and cell sources are checked only for page existence; the cell values are left to the table test.
+- Small: a page listed twice in a source ("p1, p1") is accepted.
 
 **Before the editor is used (E2)**
 - The 0–100 limit on the earlier-counts boxes is typed in code (three places); its error text is data.

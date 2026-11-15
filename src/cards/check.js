@@ -45,7 +45,8 @@ const show = (value) => JSON.stringify(value);
 /* Makes two pieces of text comparable: the same letters and words in the same order count as the same, whatever
    the spacing, line breaks, quote style (‘ ’ “ ”) or dash style (‐ – —). Nothing else is changed. */
 export function sameWords(text) {
-  return String(text).normalize('NFKC')
+  return String(text).normalize('NFC')
+    .replace(/\uFB01/g, 'fi').replace(/\uFB02/g, 'fl') // the PDF's "fi" and "fl" joined letters
     .replace(/[‘’‚‛′]/g, "'")
     .replace(/[“”„″]/g, '"')
     .replace(/[‐-―−]/g, '-')
@@ -54,15 +55,53 @@ export function sameWords(text) {
     .trim();
 }
 
+/* A guideline page as one line of comparable text, plus where its sentences and lines may start and end. A card
+   sentence must start and end on these places: it cannot be a fragment cut from the middle of a sentence or a word
+   ("50 mg" inside "150 mg", "administer ..." without the "Do not" before it).
+   A place is: the start or end of the text; a full stop, colon, semicolon, question or exclamation mark followed by
+   a word that does not start with a small letter; or a line break, unless the next line starts with a small letter
+   (then the line was only wrapped). bodies is a list of page bodies; consecutive pages are joined as one. */
+export function comparableText(bodies) {
+  const lines = bodies.join('\n\n').split('\n').map(sameWords);
+  let text = '';
+  const starts = new Set(), ends = new Set();
+  let breakBefore = true; // a blank line (or the start) always ends what came before
+  for (const line of lines) {
+    if (!line) { breakBefore = true; continue; }
+    const wrapped = !breakBefore && /^[a-z]/.test(line);
+    if (text) {
+      if (!wrapped) ends.add(text.length);
+      text += ' ';
+    }
+    if (!wrapped) starts.add(text.length);
+    const offset = text.length;
+    text += line;
+    for (const m of line.matchAll(/[.:;?!](?= (?![a-z]))/g)) { ends.add(offset + m.index + 1); starts.add(offset + m.index + 2); }
+    breakBefore = false;
+  }
+  ends.add(text.length);
+  return { text, starts, ends };
+}
+
+// True when wanted appears in place (from comparableText) starting and ending on a sentence or line boundary.
+export function foundWhole(wanted, place) {
+  for (let at = place.text.indexOf(wanted); at >= 0; at = place.text.indexOf(wanted, at + 1)) {
+    if (place.starts.has(at) && place.ends.has(at + wanted.length)) return true;
+  }
+  return false;
+}
+
 /* The body of one exported PDF page: without the export header (up to "View online at cpg.stjohn.org.nz") and the
-   footer (from the last "Clinical Practice Guidelines"), so a sentence that runs on to the next page can be found
-   across the page break. */
+   footer (from the last "Clinical Practice Guidelines"). Card text is compared with the body only, so the export
+   header and footer can never pass as guideline text, and a sentence that runs on to the next page is found across
+   the page break. */
 const HEADER_END = 'View online at cpg.stjohn.org.nz';
 const FOOTER_START = 'Clinical Practice Guidelines';
 export function pageBody(pageText) {
   const start = pageText.indexOf(HEADER_END);
   const end = pageText.lastIndexOf(FOOTER_START);
-  return pageText.slice(start < 0 ? 0 : start + HEADER_END.length, end < start ? pageText.length : end);
+  const from = start < 0 ? 0 : start + HEADER_END.length;
+  return pageText.slice(from, end < from ? pageText.length : end);
 }
 
 /* ---------- Sources ---------- */
@@ -331,7 +370,7 @@ function checkLine(line, where, context, { isDose = false, allowCell = false }) 
 function checkPlainWords(text, where, context) {
   if (!isText(text)) { problem(context, where, 'must be text that is not empty'); return; }
   if (/[{}]/.test(text)) problem(context, where, 'has { or }: card text is written out in full, with no {gaps}');
-  if (/\*\*|__/.test(text)) problem(context, where, 'has bold or italic marks; card text is plain');
+  if (/[*_]/.test(text)) problem(context, where, 'has * or _ (bold or italic marks); card text is plain');
 }
 
 /* Checks a source. Every EAS part must name a known guideline and pages that exist in its PDF. needsGuideline:
@@ -362,11 +401,11 @@ function checkWordForWord(text, source, where, { guidelines, guidelineText, prob
     if (pdf === null) { report(where, 'EAS ' + code + ' has no packaged PDF, so this sentence cannot be checked word for word'); return; }
     const pageList = guidelineText[pdf];
     for (const page of pages) {
-      places.push(sameWords(pageList[page - 1]));
-      if (pages.includes(page + 1)) places.push(sameWords(pageBody(pageList[page - 1]) + ' ' + pageBody(pageList[page])));
+      places.push(comparableText([pageBody(pageList[page - 1])]));
+      if (pages.includes(page + 1)) places.push(comparableText([pageBody(pageList[page - 1]), pageBody(pageList[page])]));
     }
   }
-  if (!places.some((pageText) => pageText.includes(wanted))) report(where, 'not found word for word on ' + source.eas.map(({ code, pages }) => 'EAS ' + code + ' p' + pages.join(', p')).join(' or ') + ': "' + text + '"');
+  if (!places.some((place) => foundWhole(wanted, place))) report(where, 'not found word for word on ' + source.eas.map(({ code, pages }) => 'EAS ' + code + ' p' + pages.join(', p')).join(' or ') + ': "' + text + '"');
 }
 
 /* dose: { adult: <line>, child: <line or table cell, or a list of them> }. An empty ("-") table cell is shown by
