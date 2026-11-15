@@ -310,7 +310,7 @@ DECISIONS.md and stop. Do not review Opus-or-Sonnet work with a weaker reviewer 
 2. Guideline currency: compare each guideline's online version with the packaged export; record
    the result in GUIDELINE-TRACE.md section 7. A changed guideline stops the release and goes to the owner.
 3. Merge `main` in; run `npm test` and the deep run on the merged commit.
-4. `node tools/set-cache-name.mjs v24` (the next label); tests again.
+4. `node tools/set-cache-name.mjs v25` (the next label); tests again.
 5. Push `rules-editor`, then `git push origin HEAD:main` (fast-forward only, never force).
 6. Tell the owner and ask for the phone checks: installs and opens in airplane mode; Start works;
    a shock and a drug record; leave the app in the background past one cycle and return (the clock

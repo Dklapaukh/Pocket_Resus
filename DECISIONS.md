@@ -89,10 +89,10 @@ offline phone app that runs a cardiac arrest as an active flowchart and records 
 NZ EAS CPG content only (sections 1 to 3). The owner is a clinician, not a developer, and is the clinical
 reviewer. Independent clinical review comes after the deviation rulings (GUIDELINE-TRACE.md).
 
-- **Live: v23** (published 13 Nov 2026; owner phone check passed 14 Nov 2026). It loads
-  `nz-eas.json`. The owed v23 check of "Other" (A7) is no longer needed: A20 removes "Other".
-- **On `rules-editor`, not live:** rule set as YAML (`src/rules/nz-eas.yaml`), the checker and the
-  what-changed tool, and the changes listed under "Changes not yet live".
+- **Live: v24** (published 15 Nov 2026 at the owner's request, ahead of the planned order). It loads
+  the YAML rule set (`src/rules/nz-eas.yaml`) and includes A9 to A12 and A15 to A19. **Owner phone
+  checks due:** the standard release checks (README "Release" step 6) and the "Phone check" column of
+  the first A-table below. Owner decision 17's "release v24" is now the next release, v25.
 
 ## 5. Build queue (README "How the build is run" has the method; commit messages hold each step's proof)
 | Step | State |
@@ -102,19 +102,19 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
 | 2b Safer update (`sw.js`), v23 published | Done |
 | E1 Checker and what-changed tool (`src/rules/check.js`, `tools/rules-diff.mjs`) | Done |
 | E1b Rule set as YAML, strict reader and byte-for-byte writer | Done |
-| A9 to A12, A15 to A19 (guideline tables instead of calculations) | Done, not live |
+| A9 to A12, A15 to A19 (guideline tables instead of calculations) | Done, live in v24; phone checks due |
 | P1 Trace check of GUIDELINE-TRACE.md (found D9 to D12) | Done |
 | P2 Deviation rulings | D1 to D8 ruled 15 Nov 2026: rows A20 to A26 approved, **next: build A20**, one row per chat. D9 to D12 wait for the owner |
 | P3 Citations in the rule set; word-for-word extract test | Approved (owner ruling Q9). After A26, before A27 |
 | P2 continued: A27 to A31 (word-for-word wording, D6), then A32 (source lines and guideline links, Q9) | Approved. After P3 (A32 also needs the web addresses, waiting list 3) |
 | E2 Editor page, Rules view | After A32. Checker rules settled (Q10) except one point (waiting list 1) |
 | E3 Approve, publish, rollback | After E2; needs a short design note first |
-| v24 release | After P2 rulings are built and E3 |
-| S Store apps | Owner actions can start now (below); build after v24 |
+| v25 release | After P2 rulings are built and E3 |
+| S Store apps | Owner actions can start now (below); build after v25 |
 | 3 to 10 Deeper editor stages | After store publication (owner ruling Q11) |
 
 ### Work plan, step by step
-Order is the owner's (owner decision 17): rows A20 to A26, P3, A27 to A32, E2, E3, v24, store apps. Proof for every step: tests pass before and
+Order is the owner's (owner decision 17): rows A20 to A26, P3, A27 to A32, E2, E3, v25, store apps. Proof for every step: tests pass before and
 after; screens identical to the reference except where an approved A-row says otherwise; reviewer
 has no blocking findings.
 
@@ -128,7 +128,7 @@ has no blocking findings.
 | E2b | **Editing and saving.** Edit any value; the checker runs as you type and blocks saving an invalid rule set; do the "before the editor saves files" items in section 8 first | Open the reference rule set and save without edits: file identical byte for byte; invalid edits cannot be saved | Opus · high |
 | E2c | **What-changed view and large-change confirmation** (editor decision 18). **Owner tries the editor after this step** | Planted edits appear in the view; a doubled dose needs the typed confirmation | Opus · high |
 | E3 | **Approve, publish, rollback** (editor decisions 18, 20, 21, 26). Design note first (how a confirmed rule set goes live; whether the phone runs the checker or checks a fingerprint): the owner approves the note before any code | Rollback restores the previous rule set exactly; the what-changed report is part of the approval record | Opus · high |
-| v24 | **Release** (attended chat only): see "Release" | Owner phone checks | Orchestrator |
+| v25 | **Release** (attended chat only): see "Release" | Owner phone checks | Orchestrator |
 | S1 | **Store apps, design note:** how the same files are wrapped for Android and iPhone, built by GitHub Actions, with the rule set still updatable; privacy policy and store listing text; what each store will ask about medical content (section 2 "Regulatory position"). Owner approves the note | Note only | Opus · high |
 | S2 | Build the wrappers and the GitHub Actions build; test builds the owner can install | Wrapped app behaves as the web app offline; update path proved | Sonnet · high |
 | S3 | Closed test, store submissions (owner's accounts and actions; Claude prepares the material) | Store acceptance | Owner, with Sonnet · medium |
@@ -222,6 +222,7 @@ No clinical number, wording, timing or behaviour changes unless it is an approve
 row is written in full (what changes, which screens, the test, the guideline source in GUIDELINE-TRACE.md
 terms) and shown to the owner; once applied it shrinks to one line and GUIDELINE-TRACE.md carries the result.
 Rows already live (A1 to A8, C6b-2) are no longer listed: their behaviour is in GUIDELINE-TRACE.md.
+A9 to A19 went live in v24 (15 Nov 2026); each stays listed until its phone check is done.
 
 | ID | Change (applied on `rules-editor` unless stated) | Phone check at the next release |
 |---|---|---|
@@ -260,7 +261,7 @@ A7) update that row's test to the new approved behaviour; that is not a loosenin
 Withdrawn: A13, A14 (showing the working on screen; decision 7 rule 4).
 
 ## 8. Carried forward (not blocking; each has a "do before")
-**Before the next release (v24)**
+**Before the next release (v25)**
 - The start page entry `./` is not part of the install check: require its download to equal `index.html`.
 - `tools/check-offline-browser.cjs` sometimes fails at "old store changed" (the test browser still
   checks for updates while "offline"): wait for that install to end.
