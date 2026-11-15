@@ -240,8 +240,7 @@ chat small and means a usage limit or a mistake costs one step at most.
 8. Blocking findings go back to the same worker, then to the **same** reviewer by message. One
    review round; non-blocking findings go on the "Carried forward" list (DECISIONS.md section 8).
 9. Update DECISIONS.md (progress table, A-table, waiting list) and GUIDELINE-TRACE.md if anything clinical on screen
-   changed. Put the proof in the commit message. Push (see "Git"). Last act:
-   `sh tools/build-progress.sh save "IDLE: <what is next>"`. Then stop: one step per chat.
+   changed. Put the proof in the commit message. Push (see "Git"). Then stop: one step per chat.
 
 ### Rules for every agent (copy into each worker and reviewer brief)
 - **The guiding principle (DECISIONS.md section 1) governs every change:** the app shows NZ EAS CPG content, as
@@ -276,7 +275,7 @@ with passing tests until the recordings are re-recorded, so an unattended chat: 
 uncommitted; proves the end state in a scratch copy (clone, apply, commit there,
 `node tests/reference/record.mjs --commit <it>`, `npm test`, deep run); has it reviewed; commits
 docs only (DECISIONS.md: "A-row waits for an owner-started chat"); then saves the work with
-`sh tools/build-progress.sh save "IDLE: <row> built, waits for an owner-started chat"`. The
+`sh tools/build-progress.sh save "<row> built, waits for an owner-started chat"`. The
 owner-started chat restores it, runs `npm test` (only the recording-based tests may fail), commits
 the row, re-records from that commit, checks the recordings differ only where the what-changed
 report said, runs `npm test` and the deep run, and commits the recordings.
@@ -290,7 +289,7 @@ Continue the Pocket Resus build (github.com/Dklapaukh/Pocket_Resus). This is an 
 4. If DECISIONS.md shows that every remaining step is waiting for the owner, stop at once and say so in one line.
 5. Otherwise act as the orchestrator in README "How the build is run" and follow "The loop for one step" exactly, for ONE step: the first step in the progress table in DECISIONS.md section 5 that is not done and not waiting for the owner (or the saved unfinished work, if the check in step 2 reported any). Use the worker and reviewer models and effort levels in README. Never use Fable.
 6. Limits: never push to `main`; never make a clinical or design decision (write it under "Waiting for the owner" in DECISIONS.md with the full text of every option and one recommendation); never edit `tests/golden/` or the reference recordings (for an approved A-row follow "Running unattended" in README: build uncommitted, prove in a scratch copy, save the snapshot); never loosen a test. If a test fails and you cannot explain and fix it within the rules, stop and write a plain-English explanation at the top of the progress table in DECISIONS.md. If a model reports a usage limit, do not retry in a loop and do not swap models: note it in DECISIONS.md and stop.
-7. Update DECISIONS.md (and GUIDELINE-TRACE.md if anything clinical on screen changed), commit and push to `rules-editor`, then run `sh tools/build-progress.sh save "IDLE: <what is next>"`.
+7. Update DECISIONS.md (and GUIDELINE-TRACE.md if anything clinical on screen changed), commit and push to `rules-editor`.
 8. Finish with a short plain-English summary for the owner (a clinician, not a programmer): what was done, what was proved, what is next, and at most one question.
 ```
 
