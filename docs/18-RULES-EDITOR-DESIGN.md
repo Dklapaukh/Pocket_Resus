@@ -10,11 +10,13 @@ automatic tests for each rule set; approval before a rule set goes live.
 
 ## What the guiding principle requires of the editor (15 Nov 2026)
 The editor is where the principle could be broken, because an editor can type anything. So:
-1. **Citation required (owner to confirm, doc 07 question 2).** Every clinical value, sentence and
+1. **Citation required (owner ruling Q9, 15 Nov 2026; doc 06 decision 15).** Every clinical value, sentence and
    rule carries its guideline and page. The checker refuses a rule set with one missing.
 2. **Guideline text is an extract.** A sentence shown as guidance is word for word from the
-   guideline (whole sentences may be left out), checked against the packaged PDF text. Anything
-   else is marked as app text and cannot be styled to look like guidance.
+   guideline (whole sentences may be left out), checked against the packaged PDF text (owner
+   ruling D6). A summary or an omission needs a recorded owner ruling and shows "Summary: see EAS
+   [number] [title]" with its link. Anything else is marked as app text and cannot be styled to
+   look like guidance.
 3. **Dose methods, in order of preference:** a printed value (fixed, band table, column table);
    "Seek clinical advice" with no number; a guideline formula only where the cited guideline prints
    a formula and no value. "Per kg with cap" and "per kg with rounding" exist only as the last kind.

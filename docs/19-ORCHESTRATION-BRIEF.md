@@ -74,7 +74,7 @@ the same form and move to a step that is not blocked, or stop.
 The scheduled task "Pocket Resus build" starts a fresh Opus chat every 3 hours with the prompt
 below. To change it, update the task and this section together. An unattended chat never pushes to
 `main`, never makes a clinical or design choice, and **never touches the reference recordings**
-(doc 07 question 5 asks the owner whether to relax this). An approved A-row cannot be committed
+(doc 07 waiting list 2 asks the owner whether to relax this). An approved A-row cannot be committed
 with passing tests until the recordings are re-recorded, so an unattended chat: builds the row
 uncommitted; proves the end state in a scratch copy (clone, apply, commit there,
 `node tests/reference/record.mjs --commit <it>`, `npm test`, deep run); has it reviewed; commits
@@ -110,7 +110,7 @@ docs it was not pointed to; one review round. If Opus reports a limit: note the 
 doc 07 and stop. Do not review Opus-or-Sonnet work with a weaker reviewer to keep going.
 
 ## Work plan
-Order is the recommended one (doc 07 question 4). Proof for every step: tests pass before and
+Order is the owner's (doc 06 decision 17): rows A20 to A26, P3, A27 to A32, E2, E3, v24, store apps. Proof for every step: tests pass before and
 after; screens identical to the reference except where an approved A-row says otherwise; reviewer
 has no blocking findings.
 
@@ -119,7 +119,7 @@ has no blocking findings.
 | A-row (rows from P2) | Build one approved row from doc 07 exactly as written. Add its test and its entry in `tests/helpers/approved-changes.mjs`; never edit the frozen copies. Run the what-changed report on all cases; the reference is re-recorded from the change's commit only after the report shows every difference is the approved change (in an owner-started chat: see "Running unattended"). Shrink the row in doc 07 to one line; update doc 11 | What-changed report lists only the row's screens; no saved session differs unless the row says so | Sonnet · high |
 | P1 | **Trace check.** Read doc 11 and the rule set against the text of each packaged PDF (`pdftotext -layout`), cell by cell for sections 1 to 3. Then search the rule set's `wording` and `checklists` for any clinical sentence or number with no row in doc 11. Correct doc 11; list anything new as a further deviation (D9 onward) with options, under doc 07 question 1. No app change | Every row of doc 11 marked checked, with the page; reviewer re-checks 15 cells chosen at random | Opus · high |
 | P2 | **Deviations.** For each owner ruling on D1 to D12: write the full A-row, then build it as an A-row step. One ruling, one row, one chat | As for an A-row | Sonnet · high |
-| P3 | **Citations** (after the owner's yes). Each clinical value and sentence in the rule set gets its guideline and page (a parallel `citations` block beside `notes`, so no existing value moves); checker rule: none missing; new test compares every sentence marked as an extract with the PDF text. Read doc 18 "What the guiding principle requires" | All existing values identical; a planted missing citation and a planted one-word change to an extract are both caught | Sonnet · high |
+| P3 | **Citations** (approved, doc 06 decision 15). Each clinical value and sentence in the rule set gets its guideline and page (a parallel `citations` block beside `notes`, so no existing value moves); checker rule: none missing; new test compares every sentence marked as an extract with the PDF text. Read doc 18 "What the guiding principle requires" | All existing values identical; a planted missing citation and a planted one-word change to an extract are both caught | Sonnet · high |
 | E2a | **Editor page, read-only.** A separate offline page of the same site that opens the rule set and shows every value of the five parts with its note and citation; tabs Rules, Tests, Publish (shells). Read doc 18 decisions 20, 23, 24, 26 and the `frontend-design` guidance. Start with a one-page design note; reviewer checks the note before any code | Every value reachable; live app files unchanged | Opus · high |
 | E2b | **Editing and saving.** Edit any value; the checker runs as you type and blocks saving an invalid rule set; do the "before the editor saves files" items in doc 07 first | Open the reference rule set and save without edits: file identical byte for byte; invalid edits cannot be saved | Opus · high |
 | E2c | **What-changed view and large-change confirmation** (decision 18). **Owner tries the editor after this step** | Planted edits appear in the view; a doubled dose needs the typed confirmation | Opus · high |
