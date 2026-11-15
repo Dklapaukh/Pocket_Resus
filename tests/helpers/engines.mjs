@@ -1,7 +1,5 @@
-// Loads the ORIGINAL engine (root files, old global-script style) and the PORTED engine
-// (src/engine, ES modules) so tests can run both. Also fixes randomness and the clock
+// Loads the app's engine (src/engine, ES modules) for tests, and fixes randomness and the clock
 // so results are repeatable.
-import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -14,47 +12,10 @@ export function resetDeterminism() { idCounter = 0; }
 Object.defineProperty(globalThis, 'crypto', { value: { randomUUID: () => 'id-' + (++idCounter) }, configurable: true, writable: true });
 Date.now = () => FIXED_NOW;
 
-const require = createRequire(import.meta.url);
-require(path.join(ROOT, 'core.js'));
-require(path.join(ROOT, 'rhythm-care.js'));
-require(path.join(ROOT, 'log-view.js'));
-export const original = globalThis.Resus; // all three files add to this one object
-
 const { Resus: ported } = await import('../../src/engine/index.js');
 export { ported };
 
-// checklists.js is a plain browser script (const ARREST_CHECKLISTS=...): evaluate it to get the data.
-export const LISTS = new Function(readFileSync(path.join(ROOT, 'checklists.js'), 'utf8') + ';return ARREST_CHECKLISTS;')();
-
-// A1 (owner-approved 3 Nov 2026): shock energy = 4 J/kg of the CPG weight band. The ORIGINAL files in the
-// repo root stay untouched as evidence. Tests that compare old and new engines call this to give the
-// original object the A1 energy rule (and nothing else), so every OTHER difference is still caught.
-// Only call it in a test file that does not also need the pure original afterwards (each file runs separately).
-export function giveOriginalTheA1Energy() {
-  original.joules = ported.joules;
-  original.needsPaediatricPads = ported.needsPaediatricPads;
-}
-
-// A10 (owner-approved 14 Nov 2026): a child has no second amiodarone dose (EAS 7.2 gives none), so the new
-// engine's dose() gives amio2 = null for a child. Same treatment as A1: tests that compare old and new
-// engines call this to give the ORIGINAL object that rule (and nothing else); adults are untouched.
-export function giveOriginalTheA10ChildSecondDose() {
-  const originalDose = original.dose;
-  original.dose = (s) => {
-    const reference = originalDose(s);
-    return reference && original.isPaediatric(s) ? { ...reference, amio2: null } : reference;
-  };
-}
-
-// A11 (owner-approved 14 Nov 2026): a child's fluid volume comes from the weight band (EAS 7.2 table volume to
-// 40 mL/kg x the band weight). Same treatment as A1: the ORIGINAL object gets the new fluid rule, nothing else.
-export function giveOriginalTheA11BandFluids() {
-  original.fluidReference = ported.fluidReference;
-}
-
-// A16 (owner-approved 14 Nov 2026, decision 8): weight from age comes from the EAS 7.2 band table headings (age
-// rounded up; 1 = 10 kg, 2-5 = 20, 6-10 = 30, 11-13 = 40 kg; 14 = adult, no weight). Same treatment as A1: the
-// ORIGINAL object gets the new estimate rule, nothing else.
-export function giveOriginalTheA16AgeBands() {
-  original.estimate = ported.estimate;
-}
+// The original app's checklist list, frozen: the generated test cases (tests/helpers/fuzz.mjs, and through it
+// the reference recordings) pick checklists from it, so it must never change. It is a plain browser script
+// (const ARREST_CHECKLISTS=...): evaluate it to get the data.
+export const LISTS = new Function(readFileSync(path.join(ROOT, 'tests/fixtures/original-checklists.js'), 'utf8') + ';return ARREST_CHECKLISTS;')();

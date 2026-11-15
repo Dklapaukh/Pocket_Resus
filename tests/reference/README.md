@@ -99,7 +99,7 @@ stage 0 list in at least 3 fast-set cases and at least 48 of all cases. Not reac
   the size slider / size unit / cannula gauge handlers, an invalid tube size (only valid sizes can be
   chosen), the amiodarone-after-torsades warning in the manual form (the amiodarone card is never shown
   after torsades), the engine's one-step shock/no-shock record (the app always uses two steps), the old
-  `careMode` rule (kept for the side-by-side test);
+  `careMode` rule (not used by the app);
 - the phone's browser blocks it first: a correction with a zero or negative dose (the dose box refuses it);
 - safety checks behind greyed-out buttons (e.g. the adrenaline lock check when the button is already
   greyed out): a person cannot tap a greyed-out button;

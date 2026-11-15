@@ -93,7 +93,6 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
   `nz-eas.json`. The owed v23 check of "Other" (A7) is no longer needed: A20 removes "Other".
 - **On `rules-editor`, not live:** rule set as YAML (`src/rules/nz-eas.yaml`), the checker and the
   what-changed tool, and the changes listed under "Changes not yet live".
-- Root JS files (`core.js`, `rhythm-care.js`, `log-view.js`, `checklists.js`) are the original engine, kept only as test baselines.
 
 ## 5. Build queue (README "How the build is run" has the method; commit messages hold each step's proof)
 | Step | State |
@@ -300,7 +299,7 @@ Withdrawn: A13, A14 (showing the working on screen; decision 7 rule 4).
   in the source line come from the rule set (A11's test has the same gap): change the rule-set
   value in a test and check the line follows. `tests/a11-child-fluids-band.test.mjs` still carries
   an unused `upper` column.
-- Retire the engine's original PEA-only `careMode` (kept only for the side-by-side test).
+- Retire the engine's original PEA-only `careMode` (no longer used by any comparison test; only a2c checks it is unchanged).
 - The Post ROSC checklist may scroll (owner accepts this).
 
 ## 9. Rules editor design

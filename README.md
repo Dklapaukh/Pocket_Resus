@@ -6,9 +6,8 @@ the app. Serve the repository over localhost (rather than opening the HTML as
 a file) to exercise modules and offline features. Do not use real patient data
 while developing or testing.
 
-The root files `core.js`, `rhythm-care.js`, `log-view.js` and `checklists.js`
-are the original engine, kept only so tests can compare old and new. The live
-page does not load them.
+The original app's checklist list is kept, frozen, as `tests/fixtures/original-checklists.js`:
+the generated reference cases pick checklists from it. The live page does not load it.
 
 Where things are:
 - [DECISIONS.md](DECISIONS.md): the guiding principle, every owner decision and
@@ -35,7 +34,7 @@ for a fresh clone use `git -c core.autocrlf=false clone <repository URL>`.
 The automated suite includes behaviour and regression checks, but does not
 replace clinical review or real-device checks of layout, offline operation,
 installation, clipboard, wake lock and background timing. Do not update a
-golden file or weaken a test merely to make a change pass.
+reference recording or weaken a test merely to make a change pass.
 
 `tests/reference/` holds the wider safety net (recorded screens and saved
 sessions for thousands of generated cases; read `tests/reference/README.md`).
@@ -106,7 +105,7 @@ current readability work retains the existing module paths and cache list.
 | CPR cycle or adrenaline clock | `core.js`: `CYCLE`, `ADR`, `timing`, `begin`; `views.js`: `tick` | Deadlines derive from recorded times. Check background and reload behaviour on real devices. |
 | Weight, energy, medication references | `core.js`: `validWeight`, `dose`, `joules`; `views.js`: `weightHeader`, `drugCard` | Suggested values and actually recorded interventions are different. `joules` has the approved A1 change. |
 | Amiodarone visibility and second dose | `engine/drug-cards.js`: `amiodaroneDue`, `doseFor`, `childAmiodaroneAdvice`, `childSecondAmiodarone`, `secondAmiodaroneEarly`; `views.js`: `amioCardVisible`, `drugCard` | See A2/A2b/C6b-2 and their tests and decisions. Do not infer a child second dose from the raw engine calculation. |
-| Lower medication/support card | `engine/drug-cards.js`: `latestLowerRhythm`, `lowerCard`; `views.js`: `liveView` | `lowerCard` (A2c, A7) is the live rule. The engine's older `careMode` (PEA only) is kept only for the side-by-side test. |
+| Lower medication/support card | `engine/drug-cards.js`: `latestLowerRhythm`, `lowerCard`; `views.js`: `liveView` | `lowerCard` (A2c, A7) is the live rule. The engine's older `careMode` (PEA only) is not used by the app; `tests/a2c-fluids-non-shockable.test.mjs` checks it is unchanged. |
 | Double-tap guards | `engine/drug-cards.js`: `lockLeft` (times in `RULES.doubleTapLockMs`); `session.js`: `recordSupport`; `events.js`; `views.js` | UI disabling and recording guards both matter; manual entry follows a separate path. |
 | Rhythm and shock recording | `rhythm-care.js`: `startOutcome`, `completeOutcome`; `session.js`: `saveRhythm` | A previous shock can lack an actual time; do not invent one. Corrected and voided events affect derived state. |
 | Recovery and storage | `core.js`: `restoreSaved`; `state.js`, `events.js` (other tab), `session.js`: `save`, `main.js` | Incomplete saves are filled in and comma weights converted (raw copy under the repaired-backup key). Only one unreadable raw backup is kept. The warning does not provide an in-app restore tool. |
@@ -131,10 +130,9 @@ rule set. It never records a clinical event by itself.
 | `src/engine/log-view.js` | Log filters shared by the log screen and text export |
 | `src/engine/index.js` | Combines these into the `Resus` object the app uses |
 
-How correctness is proven: `tests/reference/` (thousands of recorded cases, read its README);
-the side-by-side test against the original engine; the golden recordings of the original app; and
+How correctness is proven: `tests/reference/` (thousands of recorded cases, read its README), the A-row tests and
 `tests/rules-file.test.mjs`, which checks rule-set values against the guideline tables. The
-engine's own `careMode` is the original PEA-only rule, kept only for the side-by-side test.
+engine's own `careMode` is the original PEA-only rule, not used by the app.
 
 ### Session storage and recovery
 `st.s` is the in-memory session; `save` writes it as JSON under
@@ -190,10 +188,10 @@ and test start-up, cross-tab and undo together, including storage-write failures
   Undo restores a snapshot through `R.undo` and then saves it (see "Session storage and recovery").
 
 ### Safe refactoring
-- Engine changes must keep the reference recordings (`tests/reference/`), the side-by-side
-  test, the golden tests and `tests/rules-file.test.mjs` passing.
+- Engine changes must keep the reference recordings (`tests/reference/`), the A-row tests
+  and `tests/rules-file.test.mjs` passing.
 - Run the full suite before and after a coherent change. Read failing tests;
-  do not regenerate golden outputs to hide differences.
+  do not re-record reference outputs to hide differences.
 - Keep event occurrence, displayed suggestions, clinical actions actually
   recorded, corrections and undo distinct. Preserve offline and storage paths.
 - A rule set for another service needs its own packaged guideline, citations, checks and
@@ -231,7 +229,7 @@ chat small and means a usage limit or a mistake costs one step at most.
    for every agent" below, the exact files to read, and the instruction to save a snapshot at least
    once an hour. One step per worker. Agents start in the background; wait for the report.
 6. When it reports, run both test commands yourself (never trust a reported result) and
-   `git diff --exit-code -- tests/golden tests/reference/screens.json tests/reference/saved-sessions.json`
+   `git diff --exit-code -- tests/reference/screens.json tests/reference/saved-sessions.json`
    (must be clean unless the card says recordings change). Read the diff summary.
 7. Commit to `rules-editor` labelled "awaiting independent review". Start the reviewer with your
    test results for that commit (it does not repeat those runs), the diff scope and the card's
@@ -334,9 +332,7 @@ DECISIONS.md and stop. Do not review Opus-or-Sonnet work with a weaker reviewer 
 - The safety net is `tests/reference/` (read its README); the reference is commit 99388e2.
   `record.mjs` takes about 10 minutes on 2 cores: start it detached and run nothing else beside it.
 - Approved changes are listed with their row in `tests/helpers/approved-changes.mjs`; the identical-to-reference tests compare with the
-  frozen copies (`tests/baseline/`, `tests/golden/`) plus exactly those swaps. An approved change
-  made in code as well as data gives the original engine the same rule in
-  `tests/helpers/engines.mjs`.
+  frozen copies (`tests/baseline/`) plus exactly those swaps.
 - The fake-browser tests bypass `src/rules/load.js`: only a real browser proves the loader. The
   pre-installed Playwright Chromium and `tools/check-offline-browser.cjs` are available.
 - When a step moves text or values into the rule set: re-point planted-change search texts, add new
