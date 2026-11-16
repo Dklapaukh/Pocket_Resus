@@ -182,9 +182,8 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
    https://cpg.stjohn.org.nz/tabs/guidelines/intubation-and-ventilation/page/rsi-rapid-sequence-intubation-eas
    (linked from the EAS 7.2 PDF); EAS 14.27 Magnesium sulphate
    https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas. **Not yet confirmed**
-   (the website cannot be read from here): EAS 7.2 Paediatric Equipment and Drug Doses, EAS 9.2
-   Airway Backup Checklist, EAS 3.15 Treatment following ROSC, EAS 9.4 RSI Checklist, EAS 14.3
-   Adrenaline, EAS 14.4 Amiodarone. Owner action: copy each page's address from the website.
+       - Author Addition: EAS 7.2 Paediatric Equipment and Drug Doses, https://cpg.stjohn.org.nz/tabs/guidelines/paediatrics-eas/page/paediatric-equipment-and-drug-doses-eas;  EAS 9.2 Airway Backup Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/airway-backup; EAS 3.15 Treatment following ROSC, https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/treatment-following-rosc-eas; EAS 9.4 RSI Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/rsi-checklist; EAS 14.3
+   Adrenaline, https://cpg.stjohn.org.nz/tabs/medicines/page/adrenaline-eas; EAS 14.4 Amiodarone, https://cpg.stjohn.org.nz/tabs/medicines/page/amiodarone-eas. Owner action: completed.
 4. **Deviations D9 to D12** (GUIDELINE-TRACE.md section 5): one ruling each. Option A recommended for each.
    - **D9** child second amiodarone (now "Seek clinical advice", A10; EAS 3.14 says "See the
      paediatric drug dose tables for a child"). **A (recommended):** at the second-dose point show
