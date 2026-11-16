@@ -30,6 +30,12 @@ const BAD = [
   ['an empty lines list', (f) => { card(f, 'fluids').lines = []; }, /\(fluids\)\.lines: must be a list of at least one line/],
   ['a group of one card', (f) => { card(f, 'amiodarone-2').group = 'amio-two'; }, /group "amio-two" has only one card/],
   ['a group across two places', (f) => { card(f, 'amiodarone-1').place = 'top'; }, /cards of group "amiodarone" must all have the same place/],
+  // Step C3: group order (the engine shows only the first matching card of a group)
+  ['amiodarone-1 placed before amiodarone-2 (the second-dose card could never show)', (f) => {
+    const first = f.cards.findIndex((c) => c.id === 'amiodarone-1');
+    const [moved] = f.cards.splice(first, 1);
+    f.cards.splice(f.cards.findIndex((c) => c.id === 'amiodarone-2'), 0, moved);
+  }, /\(amiodarone-2\): can never show: the earlier card "amiodarone-1" of group "amiodarone" matches whenever this one does/],
   // Conditions
   ['an unknown condition word', (f) => { card(f, 'fluids').show_when.push('patient_moving'); }, /"patient_moving" is not a condition/],
   ['an unknown condition with a value', (f) => { card(f, 'fluids').show_when.push({ minutes_at_least: 10 }); }, /"minutes_at_least" is not a condition that takes a value/],
@@ -160,6 +166,26 @@ test('step C2 marks are accepted where allowed: an adult table cell, a child-onl
   card(f, 'magnesium').details.push({ app_text: 'Administration time: see EAS 7.2, dilution 13', source: 'Owner ruling A34 · EAS 7.2 p4-5', only: 'child' });
   f.checklists[0].items.unshift({ text: 'Cardiac arrest checklist', source: 'EAS 3.14 p2', tick: false });
   assert.deepEqual(check(f), []);
+});
+
+test('step C3 group order: a later card is refused only when an earlier card of its group is sure to match whenever it does', () => {
+  // amiodarone-1 moved first; a = amiodarone-1 (earlier), b = amiodarone-2 (later).
+  const swapped = (change) => {
+    const f = good();
+    const first = f.cards.findIndex((c) => c.id === 'amiodarone-1');
+    const [moved] = f.cards.splice(first, 1);
+    f.cards.splice(f.cards.findIndex((c) => c.id === 'amiodarone-2'), 0, moved);
+    change(card(f, 'amiodarone-1'), card(f, 'amiodarone-2'));
+    return check(f).some((p) => /can never show/.test(p));
+  };
+  assert.equal(swapped(() => {}), true, 'as planted above');
+  assert.equal(swapped((a) => { a.show_when[1] = { latest_rhythm: ['VF'] }; }), false, 'the earlier card needs a narrower rhythm list');
+  assert.equal(swapped((a) => { a.show_when[3] = { shocks_at_least: 7 }; }), false, 'the earlier card needs more shocks');
+  assert.equal(swapped((a) => { a.show_when.splice(2, 1); }), true, 'fewer conditions on the earlier card still match');
+  assert.equal(swapped((a) => { a.show_when.push({ doses_at_least: 1 }); a.repeat.max = 2; }), true, 'same drug, same dose count');
+  assert.equal(swapped((a) => { a.show_when.push({ doses_at_least: 1 }); a.repeat.max = 2; a.record.drug = 'other-drug'; }), false, 'doses of another drug');
+  assert.equal(swapped((a) => { a.show_when[2] = { ever_recorded: 'VF' }; a.show_when[1] = { latest_rhythm: ['VF', 'VT'] }; }), false, 'latest VF or VT does not mean VF was recorded');
+  assert.equal(swapped((a, b) => { a.show_when[2] = { ever_recorded: 'VF' }; b.show_when[1] = { latest_rhythm: ['VF'] }; }), true, 'latest VF means VF was recorded');
 });
 
 test('the checker changes nothing it is given', () => {
