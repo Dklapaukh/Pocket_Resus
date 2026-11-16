@@ -6,9 +6,12 @@
 // Screen checks added at C4: 3 x "+ Previous shock" with no rhythm shows no amiodarone card; a shock in VF shows the
 // card starting "If in VF or VT after three shocks"; then Asystole removes it; "Review at ... shocks" and "Due after
 // ... shocks" are gone; "{maxDoses} doses recorded" stays. (The old a2b test moves to this row at C4/C5.)
+// Step C4 (owner decision 22, A37 item 1, which wins on what is drawn): the card draws the dose line and the dose
+// count only. The three- and six-shock sentences and "Administer amiodarone:" stay in the card file as trace-only lines
+// (kept for audit, still matched with the PDF): checked here in the file, and absent from what the engine returns.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arrest, texts, CARDS, GUIDELINE_TEXT } from './helpers/card-sessions.mjs';
+import { arrest, texts, CARDS, GUIDELINE_TEXT, fileLines, traced } from './helpers/card-sessions.mjs';
 import { checkCardFile } from '../src/cards/check.js';
 
 const THREE = ['If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:', 'Administer amiodarone:'];
@@ -20,10 +23,11 @@ test('A23: three "+ Previous shock" with no rhythm recorded: no amiodarone card'
   assert.deepEqual(lower(c), []);
 });
 
-test('A23: then a shock in VF: the card with the three-shock sentence and the adult dose', () => {
+test('A23: then a shock in VF: the card with the adult dose; the three-shock sentence is in the file, not drawn (A37)', () => {
   const c = arrest({ weight: '70' }).previousShock().previousShock().previousShock().shock('VF');
   assert.deepEqual(lower(c), ['amiodarone-1']);
-  assert.deepEqual(texts(c.card('amiodarone-1').lines), THREE);
+  assert.deepEqual(texts(c.card('amiodarone-1').lines), []);
+  assert.deepEqual(fileLines('amiodarone-1'), traced(THREE));
   assert.deepEqual(texts(c.card('amiodarone-1').dose.lines), ['300 mg IV for an adult.']);
 });
 
@@ -37,12 +41,13 @@ test('A23: Asystole hides it; VF again brings it back', () => {
   assert.deepEqual(lower(c), ['fluids'], 'PEA: the lower card follows A20');
 });
 
-test('A23: at 6 shocks after one dose, the six-shock sentence and 150 mg; a child sees "Seek clinical advice"', () => {
+test('A23: at 6 shocks after one dose, 150 mg (the six-shock sentence in the file only, A37); a child sees "Seek clinical advice"', () => {
   const c = arrest({ weight: '70' }).shock().shock().shock().dose('amiodarone', 300).shock().shock();
   assert.deepEqual(lower(c), ['amiodarone-1'], '5 shocks: the second dose is not shown yet');
   c.shock();
   assert.deepEqual(lower(c), ['amiodarone-2']);
-  assert.deepEqual(texts(c.card('amiodarone-2').lines), SIX);
+  assert.deepEqual(texts(c.card('amiodarone-2').lines), []);
+  assert.deepEqual(fileLines('amiodarone-2'), traced(SIX));
   assert.deepEqual(texts(c.card('amiodarone-2').dose.lines), ['150 mg IV for an adult.']);
   c.dose('amiodarone', 150);
   assert.deepEqual(c.card('amiodarone-2').doses, { count: 2, max: 2, complete: true, confirm: [] }, 'two doses recorded');

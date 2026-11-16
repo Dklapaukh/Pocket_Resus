@@ -12,7 +12,12 @@
        are ignored, nothing else;
      - app text ({app_text}) is never a dose unless an owner ruling is cited;
      - a dose taken from a table names a table and column that exist;
-     - every card of a group can show: no earlier card of the group matches whenever it does (step C3).
+     - every card of a group can show: no earlier card of the group matches whenever it does (step C3);
+     - a card that records "the dose shown" has an adult line that starts with the number and unit it records
+       (DECISIONS.md section 8, before C4), so a reworded line cannot quietly record nothing;
+     - a line marked trace_only (step C4, owner decision 22, A37) is guideline text kept in the file for audit and
+       never drawn: it is still compared with the PDF, and every card, dose, pop-up and checklist keeps something
+       to draw.
    It is a pure function: it reads only what it is given and changes nothing. It holds no clinical values.
    The phone never runs it; the tests do (and the rules editor will). */
 
@@ -21,11 +26,15 @@ import { readYamlStrict } from '../rules/parse.js';
 // The names at the top of a card file, in this order (anything missing, extra or out of order is refused).
 export const FILE_NAMES = ['about', 'guidelines', 'settings', 'tables', 'cards', 'checklists'];
 
-// Where a card is drawn on the screen.
-export const PLACES = ['top', 'lower', 'header', 'guidance'];
+// Where a card is drawn on the screen. Step C4 (owner decision 23e): "settings" is the Settings tab note (special
+// situations); "weight-sheet" is opened from the weight sheet (weight from age).
+export const PLACES = ['top', 'lower', 'header', 'guidance', 'settings', 'weight-sheet'];
 
-// The seven conditions (CARDS-DESIGN.md section 2). Two are plain words; five take a value.
-export const WORD_CONDITIONS = ['arrest_running', 'on_request'];
+// The conditions (CARDS-DESIGN.md section 2). Three are plain words; five take a value. "always" (step C4, owner
+// decision 23a) shows a card at all times, for the shock energy header.
+export const WORD_CONDITIONS = ['arrest_running', 'on_request', 'always'];
+// The three words that say WHEN a card can show at all: a card has exactly one of them.
+const TIMING_CONDITIONS = ['arrest_running', 'on_request', 'always'];
 export const VALUE_CONDITIONS = ['latest_rhythm', 'shocks_at_least', 'ever_recorded', 'never_recorded', 'doses_at_least'];
 
 // Every field a card may have. The first five are required.
@@ -264,9 +273,15 @@ function checkCards(cards, context) {
     const hasRecord = 'record' in card;
     const maxDoses = isMap(card.repeat) && Number.isInteger(card.repeat.max) ? card.repeat.max : null;
     if ('show_when' in card) checkShowWhen(card.show_when, where + '.show_when', context, { hasRecord, maxDoses });
-    if ('lines' in card) checkLines(card.lines, where + '.lines', context, { allowEmpty: false });
+    // A header card may have no lines (owner decision 23a: the shock energy header shows the energy only).
+    if ('lines' in card) checkLines(card.lines, where + '.lines', context, { allowEmpty: card.place === 'header', allowTrace: true });
     if ('dose' in card) checkDose(card.dose, where + '.dose', context);
     if (hasRecord) checkRecord(card.record, where + '.record', 'dose' in card, problem);
+    if (hasRecord) checkRecordedNumber(card, where, problem);
+    // Something to draw: a card that is not a header card needs at least one drawn line or a dose.
+    if (card.place !== 'header' && PLACES.includes(card.place) && Array.isArray(card.lines) && card.lines.length && !card.lines.some(drawn) && !('dose' in card)) {
+      problem(where + '.lines', 'every line is trace_only and the card has no dose, so nothing would be drawn');
+    }
     if ('timer' in card) {
       const timer = card.timer;
       if (!hasRecord) problem(where + '.timer', 'a timer counts from a recorded dose, so the card needs "record"');
@@ -284,14 +299,14 @@ function checkCards(cards, context) {
         if (!isWhole(repeat.max, LIMITS.repeatMax)) problem(where + '.repeat.max', 'must be a whole number of doses from 1 to 20 (found ' + show(repeat.max) + ')');
         if ('confirm' in repeat) {
           if (repeat.max === 1) problem(where + '.repeat.confirm', 'confirm lines are asked before a repeat dose, but max is 1 so there is no repeat');
-          checkLines(repeat.confirm, where + '.repeat.confirm', context, { allowEmpty: false });
+          checkLines(repeat.confirm, where + '.repeat.confirm', context, { allowEmpty: false, allowTrace: true, needsDrawn: true });
         }
       }
     }
-    if ('details' in card) checkLines(card.details, where + '.details', context, { allowEmpty: true, allowOnly: true });
+    if ('details' in card) checkLines(card.details, where + '.details', context, { allowEmpty: true, allowOnly: true, allowTrace: true });
     if ('pop_up_on_show' in card) {
       if (typeof card.pop_up_on_show !== 'boolean') problem(where + '.pop_up_on_show', 'must be true or false');
-      else if (card.pop_up_on_show && !(Array.isArray(card.details) && card.details.length)) problem(where + '.pop_up_on_show', 'opens the details pop-up, so the card needs at least one details line');
+      else if (card.pop_up_on_show && !(Array.isArray(card.details) && card.details.some(drawn))) problem(where + '.pop_up_on_show', 'opens the details pop-up, so the card needs at least one details line that is drawn (not trace_only)');
     }
     if ('lock_s' in card && !isWhole(card.lock_s, LIMITS.lockS)) problem(where + '.lock_s', 'must be a whole number of seconds from 0 to 600 (found ' + show(card.lock_s) + ')');
     if ('lock_s' in card && !hasRecord) problem(where + '.lock_s', 'a lock follows a recorded dose, so the card needs "record"');
@@ -344,6 +359,7 @@ function conditionMap(card) {
      doses_at_least n     the later card asks for at least n doses of the same drug
      ever_recorded R      the later card has ever_recorded R, or its latest rhythm can only be R
      never_recorded R     the later card has never_recorded R
+     always               always true
    on_request is never "sure": each card is opened by its own request. Anything unreadable counts as not sure. */
 function alwaysMatchedWith(earlierCard, laterCard) {
   const earlier = conditionMap(earlierCard), later = conditionMap(laterCard);
@@ -353,6 +369,7 @@ function alwaysMatchedWith(earlierCard, laterCard) {
   for (const [name, value] of earlier) {
     const theirs = later.get(name);
     const sure =
+      name === 'always' ? true :
       name === 'arrest_running' ? theirs === true :
       name === 'latest_rhythm' ? Array.isArray(value) && latest !== null && latest.every((rhythm) => value.includes(rhythm)) :
       name === 'shocks_at_least' ? Number.isInteger(theirs) && theirs >= value :
@@ -365,8 +382,8 @@ function alwaysMatchedWith(earlierCard, laterCard) {
   return true;
 }
 
-/* show_when: a list of conditions, all of which must be true. Exactly one of arrest_running and on_request; an
-   on_request card has no other condition (it is opened by hand). */
+/* show_when: a list of conditions, all of which must be true. Exactly one of arrest_running, on_request and always;
+   an on_request card has no other condition (it is opened by hand), nor has an always card (it always shows). */
 function checkShowWhen(list, where, { rhythms, problem }, { hasRecord, maxDoses }) {
   if (!Array.isArray(list) || !list.length) { problem(where, 'must be a list of at least one condition'); return; }
   const seen = new Map();
@@ -395,9 +412,10 @@ function checkShowWhen(list, where, { rhythms, problem }, { hasRecord, maxDoses 
       else if (maxDoses !== null && Number.isInteger(value) && value >= maxDoses) problem(at, 'the card would show only after its dose limit (repeat.max ' + maxDoses + ') is reached, so it could never be used');
     }
   });
-  const timing = ['arrest_running', 'on_request'].filter((name) => seen.has(name));
-  if (timing.length !== 1) problem(where, 'needs exactly one of arrest_running (shown during the arrest) or on_request (opened from the Guidance tab)');
+  const timing = TIMING_CONDITIONS.filter((name) => seen.has(name));
+  if (timing.length !== 1) problem(where, 'needs exactly one of arrest_running (shown during the arrest), always (shown at all times) or on_request (opened from the Guidance tab)');
   if (seen.has('on_request') && seen.size > 1) problem(where, 'an on_request card is opened by hand, so it takes no other condition');
+  if (seen.has('always') && seen.size > 1) problem(where, 'an always card shows at all times, so it takes no other condition');
   // Conditions that can never all be true together.
   const latest = Array.isArray(seen.get('latest_rhythm')) ? seen.get('latest_rhythm') : [];
   const never = seen.get('never_recorded');
@@ -407,19 +425,31 @@ function checkShowWhen(list, where, { rhythms, problem }, { hasRecord, maxDoses 
 
 /* A list of lines. Each line is {text, source} (guideline words, compared with the PDF) or {app_text} with an
    optional source (the app's own words, drawn so they never look like guidance).
-   Two optional marks (added in step C2 for approved rows that need them):
+   Optional marks (added in steps C2 and C4 for approved rows that need them):
      - only: adult | child  (details lines only): the line is shown for that patient only (A34: the child magnesium
        pop-up adds a pointer line that an adult never sees);
      - tick: false  (checklist items only): the line is shown but is not ticked, for a printed section heading or an
-       opening sentence (A31: EAS 9.4 section headings shown once; the EAS 9.2 opening sentence). */
-function checkLines(lines, where, context, { allowEmpty, allowOnly = false, allowTick = false }) {
+       opening sentence (A31: EAS 9.4 section headings shown once);
+     - trace_only: true  (guideline lines only, step C4): the sentence is kept in the file for audit and never drawn
+       (owner decision 22; every such line is listed in A37). It is still compared word for word with the PDF.
+   needsDrawn: the list must keep at least one line that is drawn (a list of only trace-only lines would show nothing). */
+function checkLines(lines, where, context, { allowEmpty, allowOnly = false, allowTick = false, allowTrace = false, needsDrawn = false }) {
   if (!Array.isArray(lines) || (!allowEmpty && !lines.length)) { problem(context, where, 'must be a list of ' + (allowEmpty ? '' : 'at least one ') + 'line'); return; }
-  lines.forEach((line, i) => checkLine(line, where + '[' + i + ']', context, { allowOnly, allowTick }));
+  lines.forEach((line, i) => checkLine(line, where + '[' + i + ']', context, { allowOnly, allowTick, allowTrace }));
+  if (needsDrawn && lines.length && !lines.some(drawn)) problem(context, where, 'every line is trace_only, so nothing would be drawn');
 }
 const problem = (context, where, message) => context.problem(where, message);
 
-function checkLine(line, where, context, { isDose = false, allowCell = false, allowOnly = false, allowTick = false }) {
+// True for a line the screen draws: anything not marked trace_only: true.
+const drawn = (line) => !(isMap(line) && line.trace_only === true);
+
+function checkLine(line, where, context, { isDose = false, allowCell = false, allowOnly = false, allowTick = false, allowTrace = false }) {
   if (!isMap(line)) { problem(context, where, 'a line is {text, source} or {app_text}'); return; }
+  if ('trace_only' in line) {
+    if (!allowTrace) problem(context, where + '.trace_only', '"trace_only: true" is allowed on card lines, dose lines, details, confirm lines and checklist items only');
+    else if (line.trace_only !== true) problem(context, where + '.trace_only', 'must be true (a guideline sentence kept for audit, never drawn); leave it out for a line that is drawn (found ' + show(line.trace_only) + ')');
+    else if (!('text' in line) || 'app_text' in line || 'table' in line) problem(context, where + '.trace_only', 'only a guideline sentence {text, source} can be trace_only: app text that is never drawn is deleted, and a table cell is a dose');
+  }
   if ('only' in line) {
     if (!allowOnly) problem(context, where + '.only', '"only" (adult or child) is allowed in details lines only');
     else if (!['adult', 'child'].includes(line.only)) problem(context, where + '.only', 'must be adult or child (found ' + show(line.only) + ')');
@@ -428,7 +458,7 @@ function checkLine(line, where, context, { isDose = false, allowCell = false, al
     if (!allowTick) problem(context, where + '.tick', '"tick: false" is allowed in checklist items only');
     else if (line.tick !== false) problem(context, where + '.tick', 'must be false (a line that is shown but not ticked); leave it out for an item that is ticked (found ' + show(line.tick) + ')');
   }
-  const keys = Object.keys(line).filter((key) => key !== 'only' && key !== 'tick').sort().join();
+  const keys = Object.keys(line).filter((key) => key !== 'only' && key !== 'tick' && key !== 'trace_only').sort().join();
   if (allowCell && 'table' in line) { checkCell(line, where, context); return; }
   if (keys === 'source,text') {
     checkPlainWords(line.text, where + '.text', context);
@@ -493,7 +523,24 @@ function checkDose(dose, where, context) {
   for (const who of ['adult', 'child']) {
     const lines = Array.isArray(dose[who]) ? dose[who] : [dose[who]];
     if (!lines.length) problem(context, where + '.' + who, 'needs at least one line or table cell');
-    lines.forEach((line, i) => checkLine(line, where + '.' + who + (Array.isArray(dose[who]) ? '[' + i + ']' : ''), context, { isDose: true, allowCell: true }));
+    else if (!lines.some(drawn)) problem(context, where + '.' + who, 'every dose line is trace_only, so no dose would be drawn');
+    lines.forEach((line, i) => checkLine(line, where + '.' + who + (Array.isArray(dose[who]) ? '[' + i + ']' : ''), context, { isDose: true, allowCell: true, allowTrace: true }));
+  }
+}
+
+/* DECISIONS.md section 8 (before C4): a tap on a card with amount: dose records the number printed at the start of the
+   adult dose line ("1 mg IV for an adult." records 1 mg; the engine reads it, src/cards/engine.js recordValue). So the
+   first drawn adult dose line must be a table cell, or a line that starts with a number and the record unit; otherwise a
+   reworded line would quietly record nothing. */
+function checkRecordedNumber(card, where, report) {
+  if (!isMap(card.record) || card.record.amount !== 'dose' || !isMap(card.dose) || !isText(card.record.unit)) return;
+  const adult = (Array.isArray(card.dose.adult) ? card.dose.adult : [card.dose.adult]).filter((line) => isMap(line) && drawn(line));
+  const first = adult[0];
+  if (!first || 'table' in first) return;
+  const unit = card.record.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const text = typeof first.text === 'string' ? first.text : first.app_text;
+  if (!new RegExp('^\\d+(?:\\.\\d+)? ' + unit + '(?![A-Za-z])').test(String(text ?? ''))) {
+    report(where + '.dose.adult', 'the card records the dose shown (record.amount: dose), so the first adult dose line must start with the number and unit it records ("<number> ' + card.record.unit + '"); found ' + show(text));
   }
 }
 
@@ -526,6 +573,6 @@ function checkChecklists(checklists, context) {
     else if (ids.has(list.id)) problem(context, where + '.id', 'another checklist already has this id');
     else ids.add(list.id);
     if (!isText(list.title)) problem(context, where + '.title', 'needs the checklist title');
-    checkLines(list.items, where + '.items', context, { allowEmpty: false, allowTick: true });
+    checkLines(list.items, where + '.items', context, { allowEmpty: false, allowTick: true, allowTrace: true, needsDrawn: true });
   });
 }

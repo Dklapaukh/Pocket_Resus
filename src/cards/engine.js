@@ -12,7 +12,12 @@
    The only fixed things here are how the app's saved session is laid out (event types, the "Unknown" rhythm that a
    rhythm check carries until its rhythm is chosen, the earlier-amiodarone count) and the weight rule of owner
    decision 2: a child's weight is rounded UP to the EAS 7.2 band; above the last band, adult; no weight, adult
-   (decision 2, D11). The live app does not use this file until plan step C4. */
+   (decision 2, D11).
+
+   Step C4 (owner decisions 22 and 23): a line marked trace_only in the card file is kept there for audit and is never
+   returned here, so the screen cannot draw it (A37); an "always" card shows at all times (the shock energy header,
+   23a); every card that shows by itself (arrest_running or always) is marked "manual review" under the
+   special-situation switch, header cards included. The app passes its weight limit as options.maxWeightKg. */
 
 // The EAS 7.2 band table in the card file: the authority for child weight bands (owner decisions 2 and 8).
 export const BAND_TABLE = 'eas72';
@@ -120,6 +125,12 @@ export function patientNow(cardFile, session, options = {}) {
 
 /* ---------- Lines and doses ---------- */
 
+/* True for a line the screen draws. A trace_only line (owner decision 22, A37) is guideline text kept in the card
+   file for audit only: it is never returned to the screen. */
+function drawn(line) {
+  return line.trace_only !== true;
+}
+
 /* One card line as the screen draws it: guideline words (kind 'guideline', with its source) or the app's own words
    (kind 'app', drawn differently; source may be null). */
 function showLine(line) {
@@ -153,7 +164,7 @@ function resolveDose(dose, cardFile, patient) {
   if (!dose) return null;
   if (patient.who === null) return { who: null, lines: [] };
   const part = dose[patient.who];
-  const lines = (Array.isArray(part) ? part : [part]).map((line) => ('table' in line ? resolveCell(line, cardFile, patient) : showLine(line)));
+  const lines = (Array.isArray(part) ? part : [part]).filter(drawn).map((line) => ('table' in line ? resolveCell(line, cardFile, patient) : showLine(line)));
   return { who: patient.who, lines };
 }
 
@@ -172,9 +183,9 @@ function recordValue(record, dose) {
 }
 
 /* Details pop-up lines for this patient: a line marked only: adult or only: child is left out for the other
-   patient (A34), and left out when the weight is not valid. */
+   patient (A34), and left out when the weight is not valid. Trace-only lines are left out (A37). */
 function detailsFor(details, patient) {
-  return (details || []).filter((line) => !('only' in line) || line.only === patient.who).map(showLine);
+  return (details || []).filter(drawn).filter((line) => !('only' in line) || line.only === patient.who).map(showLine);
 }
 
 /* Every source the card shows (lines, dose lines, details), each once, in the order they appear. */
@@ -186,9 +197,10 @@ function sourcesOf(parts) {
 
 /* ---------- Conditions ---------- */
 
-/* One condition of show_when, true or false for this session (CARDS-DESIGN.md section 2, the seven conditions).
+/* One condition of show_when, true or false for this session (CARDS-DESIGN.md section 2, the conditions).
    request: the ids of the cards opened from the Guidance tab (on_request). */
 function conditionMet(condition, card, session, request) {
+  if (condition === 'always') return true;
   if (condition === 'arrest_running') return arrestRunning(session);
   if (condition === 'on_request') return request.includes(card.id);
   const [[name, value]] = Object.entries(condition);
@@ -221,8 +233,10 @@ function cardMatches(card, session, request) {
    doses         null, or { count, max, complete, confirm } (confirm: the lines to show before a repeat dose, once
                  a dose is recorded and the limit is not reached)
    lock          null, or { seconds, leftMs } (A5 double-tap lock; 0 = free; a voided or undone dose frees it)
-   manual_review true for every automatic (arrest_running) card while the special-situation switch is on: the
-                 card is still shown, but the screen offers no recording from it ("Manual review", as today) */
+   manual_review true for every card that shows by itself (arrest_running or always; header cards included) while
+                 the special-situation switch is on: the card is still shown, but the screen offers no recording from
+                 it ("Manual review", as today). An on_request card is never marked.
+   Lines, dose lines, details and confirm lines leave out trace_only lines (A37): what is returned is what is drawn. */
 export function cardsNow(cardFile, session, nowMs, options = {}) {
   const request = [].concat(options.request ?? []);
   const patient = patientNow(cardFile, session, options);
@@ -239,15 +253,15 @@ export function cardsNow(cardFile, session, nowMs, options = {}) {
 
 /* Everything the screen needs to draw one card that shows now. */
 function drawCard(card, cardFile, session, nowMs, patient) {
-  const lines = card.lines.map(showLine);
+  const lines = card.lines.filter(drawn).map(showLine);
   const dose = resolveDose(card.dose, cardFile, patient);
   const details = detailsFor(card.details, patient);
   const record = card.record ? { ...card.record, value: recordValue(card.record, dose) } : null;
   const count = card.record ? doseCount(session, card.record.drug) : 0;
   const last = card.record ? lastDose(session, card.record.drug) : undefined;
   const max = card.repeat ? card.repeat.max : null;
-  const confirm = card.repeat?.confirm && count >= 1 && count < max ? card.repeat.confirm.map(showLine) : [];
-  const automatic = card.show_when.includes('arrest_running');
+  const confirm = card.repeat?.confirm && count >= 1 && count < max ? card.repeat.confirm.filter(drawn).map(showLine) : [];
+  const automatic = card.show_when.includes('arrest_running') || card.show_when.includes('always');
   return {
     id: card.id,
     title: card.title,

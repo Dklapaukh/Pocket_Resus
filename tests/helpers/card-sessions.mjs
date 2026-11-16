@@ -64,3 +64,17 @@ export const SHOWN_TEXT = (function collect(node, key) {
   if (node && typeof node === 'object') return Object.entries(node).map(([name, value]) => collect(value, name)).join('\n');
   return '';
 })(CARDS);
+
+/* One part of a card AS WRITTEN IN THE CARD FILE (not what the engine returns): the text of each line, with " [trace]"
+   after a line marked trace_only (kept in the file for audit and never drawn: owner decision 22, A37), " [app]" after
+   app text, and "cell:<column>" for a table cell. part is 'lines', 'details', 'dose.adult', 'dose.child' or
+   'repeat.confirm'. */
+export function fileLines(id, part = 'lines') {
+  const card = CARDS.cards.find((c) => c.id === id);
+  if (!card) throw new Error('no card "' + id + '" in the card file');
+  const value = part.split('.').reduce((node, name) => node?.[name], card);
+  return [].concat(value ?? []).map((line) => ('table' in line ? 'cell:' + line.column : 'app_text' in line ? line.app_text + ' [app]' : line.text + (line.trace_only ? ' [trace]' : '')));
+}
+
+// Adds " [trace]" to each text, for comparing with fileLines.
+export const traced = (list) => list.map((text) => text + ' [trace]');
