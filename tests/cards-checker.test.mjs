@@ -92,6 +92,14 @@ const BAD = [
   ['table rows out of order', (f) => { f.tables.eas72.rows.reverse(); }, /"maxKg" column must be numbers in increasing order/],
   ['a table row with a missing column', (f) => { delete f.tables.eas72.rows[1].fluidsTableMl; }, /rows\[1\]: must have the same columns/],
   ['a checklist item with a changed word', (f) => { f.checklists[0].items[0].text = 'Team leader chosen.'; }, /checklists\[0\]\.items\[0\]: not found word for word/],
+  // Step C2 extensions: adult table cells (A12 RSI), child-only details lines (A34), checklist lines not ticked (A31)
+  ['an adult table cell naming a missing column', (f) => { card(f, 'adrenaline').dose.adult = { table: 'eas72', column: 'adultMg', source: 'EAS 7.2 p5' }; }, /dose\.adult\.column: table "eas72" has no column "adultMg"/],
+  ['an empty adult dose list', (f) => { card(f, 'adrenaline').dose.adult = []; }, /dose\.adult: needs at least one line or table cell/],
+  ['a details line only for an unknown patient', (f) => { card(f, 'fluids').details[0].only = 'baby'; }, /details\[0\]\.only: must be adult or child \(found "baby"\)/],
+  ['"only" on a card line', (f) => { card(f, 'fluids').lines[0].only = 'child'; }, /lines\[0\]\.only: "only" \(adult or child\) is allowed in details lines only/],
+  ['"only" on a dose line', (f) => { card(f, 'adrenaline').dose.adult.only = 'adult'; }, /dose\.adult\.only: "only" .* is allowed in details lines only/],
+  ['tick: true on a checklist item', (f) => { f.checklists[0].items[0].tick = true; }, /items\[0\]\.tick: must be false/],
+  ['tick on a card line', (f) => { card(f, 'fluids').lines[0].tick = false; }, /lines\[0\]\.tick: "tick: false" is allowed in checklist items only/],
 ];
 
 for (const [name, plant, pattern] of BAD) {
@@ -144,6 +152,14 @@ test('sources are read into guideline parts and owner-ruling parts', () => {
   assert.match(readSource('EAS 7.2 p9-8').problem, /runs backwards/);
   assert.match(readSource('').problem, /needs a source/);
   assert.match(readSource('see EAS 3.14').problem, /not "EAS <number> p<page>"/);
+});
+
+test('step C2 marks are accepted where allowed: an adult table cell, a child-only details line, a checklist heading', () => {
+  const f = good();
+  card(f, 'adrenaline').dose.adult = [{ table: 'eas72', column: 'adrenalineMg', source: 'EAS 7.2 p5' }, { text: '1 mg IV for an adult.', source: 'EAS 3.14 p1' }];
+  card(f, 'magnesium').details.push({ app_text: 'Administration time: see EAS 7.2, dilution 13', source: 'Owner ruling A34 · EAS 7.2 p4-5', only: 'child' });
+  f.checklists[0].items.unshift({ text: 'Cardiac arrest checklist', source: 'EAS 3.14 p2', tick: false });
+  assert.deepEqual(check(f), []);
 });
 
 test('the checker changes nothing it is given', () => {

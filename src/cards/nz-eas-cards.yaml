@@ -1,0 +1,390 @@
+about: "CARD RULE FILE: NZ EAS clinical practice guidelines (packaged exports 24 September 2026), written as cards (CARDS-DESIGN.md, owner decisions 5, 17 and 20). One card is one guideline instruction the app acts on. Every guideline sentence is copied word for word from the cited page, and the card checker (src/cards/check.js) compares it with the packaged PDF text. App text (the app's own words) is marked app_text. The EAS 7.2 and EAS 9.3 tables are copied unchanged and checked value by value by tests/cards-rule-file.test.mjs. Approved rows A20 to A35 are written in (DECISIONS.md section 7). The live app does not read this file yet (plan step C3 builds the engine that does); do not change a value without the owner's approval as an A-row."
+guidelines:
+  "3.14":
+    title: Cardiac Arrest
+    pdf: cpg-cardiac-arrest.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas"
+  "3.15":
+    title: Treatment following ROSC
+    pdf: cpg-post-rosc.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/treatment-following-rosc-eas"
+  "7.2":
+    title: Paediatric Equipment and Drug Doses
+    pdf: cpg-paediatric-equipment.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/guidelines/paediatrics-eas/page/paediatric-equipment-and-drug-doses-eas"
+  "9.2":
+    title: Airway Backup Checklist
+    pdf: cpg-preparation-rsi.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/airway-backup"
+  "9.3":
+    title: RSI (Rapid Sequence Intubation)
+    pdf: cpg-rsi.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/guidelines/intubation-and-ventilation/page/rsi-rapid-sequence-intubation-eas"
+  "9.4":
+    title: RSI Checklist
+    pdf: cpg-rsi-checklist.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/rsi-checklist"
+  "14.3":
+    title: Adrenaline
+    pdf: cpg-drugs/eas-14-3.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/medicines/page/adrenaline-eas"
+  "14.4":
+    title: Amiodarone
+    pdf: cpg-drugs/eas-14-4.pdf
+    web: "https://cpg.stjohn.org.nz/tabs/medicines/page/amiodarone-eas"
+  "14.27":
+    title: Magnesium sulphate
+    pdf: null
+    web: "https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas"
+settings:
+  rhythms:
+    shock: [VF, VT, Torsades]
+    noshock: [PEA, Asystole]
+    rosc: [Sinus rhythm, Organised rhythm, AF, Other, Unknown]
+tables:
+  eas72:
+    source: "EAS 7.2 p5-16"
+    key: maxKg
+    rows:
+      - {maxKg: 5, heading: "5 kg / less than one year", ageYears: [0, 0], adrenalineMg: 0.05, amiodaroneFirstMg: 25, magnesiumMmol: null, shockRangeJ: [20, 25], fluidsTableMl: 100, ettSizesMm: [3], ettLengthCm: 9, lmaSize: 1, lmaCuffMl: 4}
+      - {maxKg: 10, heading: "10 kg / 1 year", ageYears: [1, 1], adrenalineMg: 0.1, amiodaroneFirstMg: 50, magnesiumMmol: null, shockRangeJ: [40, 50], fluidsTableMl: 200, ettSizesMm: [3, 4], ettLengthCm: 12, lmaSize: 2, lmaCuffMl: 10}
+      - {maxKg: 20, heading: "20 kg / 2-5 years", ageYears: [2, 5], adrenalineMg: 0.2, amiodaroneFirstMg: 100, magnesiumMmol: 4, shockRangeJ: [80, 100], fluidsTableMl: 400, ettSizesMm: [4, 5], ettLengthCm: 15, lmaSize: 2, lmaCuffMl: 10}
+      - {maxKg: 30, heading: "30 kg / 6-10 years", ageYears: [6, 10], adrenalineMg: 0.3, amiodaroneFirstMg: 150, magnesiumMmol: 6, shockRangeJ: [120, 150], fluidsTableMl: 600, ettSizesMm: [5, 6], ettLengthCm: 17, lmaSize: 3, lmaCuffMl: 20}
+      - {maxKg: 40, heading: "40 kg / 11-13 years", ageYears: [11, 13], adrenalineMg: 0.4, amiodaroneFirstMg: 200, magnesiumMmol: 8, shockRangeJ: [160, 200], fluidsTableMl: 800, ettSizesMm: [6, 7], ettLengthCm: 19, lmaSize: 3, lmaCuffMl: 20}
+  eas93child:
+    source: "EAS 9.3 p2"
+    key: columnKg
+    rows:
+      - {columnKg: 10, fentanylMcg: 20, ketamineMg: 20, reducedKetamineMg: 10, blockerMg: 20}
+      - {columnKg: 20, fentanylMcg: 40, ketamineMg: 40, reducedKetamineMg: 20, blockerMg: 40}
+      - {columnKg: 30, fentanylMcg: 60, ketamineMg: 60, reducedKetamineMg: 30, blockerMg: 60}
+      - {columnKg: 40, fentanylMcg: 80, ketamineMg: 80, reducedKetamineMg: 40, blockerMg: 80}
+  eas93adult:
+    source: "EAS 9.3 p2"
+    key: columnKg
+    rows:
+      - {columnKg: 50, fentanylMcg: 100, ketamineMg: 100, reducedKetamineMg: 50, blockerMg: 100}
+      - {columnKg: 60, fentanylMcg: 120, ketamineMg: 120, reducedKetamineMg: 60, blockerMg: 100}
+      - {columnKg: 70, fentanylMcg: 140, ketamineMg: 140, reducedKetamineMg: 70, blockerMg: 150}
+      - {columnKg: 80, fentanylMcg: 160, ketamineMg: 160, reducedKetamineMg: 80, blockerMg: 150}
+      - {columnKg: 90, fentanylMcg: 180, ketamineMg: 180, reducedKetamineMg: 90, blockerMg: 200}
+      - {columnKg: 100, fentanylMcg: 200, ketamineMg: 200, reducedKetamineMg: 100, blockerMg: 200}
+cards:
+  - id: cpr-clock
+    title: CPR clock
+    place: header
+    show_when: [arrest_running]
+    lines:
+      - {text: "Perform two-minute cycles of high performance CPR between rhythm checks.", source: EAS 3.14 p1}
+    note: "Only the guideline sentence is here. The two-minute cycle and the 30 s and 15 s warnings stay code settings for now (CARDS-DESIGN.md section 4): the card format has no field for a cycle clock, and a card timer counts from a recorded dose only."
+  - id: shock-energy
+    title: Shock energy
+    place: header
+    show_when: [arrest_running]
+    lines:
+      - {text: "Defibrillate immediately if the cardiac rhythm is VF or VT using a single shock and immediately recommence chest compressions:", source: EAS 3.14 p1}
+    dose:
+      adult: {text: "Maximum joule setting for an adult.", source: EAS 3.14 p1}
+      child: {table: eas72, column: shockRangeJ, source: "EAS 7.2 p5, p8, p10, p12, p14"}
+    note: "A22 (D3): the child energy is the EAS 7.2 range as printed (low and high, in joules); nothing is pre-filled on the shock record sheet. The line is the EAS 3.14 sentence the two energy lines belong to; today's header shows only the energy. Today the header shows the energy on every screen, not only while an arrest runs: the conditions have no 'always'."
+  - id: adrenaline
+    title: Adrenaline
+    place: top
+    show_when: [arrest_running]
+    lines:
+      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1}
+    dose:
+      adult: {text: "1 mg IV for an adult.", source: EAS 3.14 p1}
+      child: {table: eas72, column: adrenalineMg, source: "EAS 7.2 p5, p8, p10, p12, p14"}
+    record: {drug: adrenaline, amount: dose, unit: mg}
+    timer: {every_min: 4, from: last_dose}
+    lock_s: 210
+    details:
+      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1}
+      - {text: "Cardiac arrest:", source: EAS 14.3 p2}
+      - {text: "Adults and children whose weight has been rounded to 50 kg or more: administer undiluted as an IV bolus.", source: EAS 14.3 p2}
+      - {text: "Children whose weight has been rounded to 40 kg or less: dilute 1 mg of adrenaline to a total of 10 ml using 0.9% sodium chloride. This solution is 1:10,000 and contains 0.1 mg/ml. Draw up the dose from this solution and administer as an IV bolus.", source: EAS 14.3 p2}
+    note: "Details are the A28 adrenaline pop-up, word for word. D11 (decision 18): today's adult-dose label is kept unchanged (it is app text, not part of this card)."
+  - id: amiodarone-2
+    title: Amiodarone
+    group: amiodarone
+    place: lower
+    show_when: [arrest_running, {latest_rhythm: [VF, VT]}, {never_recorded: Torsades}, {shocks_at_least: 6}, {doses_at_least: 1}]
+    lines:
+      - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1}
+    dose:
+      adult: {text: "150 mg IV for an adult.", source: EAS 3.14 p1}
+      child:
+        - {app_text: "Seek clinical advice", source: "Owner ruling A10 · Owner ruling A33 · EAS 3.14 p1"}
+        - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
+        - {app_text: "The EAS 7.2 tables print one amiodarone dose per band.", source: "Owner ruling A33 · EAS 7.2 p5, p8, p10, p12, p14"}
+    record: {drug: amiodarone, amount: dose, unit: mg}
+    repeat: {max: 2}
+    details:
+      - {text: "Cardiac arrest: administer IV undiluted as a bolus.", source: EAS 14.4 p3}
+      - {text: "Contraindications", source: EAS 14.4 p1}
+      - {text: "Known severe allergy.", source: EAS 14.4 p1}
+      - {text: "Known severe allergy to iodine.", source: EAS 14.4 p1}
+      - {text: "VT secondary to cyclic antidepressant poisoning. In this setting amiodarone administration can be associated with severe worsening of shock, without resolution of the rhythm.", source: EAS 14.4 p1}
+      - {text: "If torsades de pointes is present or has occurred.", source: EAS 14.4 p1}
+    note: "A23 and A28. D9 ruled B (decision 18, A33): the child second dose stays 'Seek clinical advice' (A10); its source line quotes the EAS 3.14 sentence and adds the one-dose line. This card is listed before amiodarone-1 so the group picks it first once its conditions are met."
+  - id: amiodarone-1
+    title: Amiodarone
+    group: amiodarone
+    place: lower
+    show_when: [arrest_running, {latest_rhythm: [VF, VT]}, {never_recorded: Torsades}, {shocks_at_least: 3}]
+    lines:
+      - {text: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:", source: EAS 3.14 p1}
+      - {text: "Administer amiodarone:", source: EAS 3.14 p1}
+    dose:
+      adult: {text: "300 mg IV for an adult.", source: EAS 3.14 p1}
+      child: {table: eas72, column: amiodaroneFirstMg, source: "EAS 7.2 p5, p8, p10, p12, p14"}
+    record: {drug: amiodarone, amount: dose, unit: mg}
+    repeat: {max: 1}
+    details:
+      - {text: "Cardiac arrest: administer IV undiluted as a bolus.", source: EAS 14.4 p3}
+      - {text: "Contraindications", source: EAS 14.4 p1}
+      - {text: "Known severe allergy.", source: EAS 14.4 p1}
+      - {text: "Known severe allergy to iodine.", source: EAS 14.4 p1}
+      - {text: "VT secondary to cyclic antidepressant poisoning. In this setting amiodarone administration can be associated with severe worsening of shock, without resolution of the rhythm.", source: EAS 14.4 p1}
+      - {text: "If torsades de pointes is present or has occurred.", source: EAS 14.4 p1}
+    note: "A23 and A28: shown only while the latest rhythm is VF or VT and the shock count (with earlier shocks) has reached 3."
+  - id: magnesium
+    title: Magnesium
+    place: lower
+    show_when: [arrest_running, {ever_recorded: Torsades}]
+    lines:
+      - {text: "If torsades de pointes is present or has occurred", source: EAS 3.14 p2}
+      - {text: "Withhold amiodarone.", source: EAS 3.14 p2}
+      - {text: "Administer magnesium IV:", source: EAS 3.14 p2}
+    dose:
+      adult: {text: "10 mmol (2.5 g) over 1-2 minutes for an adult.", source: EAS 3.14 p2}
+      child: {table: eas72, column: magnesiumMmol, source: "EAS 7.2 p7, p9, p11, p13, p15"}
+    record: {drug: magnesium, amount: dose, unit: mmol}
+    repeat:
+      max: 2
+      confirm:
+        - {app_text: "One dose is already recorded."}
+        - {text: "Repeat once if torsades de pointes recurs or persists.", source: EAS 3.14 p2}
+    lock_s: 5
+    details:
+      - {text: "If torsades de pointes is present or has occurred", source: EAS 3.14 p2}
+      - {text: "Withhold amiodarone.", source: EAS 3.14 p2}
+      - {text: "Administer magnesium IV:", source: EAS 3.14 p2}
+      - {text: "10 mmol (2.5 g) over 1-2 minutes for an adult.", source: EAS 3.14 p2}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p2}
+      - {text: "Repeat once if torsades de pointes recurs or persists.", source: EAS 3.14 p2}
+      - {app_text: "Administration time: see EAS 7.2, dilution 13", source: "Owner ruling A34 · EAS 7.2 p4-5", only: child}
+    note: "A27: the details are the torsades pop-up lines, word for word (the first line is the pop-up title). A34 (D10): the child pop-up adds the pointer line; no time is shown for a child. A35 (D12): the adult dilution to 10 mL and the adrenaline-line sentence are absent until EAS 14.27 is packaged. The 5 and 10 kg bands print no magnesium dose (A9: 'Seek clinical advice')."
+  - id: fluids
+    title: "Fluids · NaCl 0.9%"
+    place: lower
+    show_when: [arrest_running, {latest_rhythm: [PEA]}]
+    pop_up_on_show: true
+    lines:
+      - {text: "If the patient is in PEA", source: EAS 3.14 p2}
+      - {text: "Correct immediately reversible causes.", source: EAS 3.14 p2}
+      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2}
+    dose:
+      adult: {text: "1-2 litres IV for an adult.", source: EAS 3.14 p2}
+      child:
+        - {table: eas72, column: fluidsTableMl, source: "EAS 7.2 p7, p9, p12, p14, p16"}
+        - {text: "20-40 ml/kg IV for a child.", source: EAS 3.14 p2}
+    record: {drug: fluids, amount: typed, unit: mL}
+    lock_s: 5
+    details:
+      - {text: "If the patient is in PEA", source: EAS 3.14 p2}
+      - {text: "Correct immediately reversible causes.", source: EAS 3.14 p2}
+      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2}
+      - {text: "1-2 litres IV for an adult.", source: EAS 3.14 p2}
+      - {text: "20-40 ml/kg IV for a child.", source: EAS 3.14 p2}
+    note: "A20 (D1): shown only while the latest rhythm is PEA; the pop-up opens after PEA only, titled with its first line. A27: 'Assess and treat the reversible cause.' is gone. A19: a child sees the EAS 7.2 table volume only; nothing is calculated."
+  - id: guidance-intro
+    title: "Guidance & sources"
+    place: guidance
+    show_when: [on_request]
+    lines:
+      - {app_text: "Standard non-traumatic cardiac arrest. Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment."}
+      - {text: "This guideline is for adults and children in non-traumatic cardiac arrest.", source: EAS 3.14 p1}
+      - {text: "Perform two-minute cycles of high performance CPR between rhythm checks.", source: EAS 3.14 p1}
+      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1}
+      - {text: "1 mg IV for an adult.", source: EAS 3.14 p1}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
+      - {text: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:", source: EAS 3.14 p1}
+      - {text: "Administer amiodarone:", source: EAS 3.14 p1}
+      - {text: "300 mg IV for an adult.", source: EAS 3.14 p1}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
+      - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1}
+      - {text: "150 mg IV for an adult.", source: EAS 3.14 p1}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
+      - {text: "Maximum joule setting for an adult.", source: EAS 3.14 p1}
+      - {text: "See the paediatric drug dose tables for joule settings for a child.", source: EAS 3.14 p1}
+      - {text: "The following pages contain tables of paediatric drug doses. They are based on rounding the child’s weight up to 5, 10, 20, 30 or 40 kg.", source: EAS 7.2 p1}
+      - {text: "The usual recommended defibrillation energy for a child is 4 J/kg, but this may not be available for all defibrillators. If the recommended defibrillation energy level is not available, select the next highest level.", source: EAS 7.2 p2}
+      - {app_text: "A no-shock cycle is counted only when recorded."}
+    note: "A29: the Guidance opening text. Item 1 stays app text (what the app is); today it starts with 'Standard non-traumatic cardiac arrest.' in bold, and card text is plain."
+  - id: reversible-causes
+    title: "Reversible causes · 4 Hs & 4 Ts"
+    place: guidance
+    show_when: [on_request]
+    lines:
+      - {text: "Potentially reversible causes of PEA include:", source: EAS 3.14 p13}
+      - {text: "Hypoxia.", source: EAS 3.14 p13}
+      - {text: "Hypothermia.", source: EAS 3.14 p13}
+      - {text: "Hypovolaemia (including anaphylaxis).", source: EAS 3.14 p13}
+      - {text: "Hyper/hypokalaemia (and other metabolic abnormalities).", source: EAS 3.14 p13}
+      - {text: "Tension pneumothorax.", source: EAS 3.14 p13}
+      - {text: "Tamponade (cardiac).", source: EAS 3.14 p13}
+      - {text: "Toxins (poisoning).", source: EAS 3.14 p13}
+      - {text: "Thrombosis (pulmonary and coronary).", source: EAS 3.14 p13}
+    note: "A24 (D5): the EAS causes replace the ANZCOR prompts; shown in any rhythm. The link opens EAS 3.14 (website online, the packaged PDF at page 13 offline)."
+  - id: special-situations
+    title: Special situations
+    place: guidance
+    show_when: [on_request]
+    lines:
+      - {text: "See the ‘cardiac arrest secondary to trauma’ guideline if the cardiac arrest is secondary to trauma.", source: EAS 3.14 p1}
+      - {text: "Cardiac arrest secondary to drowning", source: EAS 3.14 p16}
+      - {text: "Cardiac arrest secondary to hanging", source: EAS 3.14 p16}
+      - {text: "Cardiac arrest secondary to asthma", source: EAS 3.14 p17}
+      - {text: "Cardiac arrest secondary to anaphylaxis", source: EAS 3.14 p17}
+      - {text: "Cardiac arrest secondary to cyclic antidepressant poisoning", source: EAS 3.14 p17}
+      - {text: "Cardiac arrest during pregnancy greater than 20 weeks", source: EAS 3.14 p18}
+      - {text: "Cardiac arrest secondary to hypothermia", source: EAS 3.14 p18}
+      - {text: "Cardiac arrest secondary to hyperkalaemia", source: EAS 3.14 p18}
+      - {text: "Cardiac arrest secondary to opiate poisoning", source: EAS 3.14 p18}
+    note: "A29: the settings special-situation note (specialNote), word for word, then the headings as printed. The special-situation switch stays one app setting that turns every automatic card to 'Manual review'."
+  - id: weight-from-age
+    title: Age-based weight estimate
+    place: header
+    show_when: [on_request]
+    lines:
+      - {text: "If the weight is not known, it can be estimated from the child’s age using formulae, noting that the formulae are a guide only and tend to underestimate true weight.", source: EAS 7.2 p1}
+    note: "A31 caption sentence. Weight from age uses the eas72 table headings (decision 8, A16): the 'heading' column as printed and 'ageYears' (first and last whole year; 0 means under 1 year). Age is whole years only (A25, D7); age 14 is adult. The look-up is code. Opened from the weight sheet and the Tube sizes age box."
+  - id: tubes-lma
+    title: "Tube sizes & age criteria"
+    place: guidance
+    show_when: [on_request]
+    lines:
+      - {text: "Children may require a different sized SGA, ETT or length at lips than that predicted by the formulae.", source: EAS 7.2 p1}
+    dose:
+      adult: {app_text: "Not shown for adults (over 40 kg or 14 years).", source: "Owner ruling A18 · EAS 7.2 p1"}
+      child:
+        - {table: eas72, column: ettSizesMm, source: "EAS 7.2 p6, p8, p10, p12, p14"}
+        - {table: eas72, column: ettLengthCm, source: "EAS 7.2 p6, p8, p10, p12, p14"}
+        - {table: eas72, column: lmaSize, source: "EAS 7.2 p6, p8, p10, p12, p14"}
+        - {table: eas72, column: lmaCuffMl, source: "EAS 7.2 p6, p8, p10, p12, p14"}
+    note: "A31: the caution sentence word for word. A15, A18: cuffed ETT size(s), length at lips, LMA size and cuff from the EAS 7.2 band table. The adult line is today's wording (A18, decision 2: over 40 kg is adult; decision 8: age 14 is adult). The labels ('Cuffed ETT:', 'Length at lips:', 'LMA size ... cuff ... mL') are app text."
+  - id: rsi
+    title: RSI dose references
+    place: guidance
+    show_when: [on_request]
+    lines:
+      - {text: "Administer 2 mcg/kg of fentanyl IV (up to a maximum of 200 mcg) immediately prior to ketamine if the patient has:", source: EAS 9.3 p1}
+      - {text: "Traumatic brain injury, or", source: EAS 9.3 p1}
+      - {text: "Suspected intracranial pathology, or", source: EAS 9.3 p1}
+      - {text: "Hypertension (SBP > 150 mmHg in an adult).", source: EAS 9.3 p1}
+      - {text: "Withhold fentanyl if the above clinical indications are not present, or there are signs of shock.", source: EAS 9.3 p1}
+      - {text: "Administer 2 mg/kg of ketamine IV (up to a maximum of 200 mg) for most patients.", source: EAS 9.3 p1}
+      - {text: "Consider reducing the dose to 1 mg/kg if:", source: EAS 9.3 p1}
+      - {text: "There are signs of shock, or", source: EAS 9.3 p1}
+      - {text: "Sedative medicines have already been administered or taken.", source: EAS 9.3 p1}
+      - {text: "Administer neuromuscular blockade:", source: EAS 9.3 p2}
+      - {text: "2 mg/kg of rocuronium IV, or", source: EAS 9.3 p2}
+      - {text: "2 mg/kg of suxamethonium IV.", source: EAS 9.3 p2}
+      - {text: "Do not reduce the dose of ketamine in the setting of RSI for prolonged seizures.", source: EAS 9.3 p4}
+      - {text: "2 mg/kg of rocuronium or suxamethonium (to a maximum of 200 mg) is an appropriate dose for all patients.", source: EAS 9.3 p4}
+      - {text: "The dose should usually be rounded to the nearest 50 mg in adults.", source: EAS 9.3 p5}
+    dose:
+      adult:
+        - {table: eas93adult, column: fentanylMcg, source: EAS 9.3 p2}
+        - {table: eas93adult, column: ketamineMg, source: EAS 9.3 p2}
+        - {table: eas93adult, column: reducedKetamineMg, source: EAS 9.3 p2}
+        - {table: eas93adult, column: blockerMg, source: EAS 9.3 p2}
+        - {app_text: "weight rounded up to the next column", source: "Owner ruling A26 · EAS 9.3 p2"}
+      child:
+        - {table: eas93child, column: fentanylMcg, source: EAS 9.3 p2}
+        - {table: eas93child, column: ketamineMg, source: EAS 9.3 p2}
+        - {table: eas93child, column: reducedKetamineMg, source: EAS 9.3 p2}
+        - {table: eas93child, column: blockerMg, source: EAS 9.3 p2}
+    note: "A30 (D6): the RSI text word for word; A30 cites p1 for the three neuromuscular blockade lines, which are printed on p2 (cited here). A12: doses looked up in the EAS 9.3 tables. A26 (D8): an adult uses the next 10 kg column up (over 90 kg the 'greater than or equal to 100 kg' column) and the line 'weight rounded up to the next column' is shown. The 5 kg band has no column: 'Seek clinical advice'. The drug labels are app text."
+checklists:
+  - id: arrest
+    title: Cardiac arrest checklist
+    items:
+      - {text: "Team leader identified.", source: EAS 3.14 p2}
+      - {text: "Roles allocated and confirmed.", source: EAS 3.14 p2}
+      - {text: "CPR feedback device and metronome on if available.", source: EAS 3.14 p2}
+      - {text: "Defibrillator screen visible to the team leader.", source: EAS 3.14 p2}
+      - {text: "Airway adjunct or ETT in place and ventilation adequate.", source: EAS 3.14 p2}
+      - {text: "ETCO2 attached and waveform visible.", source: EAS 3.14 p3}
+      - {text: "Oxygen flow and supply adequate.", source: EAS 3.14 p3}
+      - {text: "IV/IO access secure, two sites if possible.", source: EAS 3.14 p3}
+      - {text: "Consider underlying and reversible causes.", source: EAS 3.14 p3}
+      - {text: "Appropriate medicines administered.", source: EAS 3.14 p3}
+      - {text: "Initiate documentation.", source: EAS 3.14 p3}
+      - {text: "Communication with family/bystanders.", source: EAS 3.14 p3}
+  - id: postrosc
+    title: Post cardiac arrest checklist
+    items:
+      - {text: "Airway and ventilation are adequate/secure.", source: EAS 3.15 p2}
+      - {text: "Vital signs, including blood glucose level.", source: EAS 3.15 p2}
+      - {text: "Backup for RSI called for if indicated.", source: EAS 3.15 p2}
+      - {text: "IV access secure.", source: EAS 3.15 p2}
+      - {text: "ETCO2 35-45 mmHg if ventilated.", source: EAS 3.15 p2}
+      - {text: "Sedation and neuromuscular blockade if indicated.", source: EAS 3.15 p2}
+      - {text: "BP above target.", source: EAS 3.15 p3}
+      - {text: "12 lead ECG.", source: EAS 3.15 p3}
+      - {text: "Confirm appropriate transport destination.", source: EAS 3.15 p3}
+  - id: preparation
+    title: Airway Backup Checklist
+    items:
+      - {text: "This checklist should be used to prepare a patient for RSI while awaiting CCP backup.", source: EAS 9.2 p1, tick: false}
+      - {text: "Pre-oxygenate by mask.", source: EAS 9.2 p1}
+      - {text: "Attach monitor, including ETCO2.", source: EAS 9.2 p1}
+      - {text: "Gain IV access, preferably in two sites.", source: EAS 9.2 p1}
+      - {text: "Prepare a running line of 0.9% sodium chloride.", source: EAS 9.2 p1}
+      - {text: "Position the patient for optimal airway control.", source: EAS 9.2 p1}
+      - {text: "Place an ETT holder under the patient’s head.", source: EAS 9.2 p1}
+      - {text: "Ensure suction is working and turn it off.", source: EAS 9.2 p1}
+      - {text: "Prepare a manual ventilation bag with PEEP valve.", source: EAS 9.2 p1}
+      - {text: "Maximise space and clear away unnecessary equipment.", source: EAS 9.2 p1}
+      - {text: "Consider travelling toward backup.", source: EAS 9.2 p1}
+  - id: rsi
+    title: RSI Checklist
+    items:
+      - {text: "Roles assigned:", source: EAS 9.4 p1, tick: false}
+      - {text: "Team leader.", source: EAS 9.4 p1}
+      - {text: "Airway.", source: EAS 9.4 p1}
+      - {text: "Airway assistant.", source: EAS 9.4 p1}
+      - {text: "Drugs and monitoring.", source: EAS 9.4 p1}
+      - {text: "Patient prepared:", source: EAS 9.4 p1, tick: false}
+      - {text: "Check oxygen supply and pre-oxygenate.", source: EAS 9.4 p1}
+      - {text: "Consider nasal prongs.", source: EAS 9.4 p1}
+      - {text: "Position optimised.", source: EAS 9.4 p1}
+      - {text: "IV access patent. Running line attached.", source: EAS 9.4 p1}
+      - {text: "Consider marking surgical airway landmarks.", source: EAS 9.4 p1}
+      - {text: "Monitoring attached and visible:", source: EAS 9.4 p1, tick: false}
+      - {text: "Baseline vital signs.", source: EAS 9.4 p1}
+      - {text: "Pulse oximetry, capnography, and cycling BP.", source: EAS 9.4 p1}
+      - {text: "Equipment checked and ready:", source: EAS 9.4 p1, tick: false}
+      - {text: "PPE.", source: EAS 9.4 p1}
+      - {text: "Manual ventilation bag with PEEP valve set to 5 cmH2O.", source: EAS 9.4 p1}
+      - {text: "OPA, SGA, and surgical airway equipment.", source: EAS 9.4 p1}
+      - {text: "Laryngoscope.", source: EAS 9.4 p1}
+      - {text: "ETT and 10 ml cuff syringe.", source: EAS 9.4 p1}
+      - {text: "ETT holder in place.", source: EAS 9.4 p1}
+      - {text: "Suction.", source: EAS 9.4 p1}
+      - {text: "Bougie and stylet.", source: EAS 9.4 p1}
+      - {text: "Medicines drawn up, labelled and doses confirmed:", source: EAS 9.4 p1, tick: false}
+      - {text: "Fentanyl (if indicated).", source: EAS 9.4 p1}
+      - {text: "Ketamine.", source: EAS 9.4 p1}
+      - {text: "Neuromuscular blocker.", source: EAS 9.4 p1}
+      - {text: "Post intubation sedation.", source: EAS 9.4 p1}
+      - {text: "Metaraminol.", source: EAS 9.4 p1}
+      - {text: "Team briefing:", source: EAS 9.4 p1, tick: false}
+      - {text: "Airway plan, including failed intubation.", source: EAS 9.4 p1}
+      - {text: "Medication plan.", source: EAS 9.4 p2}
+      - {text: "Anticipated complications.", source: EAS 9.4 p2}
+      - {text: "Any concerns before proceeding?", source: EAS 9.4 p2}
+...
