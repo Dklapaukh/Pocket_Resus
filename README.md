@@ -290,7 +290,7 @@ Continue the Pocket Resus build (github.com/Dklapaukh/Pocket_Resus). This is an 
 4. If DECISIONS.md shows that every remaining step is waiting for the owner, stop at once and say so in one line.
 5. Otherwise act as the orchestrator in README "How the build is run" and follow "The loop for one step" exactly, for ONE step: the first step in the progress table in DECISIONS.md section 5 that is not done and not waiting for the owner (or the saved unfinished work, if the check in step 2 reported any). Use the worker and reviewer models and effort levels in README. Never use Fable.
 6. Limits: never push to `main`; never make a clinical or design decision (write it under "Waiting for the owner" in DECISIONS.md with the full text of every option and one recommendation); never edit `tests/golden/`; re-record the reference recordings only as README "Running unattended" allows; never loosen a test. If a test fails and you cannot explain and fix it within the rules, stop and write a plain-English explanation at the top of the progress table in DECISIONS.md. If a model reports a usage limit, do not retry in a loop and do not swap models: note it in DECISIONS.md and stop.
-7. Update DECISIONS.md (and GUIDELINE-TRACE.md if anything clinical on screen changed), commit and push to `rules-editor`.
+7. Update DECISIONS.md (and GUIDELINE-TRACE.md if anything clinical on screen changed), commit and push to `rules-editor`, then run `sh tools/build-progress.sh save "IDLE: <what is next>"`.
 8. Finish with a short plain-English summary for the owner (a clinician, not a programmer): what was done, what was proved, what is next, and at most one question.
 ```
 
