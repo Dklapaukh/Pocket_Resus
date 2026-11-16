@@ -222,9 +222,7 @@ chat small and means a usage limit or a mistake costs one step at most.
 
 ### The loop for one step
 1. `sh tools/build-progress.sh check`. BUSY: stop at once. Saved unfinished work: `restore`, run
-   the full tests on it before believing its note, and carry on from there. Exception: if the
-   saved work is an A-row waiting for an owner-started chat (see "Running unattended"), an
-   unattended chat stops at once and commits nothing, because any commit would orphan the snapshot.
+   the full tests on it before believing its note, and carry on from there.
 2. `git fetch origin main`; if `main` has commits the branch lacks (the owner sometimes edits on
    GitHub), merge them first, keeping the branch's version of a doc where they clash and telling
    the owner what was on `main`.
@@ -276,16 +274,11 @@ the same form and move to a step that is not blocked, or stop.
 ### Running unattended
 The scheduled task "Pocket Resus build" starts a fresh Opus chat every 3 hours with the prompt
 below. To change it, update the task and this section together. An unattended chat never pushes to
-`main`, never makes a clinical or design choice, and **never touches the reference recordings**
-(DECISIONS.md waiting list 2 asks the owner whether to relax this). An approved A-row cannot be committed
-with passing tests until the recordings are re-recorded, so an unattended chat: builds the row
-uncommitted; proves the end state in a scratch copy (clone, apply, commit there,
-`node tests/reference/record.mjs --commit <it>`, `npm test`, deep run); has it reviewed; commits
-docs only (DECISIONS.md: "A-row waits for an owner-started chat"); then saves the work with
-`sh tools/build-progress.sh save "<row> built, waits for an owner-started chat"`. The
-owner-started chat restores it, runs `npm test` (only the recording-based tests may fail), commits
-the row, re-records from that commit, checks the recordings differ only where the what-changed
-report said, runs `npm test` and the deep run, and commits the recordings.
+`main` and never makes a clinical or design choice. It may re-record the reference recordings
+(owner decision 19) only when the what-changed report shows that every difference belongs to an
+approved A-row or cards step and the reviewer has no blocking findings: commit the change, then
+`node tests/reference/record.mjs --commit <it>`, check the recordings differ only where the report
+said, run `npm test` and the deep run, and commit the recordings.
 
 ```
 Continue the Pocket Resus build (github.com/Dklapaukh/Pocket_Resus). This is an UNATTENDED run started by a schedule: the owner is not watching and cannot answer questions now.
@@ -295,7 +288,7 @@ Continue the Pocket Resus build (github.com/Dklapaukh/Pocket_Resus). This is an 
 3. Read `CLAUDE.md`, then `DECISIONS.md` sections 4 to 8, then all of "How the build is run" in `README.md`. Read `GUIDELINE-TRACE.md` and DECISIONS.md sections 1 to 3 and 9 only where the step card says so.
 4. If DECISIONS.md shows that every remaining step is waiting for the owner, stop at once and say so in one line.
 5. Otherwise act as the orchestrator in README "How the build is run" and follow "The loop for one step" exactly, for ONE step: the first step in the progress table in DECISIONS.md section 5 that is not done and not waiting for the owner (or the saved unfinished work, if the check in step 2 reported any). Use the worker and reviewer models and effort levels in README. Never use Fable.
-6. Limits: never push to `main`; never make a clinical or design decision (write it under "Waiting for the owner" in DECISIONS.md with the full text of every option and one recommendation); never edit `tests/golden/` or the reference recordings (for an approved A-row follow "Running unattended" in README: build uncommitted, prove in a scratch copy, save the snapshot); never loosen a test. If a test fails and you cannot explain and fix it within the rules, stop and write a plain-English explanation at the top of the progress table in DECISIONS.md. If a model reports a usage limit, do not retry in a loop and do not swap models: note it in DECISIONS.md and stop.
+6. Limits: never push to `main`; never make a clinical or design decision (write it under "Waiting for the owner" in DECISIONS.md with the full text of every option and one recommendation); never edit `tests/golden/`; re-record the reference recordings only as README "Running unattended" allows; never loosen a test. If a test fails and you cannot explain and fix it within the rules, stop and write a plain-English explanation at the top of the progress table in DECISIONS.md. If a model reports a usage limit, do not retry in a loop and do not swap models: note it in DECISIONS.md and stop.
 7. Update DECISIONS.md (and GUIDELINE-TRACE.md if anything clinical on screen changed), commit and push to `rules-editor`.
 8. Finish with a short plain-English summary for the owner (a clinician, not a programmer): what was done, what was proved, what is next, and at most one question.
 ```
@@ -303,7 +296,7 @@ Continue the Pocket Resus build (github.com/Dklapaukh/Pocket_Resus). This is an 
 **Prompt for a chat the owner starts** (paste as is):
 
 ```
-Continue the Pocket Resus build (github.com/Dklapaukh/Pocket_Resus). Attach the repo with push access, check out branch `rules-editor`, run `npm ci`, then `sh tools/build-progress.sh check`. Read `CLAUDE.md`, then `DECISIONS.md` sections 4 to 8, then "How the build is run" in `README.md`. If the check reports a saved A-row waiting for an owner-started chat, finish it first (README "Running unattended"). Then ask me the next question under "Waiting for the owner" in DECISIONS.md (one at a time, full text of every option, one recommended). Then act as the orchestrator in README "How the build is run" for the next free step. Explain simply. Update the docs before you finish so this same prompt works again.
+Continue the Pocket Resus build (github.com/Dklapaukh/Pocket_Resus). Attach the repo with push access, check out branch `rules-editor`, run `npm ci`, then `sh tools/build-progress.sh check`. Read `CLAUDE.md`, then `DECISIONS.md` sections 4 to 8, then "How the build is run" in `README.md`. Then ask me the next question under "Waiting for the owner" in DECISIONS.md (one at a time, full text of every option, one recommended). Then act as the orchestrator in README "How the build is run" for the next free step. Explain simply. Update the docs before you finish so this same prompt works again.
 ```
 
 ### Usage limits

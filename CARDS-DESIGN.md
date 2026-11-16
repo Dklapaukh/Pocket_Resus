@@ -10,20 +10,20 @@ GUIDELINE-TRACE.md, `src/rules/nz-eas.yaml`, `src/engine/*.js`, `src/app/*.js`, 
 | # | Instruction (EAS text) | Source | Ruling | Card |
 |---|---|---|---|---|
 | 1 | "Perform two-minute cycles of high performance CPR between rhythm checks." | 3.14 p1 | | CPR clock (setting) |
-| 2 | "Administer adrenaline IV every four minutes:" "1 mg IV for an adult." "See the paediatric drug dose tables for a child." | 3.14 p1; 7.2 band tables | D11 open | adrenaline |
+| 2 | "Administer adrenaline IV every four minutes:" "1 mg IV for an adult." "See the paediatric drug dose tables for a child." | 3.14 p1; 7.2 band tables | D11 B (no change) | adrenaline |
 | 3 | "Maximum joule setting for an adult." "See the paediatric drug dose tables for joule settings for a child." | 3.14 p1; 7.2 p2, band tables | D3 | shock energy |
 | 4 | "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:" "Administer amiodarone:" "300 mg IV for an adult." | 3.14 p1 | D4 | amiodarone-1 |
-| 5 | "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:" "150 mg IV for an adult." Child: "Seek clinical advice" | 3.14 p1 | D4; D9 open | amiodarone-2 |
-| 6 | "If torsades de pointes is present or has occurred" "Withhold amiodarone." "Administer magnesium IV:" "10 mmol (2.5 g) over 1-2 minutes for an adult." "Repeat once if torsades de pointes recurs or persists." | 3.14 p2; 7.2 dilution 13 | D10, D12 open | magnesium |
+| 5 | "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:" "150 mg IV for an adult." Child: "Seek clinical advice" | 3.14 p1 | D4; D9 B (A33) | amiodarone-2 |
+| 6 | "If torsades de pointes is present or has occurred" "Withhold amiodarone." "Administer magnesium IV:" "10 mmol (2.5 g) over 1-2 minutes for an adult." "Repeat once if torsades de pointes recurs or persists." | 3.14 p2; 7.2 dilution 13 | D10 B (A34), D12 B (A35) | magnesium |
 | 7 | "If the patient is in PEA" "Correct immediately reversible causes." "Administer 0.9% sodium chloride IV:" "1-2 litres IV for an adult." "20-40 ml/kg IV for a child." | 3.14 p2; 7.2 band tables | D1 | fluids |
 | 8 | "Potentially reversible causes of PEA include:" and the eight causes | 3.14 p13 | D5 | reversible causes |
 | 9 | Trauma sentence and the special-situation headings | 3.14 p1, p16–18 | D6 (A29) | special situations |
-| 10 | Weight rounded up to 5, 10, 20, 30, 40 kg; over 40 kg adult doses | 7.2 p1–2 | decision 2; D7; D11 open | look-up (code) |
+| 10 | Weight rounded up to 5, 10, 20, 30, 40 kg; over 40 kg adult doses | 7.2 p1–2 | decision 2; D7; D11 B | look-up (code) |
 | 11 | Weight from the band headings ("5 kg / less than one year" … "40 kg / 11-13 years") | 7.2 p5–14 | D7; decision 8 | weight from age |
 | 12 | Cuffed ETT size, length at lips, LMA size and cuff; caution sentence | 7.2 p1, p6–14 | D6 (A31) | tubes and LMA |
 | 13 | Adrenaline preparation (undiluted ≥ 50 kg; 1 mg to 10 ml ≤ 40 kg) | 14.3 p2 | D6 (A28) | adrenaline details |
 | 14 | Amiodarone contraindications; "administer IV undiluted as a bolus." | 14.4 p1, p3 | D6 (A28) | amiodarone details |
-| 15 | Magnesium dilution and the adrenaline-line sentence | 14.27 (online only) | D12 open | magnesium details |
+| 15 | Magnesium dilution and the adrenaline-line sentence | 14.27 (online only) | D12 B: removed (A35) | magnesium details |
 | 16 | RSI doses by column; fentanyl, ketamine, blocker sentences | 9.3 p1, p2, p4, p5 | D6 (A30); D8 | RSI reference |
 | 17 | Arrest, post-ROSC, RSI preparation, RSI checklists | 3.14 p2–3; 3.15; 9.2; 9.4 | D6 (A31) | checklists (lists) |
 
@@ -96,7 +96,7 @@ one app setting that turns every automatic card to "Manual review".
     - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1}
   dose:
     adult: {text: "150 mg IV for an adult.", source: EAS 3.14 p1}
-    child: {text: "Seek clinical advice", source: "Owner ruling A10 · EAS 3.14 p1"}   # D9 waits
+    child: {text: "Seek clinical advice", source: "Owner ruling A10 · EAS 3.14 p1"}   # D9 ruled B: kept (A33)
   record: {drug: amiodarone, amount: dose, unit: mg}
   repeat: {max: 2}
   details:
@@ -138,7 +138,7 @@ one app setting that turns every automatic card to "Manual review".
       - {app_text: "One dose is already recorded."}
       - {text: "Repeat once if torsades de pointes recurs or persists.", source: EAS 3.14 p2}
   lock_s: 5
-  details: []   # waits for D10 and D12; today's sentences stay until ruled
+  details: []   # D10 pointer line (A34); D12 sentences removed (A35)
 
 - id: fluids
   place: lower
@@ -206,7 +206,7 @@ patched into the old file one by one; each row keeps its named test and phone ch
 1. Card format and new checker: fields, the seven conditions, citation required, every `text`
    compared with the PDF text; tested on deliberately bad cards.
 2. New rule file written from the PDFs and the approved A20 to A31 text; the EAS 7.2 and 9.3 tables
-   copied unchanged and still checked by the existing table test. D9 to D12 keep today's behaviour
+   copied unchanged and still checked by the existing table test. D9 to D12 follow decision 18 (A33 to A35)
    until ruled. Owner reads every card (the cards are the clinical review document).
 3. New engine and checker unit tests, plus each A20 to A31 row's named test.
 4. Rewire the drug-card corner of the screens; delete the duplicated logic; move app text and
