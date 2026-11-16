@@ -168,3 +168,184 @@ test('A31: every checklist line is in the same order as on the PDF pages; sectio
   assert.deepEqual(FILE.checklists.find((list) => list.id === 'rsi').items.filter((item) => item.tick === false).map((item) => item.text),
     ['Roles assigned:', 'Patient prepared:', 'Monitoring attached and visible:', 'Equipment checked and ready:', 'Medicines drawn up, labelled and doses confirmed:', 'Team briefing:']);
 });
+
+/* ---------- Every card's clinical fields, pinned (written out here, not taken from the file) ----------
+   From the approved CARDS-DESIGN.md section 3 examples and rows A20 to A35. A change to any of these needs an
+   approved A-row and this list changed with it. Lines are shown as their text; app text starts "APP: ", and a
+   line for one patient only ends " [child only]". */
+const S72_ARREST = 'EAS 7.2 p5, p8, p10, p12, p14';
+const S72_AIRWAY = 'EAS 7.2 p6, p8, p10, p12, p14';
+const AMIODARONE_DETAILS = ['Cardiac arrest: administer IV undiluted as a bolus.', 'Contraindications', 'Known severe allergy.', 'Known severe allergy to iodine.',
+  'VT secondary to cyclic antidepressant poisoning. In this setting amiodarone administration can be associated with severe worsening of shock, without resolution of the rhythm.',
+  'If torsades de pointes is present or has occurred.'];
+const RSI_COLUMNS = ['fentanylMcg', 'ketamineMg', 'reducedKetamineMg', 'blockerMg'];
+const EXPECTED_CARDS = {
+  'cpr-clock': { place: 'header', show_when: ['arrest_running'],
+    lines: ['Perform two-minute cycles of high performance CPR between rhythm checks.'] },
+  'shock-energy': { place: 'header', show_when: ['arrest_running'],
+    lines: ['Defibrillate immediately if the cardiac rhythm is VF or VT using a single shock and immediately recommence chest compressions:'],
+    dose: { adult: { text: 'Maximum joule setting for an adult.', source: 'EAS 3.14 p1' }, child: { table: 'eas72', column: 'shockRangeJ', source: S72_ARREST } } },
+  adrenaline: { place: 'top', show_when: ['arrest_running'],
+    lines: ['Administer adrenaline IV every four minutes:'],
+    dose: { adult: { text: '1 mg IV for an adult.', source: 'EAS 3.14 p1' }, child: { table: 'eas72', column: 'adrenalineMg', source: S72_ARREST } },
+    record: { drug: 'adrenaline', amount: 'dose', unit: 'mg' }, timer: { every_min: 4, from: 'last_dose' }, lock_s: 210,
+    details: ['Administer adrenaline IV every four minutes:', 'Cardiac arrest:',
+      'Adults and children whose weight has been rounded to 50 kg or more: administer undiluted as an IV bolus.',
+      'Children whose weight has been rounded to 40 kg or less: dilute 1 mg of adrenaline to a total of 10 ml using 0.9% sodium chloride. This solution is 1:10,000 and contains 0.1 mg/ml. Draw up the dose from this solution and administer as an IV bolus.'] },
+  'amiodarone-2': { group: 'amiodarone', place: 'lower',
+    show_when: ['arrest_running', { latest_rhythm: ['VF', 'VT'] }, { never_recorded: 'Torsades' }, { shocks_at_least: 6 }, { doses_at_least: 1 }],
+    lines: ['If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:'],
+    dose: { adult: { text: '150 mg IV for an adult.', source: 'EAS 3.14 p1' }, child: [
+      { app_text: 'Seek clinical advice', source: 'Owner ruling A10 · Owner ruling A33 · EAS 3.14 p1' },
+      { text: 'See the paediatric drug dose tables for a child.', source: 'EAS 3.14 p1' },
+      { app_text: 'The EAS 7.2 tables print one amiodarone dose per band.', source: 'Owner ruling A33 · ' + S72_ARREST }] },
+    record: { drug: 'amiodarone', amount: 'dose', unit: 'mg' }, repeat: { max: 2 }, details: AMIODARONE_DETAILS },
+  'amiodarone-1': { group: 'amiodarone', place: 'lower',
+    show_when: ['arrest_running', { latest_rhythm: ['VF', 'VT'] }, { never_recorded: 'Torsades' }, { shocks_at_least: 3 }],
+    lines: ['If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:', 'Administer amiodarone:'],
+    dose: { adult: { text: '300 mg IV for an adult.', source: 'EAS 3.14 p1' }, child: { table: 'eas72', column: 'amiodaroneFirstMg', source: S72_ARREST } },
+    record: { drug: 'amiodarone', amount: 'dose', unit: 'mg' }, repeat: { max: 1 }, details: AMIODARONE_DETAILS },
+  magnesium: { place: 'lower', show_when: ['arrest_running', { ever_recorded: 'Torsades' }],
+    lines: ['If torsades de pointes is present or has occurred', 'Withhold amiodarone.', 'Administer magnesium IV:'],
+    dose: { adult: { text: '10 mmol (2.5 g) over 1-2 minutes for an adult.', source: 'EAS 3.14 p2' }, child: { table: 'eas72', column: 'magnesiumMmol', source: 'EAS 7.2 p7, p9, p11, p13, p15' } },
+    record: { drug: 'magnesium', amount: 'dose', unit: 'mmol' },
+    repeat: { max: 2, confirm: ['APP: One dose is already recorded.', 'Repeat once if torsades de pointes recurs or persists.'] }, lock_s: 5,
+    details: ['If torsades de pointes is present or has occurred', 'Withhold amiodarone.', 'Administer magnesium IV:', '10 mmol (2.5 g) over 1-2 minutes for an adult.',
+      'See the paediatric drug dose tables for a child.', 'Repeat once if torsades de pointes recurs or persists.', 'APP: Administration time: see EAS 7.2, dilution 13 [child only]'] },
+  fluids: { place: 'lower', show_when: ['arrest_running', { latest_rhythm: ['PEA'] }], pop_up_on_show: true,
+    lines: ['If the patient is in PEA', 'Correct immediately reversible causes.', 'Administer 0.9% sodium chloride IV:'],
+    dose: { adult: { text: '1-2 litres IV for an adult.', source: 'EAS 3.14 p2' }, child: [
+      { table: 'eas72', column: 'fluidsTableMl', source: 'EAS 7.2 p7, p9, p12, p14, p16' }, { text: '20-40 ml/kg IV for a child.', source: 'EAS 3.14 p2' }] },
+    record: { drug: 'fluids', amount: 'typed', unit: 'mL' }, lock_s: 5,
+    details: ['If the patient is in PEA', 'Correct immediately reversible causes.', 'Administer 0.9% sodium chloride IV:', '1-2 litres IV for an adult.', '20-40 ml/kg IV for a child.'] },
+  'guidance-intro': { place: 'guidance', show_when: ['on_request'],
+    lines: ['APP: Standard non-traumatic cardiac arrest. Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.',
+      'This guideline is for adults and children in non-traumatic cardiac arrest.', 'Perform two-minute cycles of high performance CPR between rhythm checks.',
+      'Administer adrenaline IV every four minutes:', '1 mg IV for an adult.', 'See the paediatric drug dose tables for a child.',
+      'If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:', 'Administer amiodarone:', '300 mg IV for an adult.', 'See the paediatric drug dose tables for a child.',
+      'If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:', '150 mg IV for an adult.', 'See the paediatric drug dose tables for a child.',
+      'Maximum joule setting for an adult.', 'See the paediatric drug dose tables for joule settings for a child.',
+      'The following pages contain tables of paediatric drug doses. They are based on rounding the child’s weight up to 5, 10, 20, 30 or 40 kg.',
+      'The usual recommended defibrillation energy for a child is 4 J/kg, but this may not be available for all defibrillators. If the recommended defibrillation energy level is not available, select the next highest level.',
+      'APP: A no-shock cycle is counted only when recorded.'] },
+  'reversible-causes': { place: 'guidance', show_when: ['on_request'],
+    lines: ['Potentially reversible causes of PEA include:', 'Hypoxia.', 'Hypothermia.', 'Hypovolaemia (including anaphylaxis).', 'Hyper/hypokalaemia (and other metabolic abnormalities).',
+      'Tension pneumothorax.', 'Tamponade (cardiac).', 'Toxins (poisoning).', 'Thrombosis (pulmonary and coronary).'] },
+  'special-situations': { place: 'guidance', show_when: ['on_request'],
+    lines: ['See the ‘cardiac arrest secondary to trauma’ guideline if the cardiac arrest is secondary to trauma.', 'Cardiac arrest secondary to drowning', 'Cardiac arrest secondary to hanging',
+      'Cardiac arrest secondary to asthma', 'Cardiac arrest secondary to anaphylaxis', 'Cardiac arrest secondary to cyclic antidepressant poisoning',
+      'Cardiac arrest during pregnancy greater than 20 weeks', 'Cardiac arrest secondary to hypothermia', 'Cardiac arrest secondary to hyperkalaemia', 'Cardiac arrest secondary to opiate poisoning'] },
+  'weight-from-age': { place: 'header', show_when: ['on_request'],
+    lines: ['If the weight is not known, it can be estimated from the child’s age using formulae, noting that the formulae are a guide only and tend to underestimate true weight.'] },
+  'tubes-lma': { place: 'guidance', show_when: ['on_request'],
+    lines: ['Children may require a different sized SGA, ETT or length at lips than that predicted by the formulae.'],
+    dose: { adult: { app_text: 'Not shown for adults (over 40 kg or 14 years).', source: 'Owner ruling A18 · EAS 7.2 p1' },
+      child: ['ettSizesMm', 'ettLengthCm', 'lmaSize', 'lmaCuffMl'].map((name) => ({ table: 'eas72', column: name, source: S72_AIRWAY })) } },
+  rsi: { place: 'guidance', show_when: ['on_request'],
+    lines: ['Administer 2 mcg/kg of fentanyl IV (up to a maximum of 200 mcg) immediately prior to ketamine if the patient has:', 'Traumatic brain injury, or',
+      'Suspected intracranial pathology, or', 'Hypertension (SBP > 150 mmHg in an adult).', 'Withhold fentanyl if the above clinical indications are not present, or there are signs of shock.',
+      'Administer 2 mg/kg of ketamine IV (up to a maximum of 200 mg) for most patients.', 'Consider reducing the dose to 1 mg/kg if:', 'There are signs of shock, or',
+      'Sedative medicines have already been administered or taken.', 'Administer neuromuscular blockade:', '2 mg/kg of rocuronium IV, or', '2 mg/kg of suxamethonium IV.',
+      'Do not reduce the dose of ketamine in the setting of RSI for prolonged seizures.', '2 mg/kg of rocuronium or suxamethonium (to a maximum of 200 mg) is an appropriate dose for all patients.',
+      'The dose should usually be rounded to the nearest 50 mg in adults.'],
+    dose: { adult: [...RSI_COLUMNS.map((name) => ({ table: 'eas93adult', column: name, source: 'EAS 9.3 p2' })),
+      { app_text: 'weight rounded up to the next column', source: 'Owner ruling A26 · EAS 9.3 p2' }],
+    child: RSI_COLUMNS.map((name) => ({ table: 'eas93child', column: name, source: 'EAS 9.3 p2' })) } },
+};
+
+// A card's clinical fields in the form of EXPECTED_CARDS (only the fields the card has; title and note left out).
+const asText = (line) => (line.text ?? 'APP: ' + line.app_text) + (line.only ? ' [' + line.only + ' only]' : '');
+function clinicalFields(c) {
+  const out = {};
+  for (const field of ['group', 'place', 'show_when', 'pop_up_on_show', 'lines', 'dose', 'record', 'timer', 'repeat', 'lock_s', 'details']) {
+    if (!(field in c)) continue;
+    if (field === 'lines') out.lines = c.lines.map(asText);
+    else if (field === 'details') { if (c.details.length) out.details = c.details.map(asText); }
+    else if (field === 'repeat') out.repeat = c.repeat.confirm ? { max: c.repeat.max, confirm: c.repeat.confirm.map(asText) } : c.repeat;
+    else out[field] = c[field];
+  }
+  return out;
+}
+
+test('every card equals its approved form: conditions, doses, recording, timer, repeat, lock, place, group, lines and details', () => {
+  assert.deepEqual(FILE.cards.map((c) => c.id), Object.keys(EXPECTED_CARDS));
+  for (const c of FILE.cards) assert.deepEqual(clinicalFields(c), EXPECTED_CARDS[c.id], c.id);
+});
+
+test('the app text lines are exactly those the A-rows and the design approve (A26, A27, A29 item 1, A33, A34, tubes adult line)', () => {
+  const found = [];
+  (function walk(node) {
+    if (Array.isArray(node)) node.forEach(walk);
+    else if (node && typeof node === 'object') { if ('app_text' in node) found.push(node.app_text); else Object.values(node).forEach(walk); }
+  })(FILE);
+  assert.deepEqual(found.sort(), [
+    'A no-shock cycle is counted only when recorded.', // A29 (kept)
+    'Administration time: see EAS 7.2, dilution 13', // A34
+    'Not shown for adults (over 40 kg or 14 years).', // tubes adult line (A18, today's wording)
+    'One dose is already recorded.', // A27
+    'Seek clinical advice', // A10, A33
+    'Standard non-traumatic cardiac arrest. Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.', // A29 item 1
+    'The EAS 7.2 tables print one amiodarone dose per band.', // A33
+    'weight rounded up to the next column', // A26
+  ].sort());
+});
+
+/* ---------- Checklists and the reversible causes: the full PDF text, in PDF order ----------
+   Each expected list is written out here; [heading] marks a line shown but not ticked (tick: false). The test checks
+   the list against the PDF (the printed lines from the first to the last, nothing left out) and against the file. */
+const EXPECTED_LISTS = {
+  arrest: { pdf: 'cpg-cardiac-arrest.pdf', pages: [2, 3], items: ['Team leader identified.', 'Roles allocated and confirmed.', 'CPR feedback device and metronome on if available.',
+    'Defibrillator screen visible to the team leader.', 'Airway adjunct or ETT in place and ventilation adequate.', 'ETCO2 attached and waveform visible.', 'Oxygen flow and supply adequate.',
+    'IV/IO access secure, two sites if possible.', 'Consider underlying and reversible causes.', 'Appropriate medicines administered.', 'Initiate documentation.', 'Communication with family/bystanders.'] },
+  postrosc: { pdf: 'cpg-post-rosc.pdf', pages: [2, 3], items: ['Airway and ventilation are adequate/secure.', 'Vital signs, including blood glucose level.', 'Backup for RSI called for if indicated.',
+    'IV access secure.', 'ETCO2 35-45 mmHg if ventilated.', 'Sedation and neuromuscular blockade if indicated.', 'BP above target.', '12 lead ECG.', 'Confirm appropriate transport destination.'] },
+  preparation: { pdf: 'cpg-preparation-rsi.pdf', pages: [1], items: ['[heading] This checklist should be used to prepare a patient for RSI while awaiting CCP backup.',
+    'Pre-oxygenate by mask.', 'Attach monitor, including ETCO2.', 'Gain IV access, preferably in two sites.', 'Prepare a running line of 0.9% sodium chloride.',
+    'Position the patient for optimal airway control.', 'Place an ETT holder under the patient’s head.', 'Ensure suction is working and turn it off.',
+    'Prepare a manual ventilation bag with PEEP valve.', 'Maximise space and clear away unnecessary equipment.', 'Consider travelling toward backup.'] },
+  rsi: { pdf: 'cpg-rsi-checklist.pdf', pages: [1, 2], items: ['[heading] Roles assigned:', 'Team leader.', 'Airway.', 'Airway assistant.', 'Drugs and monitoring.',
+    '[heading] Patient prepared:', 'Check oxygen supply and pre-oxygenate.', 'Consider nasal prongs.', 'Position optimised.', 'IV access patent. Running line attached.', 'Consider marking surgical airway landmarks.',
+    '[heading] Monitoring attached and visible:', 'Baseline vital signs.', 'Pulse oximetry, capnography, and cycling BP.',
+    '[heading] Equipment checked and ready:', 'PPE.', 'Manual ventilation bag with PEEP valve set to 5 cmH2O.', 'OPA, SGA, and surgical airway equipment.', 'Laryngoscope.',
+    'ETT and 10 ml cuff syringe.', 'ETT holder in place.', 'Suction.', 'Bougie and stylet.',
+    '[heading] Medicines drawn up, labelled and doses confirmed:', 'Fentanyl (if indicated).', 'Ketamine.', 'Neuromuscular blocker.', 'Post intubation sedation.', 'Metaraminol.',
+    '[heading] Team briefing:', 'Airway plan, including failed intubation.', 'Medication plan.', 'Anticipated complications.', 'Any concerns before proceeding?'] },
+};
+const EXPECTED_TITLES = { arrest: 'Cardiac arrest checklist', postrosc: 'Post cardiac arrest checklist', preparation: 'Airway Backup Checklist', rsi: 'RSI Checklist' };
+
+// The printed lines of the pages, from the line equal to first to the line equal to last (both included). Some PDFs
+// repeat the guideline title as the first body line of a later page (EAS 3.15 p3 "Treatment following ROSC"): that
+// repeated title is the page's running heading, not part of the list, so it is skipped there and only there.
+const RUNNING_TITLES = ['Treatment following ROSC', 'Cardiac Arrest', 'RSI Checklist'];
+function printedRun(pdf, pages, first, last) {
+  const lines = pages.flatMap((page, i) => {
+    const body = pageLines(pdf, page);
+    return i > 0 && RUNNING_TITLES.includes(body[0]) ? body.slice(1) : body;
+  }).map(sameWords);
+  const from = lines.indexOf(sameWords(first)), to = lines.indexOf(sameWords(last), from);
+  assert.ok(from >= 0 && to >= from, pdf + ': "' + first + '" to "' + last + '" not found');
+  return lines.slice(from, to + 1);
+}
+const plain = (item) => item.replace(/^\[heading\] /, '');
+
+test('A31: each checklist is the full PDF list in PDF order, with exactly the printed headings and opening sentence not ticked', () => {
+  assert.deepEqual(FILE.checklists.map((list) => list.id), Object.keys(EXPECTED_LISTS));
+  for (const list of FILE.checklists) {
+    const expected = EXPECTED_LISTS[list.id];
+    assert.equal(list.title, EXPECTED_TITLES[list.id], list.id + ' title');
+    const texts = expected.items.map(plain);
+    assert.deepEqual(printedRun(expected.pdf, expected.pages, texts[0], texts.at(-1)), texts.map(sameWords), list.id + ': the PDF prints exactly these lines');
+    assert.deepEqual(list.items.map((item) => (item.tick === false ? '[heading] ' : '') + item.text), expected.items, list.id + ': the file holds exactly these lines');
+  }
+  // The headings that come just before each printed list are where the list starts.
+  assert.equal(printedRun('cpg-cardiac-arrest.pdf', [2], 'Cardiac arrest checklist', 'Team leader identified.').length, 2);
+  assert.equal(printedRun('cpg-post-rosc.pdf', [2], 'Post cardiac arrest checklist', 'Airway and ventilation are adequate/secure.').length, 2);
+  assert.equal(printedRun('cpg-cardiac-arrest.pdf', [3], 'Communication with family/bystanders.', 'Additional information').length, 2);
+  assert.equal(printedRun('cpg-post-rosc.pdf', [3], 'Confirm appropriate transport destination.', 'Additional information').length, 2);
+});
+
+test('A24: the reversible causes card is the full EAS 3.14 p13 list in PDF order, nothing left out', () => {
+  const expected = EXPECTED_CARDS['reversible-causes'].lines;
+  assert.deepEqual(printedRun('cpg-cardiac-arrest.pdf', [13], expected[0], expected.at(-1)), expected.map(sameWords));
+  assert.equal(pageLines('cpg-cardiac-arrest.pdf', 13).at(-1), expected.at(-1), 'the list ends where the page body ends');
+});
