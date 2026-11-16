@@ -81,6 +81,7 @@ Numbers 2, 7 and 8 are quoted in code and tests: never renumber them.
 | 18 | **Deviation rulings, 16 Nov 2026 (D9 to D12), all option B.** D9 child second amiodarone keeps "Seek clinical advice" (A33); D10 child magnesium time stays out, with a pointer line (A34); D11 today's adult-dose label kept, no change; D12 the two unsourced magnesium sentences removed until EAS 14.27 is packaged (A35). Owner's reason: these are gaps in the guidelines themselves, to be raised with the guideline owner (the owner's employer) later, not fixed in the app. |
 | 19 | **Unattended runs may re-record (16 Nov 2026).** An unattended run may commit and re-record the reference recordings for an approved A-row or cards step when the what-changed report shows that every difference is approved and the reviewer has no blocking findings (README "Running unattended"). |
 | 20 | **Cards approved (16 Nov 2026).** The owner has read and approved the cards in `CARDS-DESIGN.md`; C2 writes them as designed, with rows A20 to A35. |
+| 21 | **Plan simplified (16 Nov 2026).** Order of work unchanged (decision 17). The editor is two steps, E2 (open, edit, what-changed) and E3 (approve, publish, rollback), each starting with a design note; deeper stages 3, 4, 7 and 8 are dropped or folded into E2. At C5, once the comparison passes, the old rule file, old engine, old checker and the tests that only check them are deleted without asking (each named in the commit; recoverable from git history), and DECISIONS.md is trimmed to what is true now. A run skips the "before" tests when the last commit message records both test runs passing on that same commit. |
 
 **Rulings made before the principle** (fluids after Asystole and "Other"; pads prompt; single
 shock energies; amiodarone card whatever the rhythm; ANZCOR causes; shortened wording) were
@@ -113,11 +114,11 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
 | P2 Deviation rulings | Done: D1 to D8 ruled 15 Nov 2026 (A20 to A31), D9 to D12 ruled 16 Nov 2026 (A33 to A35; D11 no change) |
 | C1 Cards plan step 1: card format and card checker (`src/cards/`) | Done (reviewed; commit message has the proof) |
 | C2 to C6 Cards plan steps 2 to 6 (A20 to A32 and P3 written into the cards; one comparison against v24 at C5) | **Next: C2**, then in order. web addresses for A32 supplied by the owner (section 6) |
-| E2 Editor page, Rules view | After C6. Checker rules settled (decision 16) |
-| E3 Approve, publish, rollback | After E2; needs a short design note first |
+| E2 Editor: open, edit, what-changed (design note first) | After C6. Checker rules settled (decision 16) |
+| E3 Approve, publish, rollback (design note first) | After E2 |
 | v25 release | After C6 and E3 |
 | S Store apps | Owner actions can start now (below); build after v25 |
-| 3 to 10 Deeper editor stages | After store publication (owner ruling Q11) |
+| 5, 6, 9, 10 Deeper editor stages | After store publication (owner ruling Q11) |
 
 ### Work plan, step by step
 Order is the owner's (owner decision 17): cards plan C1 to C6 (A20 to A32 and P3 inside it), E2, E3, v25,
@@ -130,15 +131,10 @@ except where an approved A-row says otherwise; reviewer has no blocking findings
 | C2 | **New rule file** `src/cards/nz-eas-cards.yaml` written from the PDFs and the approved A20 to A31 text; EAS 7.2 and 9.3 tables copied unchanged; D9 to D12 as decision 18 (A33 to A35). Cards approved by the owner (decision 20) | Card checker passes; existing table test passes on the copied tables | Opus · high |
 | C3 | **New engine** (one routine: which cards show now) with unit tests, plus each A20 to A31 row's named test | Every condition and field tested; each A-row test passes | Opus · high |
 | C4 | **Rewire the drug-card corner of the screens**; duplicated clinical logic removed; app text and equipment to their own files; old engine kept | Full tests pass except the screens the A-rows change | Opus · high |
-| C5 | **One comparison against v24:** replay `tests/reference` on the new app; every difference must belong to an approved A-row. Then re-record from the new commit; old engine deleted (asks first) | Difference report, each line named to its A-row | Opus · high |
+| C5 | **One comparison against v24:** replay `tests/reference` on the new app; every difference must belong to an approved A-row. Then re-record from the new commit. Then, without asking (decision 21): delete the old rule file `src/rules/nz-eas.yaml`, the old engine, the old checker and what-changed tool, and the tests that only check them, naming each in the commit; update `sw.js`, README "Code map" and CLAUDE.md principle (a) to the card file; trim DECISIONS.md to what is true now (drop done steps and old step cards, section 9's "still fixed in code" list, and A-rows now in the cards; the cards file and GUIDELINE-TRACE.md are the record; target about 200 lines) | Difference report, each line named to its A-row; full tests pass after the deletions | Opus · high |
 | C6 | **Owner phone check** of all A20 to A32 checks at once | Owner | Owner |
 | A-row (rows from P2) | Build one approved row from section 7 exactly as written. Add its test and its entry in `tests/helpers/approved-changes.mjs`; never edit the frozen copies. Run the what-changed report on all cases; the reference is re-recorded from the change's commit only after the report shows every difference is the approved change (in an owner-started chat: see "Running unattended"). Shrink the row in section 7 to one line; update GUIDELINE-TRACE.md | What-changed report lists only the row's screens; no saved session differs unless the row says so | Sonnet · high |
-| P1 | **Trace check.** Read GUIDELINE-TRACE.md and the rule set against the text of each packaged PDF (`pdftotext -layout`), cell by cell for sections 1 to 3. Then search the rule set's `wording` and `checklists` for any clinical sentence or number with no row in GUIDELINE-TRACE.md. Correct GUIDELINE-TRACE.md; list anything new as a further deviation (D9 onward) with options, under section 6 question 1. No app change | Every row of GUIDELINE-TRACE.md marked checked, with the page; reviewer re-checks 15 cells chosen at random | Opus · high |
-| P2 | **Deviations.** For each owner ruling on D1 to D12: write the full A-row, then build it as an A-row step. One ruling, one row, one chat | As for an A-row | Sonnet · high |
-| P3 | **Citations** (approved, owner decision 15): now part of the cards plan. Every card line carries its source (C1 checker refuses one missing); every guideline `text` is compared with the PDF text (C1) | As C1 and C2 | as C1 |
-| E2a | **Editor page, read-only.** A separate offline page of the same site that opens the rule set and shows every value of the five parts with its note and citation; tabs Rules, Tests, Publish (shells). Read editor decisions 20, 23, 24, 26 and the `frontend-design` guidance. Start with a one-page design note; reviewer checks the note before any code | Every value reachable; live app files unchanged | Opus · high |
-| E2b | **Editing and saving.** Edit any value; the checker runs as you type and blocks saving an invalid rule set; do the "before the editor saves files" items in section 8 first | Open the reference rule set and save without edits: file identical byte for byte; invalid edits cannot be saved | Opus · high |
-| E2c | **What-changed view and large-change confirmation** (editor decision 18). **Owner tries the editor after this step** | Planted edits appear in the view; a doubled dose needs the typed confirmation | Opus · high |
+| E2 | **Editor: open, edit, what-changed.** A separate offline page of the same site. Start with a one-page design note (reviewer checks it before code): tap a card, change a field, the checker runs as you type and blocks saving an invalid file, see what changed (large changes need a typed confirmation, editor decision 18). Do the "before the editor saves files" items in section 8 first. **Owner tries the editor after this step** | Every card field reachable; open and save with no edits gives an identical file; invalid edits cannot be saved; planted edits appear in the what-changed view | Opus · high |
 | E3 | **Approve, publish, rollback** (editor decisions 18, 20, 21, 26). Design note first (how a confirmed rule set goes live; whether the phone runs the checker or checks a fingerprint): the owner approves the note before any code | Rollback restores the previous rule set exactly; the what-changed report is part of the approval record | Opus · high |
 | v25 | **Release** (attended chat only): see "Release" | Owner phone checks | Orchestrator |
 | S1 | **Store apps, design note:** how the same files are wrapped for Android and iPhone, built by GitHub Actions, with the rule set still updatable; privacy policy and store listing text; what each store will ask about medical content (section 2 "Regulatory position"). Owner approves the note | Note only | Opus · high |
@@ -150,12 +146,8 @@ a design note reviewed before code, and is cut into steps of at most one chat ea
 
 | Stage | Goal | Extra proof | Worker |
 |---|---|---|---|
-| 3 | Not needed: the cards are the rule tables (cards plan) | | |
-| 4 | Not needed: the cards are the drugs as data (cards plan); a third card still needs an owner phone check (editor decision 14) | | |
 | 5 | Pop-ups, triggered prompts, situations, on-demand cards, addable checklists (list B, E; editor decision 16) | Identical screens; test-only examples of each block work | Opus · high, 3 steps |
 | 6 | Appearance settings (editor decision 22). **Owner phone check** | Default settings give identical screens and styles | Opus · medium |
-| 7 | Checker for card fields, citations and word-for-word text (most of it built in C1; no formula box, editor decision 13), scenario runner | Rejects at least 30 deliberately bad rule sets and accepts the reference | Opus · xhigh, 3 steps |
-| 8 | Editor: App view, Appearance and Tests tabs, scenario recorder by tapping (editor decisions 12, 19). **Owner tries it** | Round trip identical; every item of section 9's list reachable from both views | Opus · high, 3 steps |
 | 9 | Trial with a second, deliberately different rule set to find anything still NZ-EAS-specific in code | Second rule set runs with no code change | Opus · high |
 | 10 | Guideline candidates G1, G2, G3, G10, G11 through the editor only, one at a time, each an owner-approved A-row with GUIDELINE-TRACE.md rows | Each appears in the what-changed report and nowhere else | Sonnet · medium; clinical cross-check Opus · high |
 

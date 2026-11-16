@@ -228,8 +228,9 @@ chat small and means a usage limit or a mistake costs one step at most.
    the owner what was on `main`.
 3. Take the first step in the progress table in DECISIONS.md section 5 that is not done and not waiting for the owner.
    Read its card below. If no step is free, stop and say so in one line.
-4. Run `npm test`, then `npm run test:deep` (two separate commands; about 5 and 9 minutes; deep run
-   in the foreground with a 10-minute limit). Both must pass before anything is changed.
+4. Run `npm test`, then `npm run test:deep` (two separate commands; about 7 and 9 minutes; deep run
+   in the foreground with a 10-minute limit). Both must pass before anything is changed. Skip this
+   when the last commit's message records both passing on that same commit (owner decision 21).
 5. `sh tools/build-progress.sh save "starting <step>"`. Start the worker with: the card, the "Rules
    for every agent" below, the exact files to read, and the instruction to save a snapshot at least
    once an hour. One step per worker. Agents start in the background; wait for the report.
