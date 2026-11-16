@@ -114,7 +114,8 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
 | P2 Deviation rulings | Done: D1 to D8 ruled 15 Nov 2026 (A20 to A31), D9 to D12 ruled 16 Nov 2026 (A33 to A35; D11 no change) |
 | C1 Cards plan step 1: card format and card checker (`src/cards/`) | Done (reviewed; commit message has the proof) |
 | C2 Cards plan step 2: card rule file `src/cards/nz-eas-cards.yaml` (13 cards, EAS 7.2 and 9.3 tables, 4 checklists, 9 guideline links) | Done (reviewed; commit message has the proof). Owner questions before C4: section 6 item 1 |
-| C3 to C6 Cards plan steps 3 to 6 (A20 to A32 and P3 written into the cards; one comparison against v24 at C5) | **Next: C3**, then in order |
+| C3 Cards plan step 3: card engine `src/cards/engine.js`, group-order check, engine-level A20 to A35 tests | Done (reviewed; commit message has the proof) |
+| C4 to C6 Cards plan steps 4 to 6 (screens rewired; one comparison against v24 at C5) | **Waiting for the owner:** section 6 item 1 (a to f) before C4 |
 | E2 Editor: open, edit, what-changed (design note first) | After C6. Checker rules settled (decision 16) |
 | E3 Approve, publish, rollback (design note first) | After E2 |
 | v25 release | After C6 and E3 |
@@ -155,8 +156,9 @@ a design note reviewed before code, and is cut into steps of at most one chat ea
 ## 6. Waiting for the owner (ask in this order, one at a time)
 Owner rulings of 15 and 16 Nov 2026 (D1 to D12, Q9 citations, Q10 checker, Q11 order of work, unattended re-recording) are recorded
 in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
-1. **Card questions from C2 (answer before C4 draws the cards; C3 is not blocked).** Each is a small
-   design choice the approved rows do not settle; the file follows option A until ruled.
+1. **Card questions (answer before C4 draws the cards; C4 waits for these).** a to e are small
+   design choices from C2 the approved rows do not settle; the file follows option A until ruled.
+   f is a clinical change found at C3.
    a. *Shock energy card.* Every card needs a guideline line, and no condition means "always".
       A: header shows the added EAS 3.14 p1 line "Defibrillate immediately if the cardiac rhythm is VF
       or VT using a single shock and immediately recommence chest compressions:" with the energy, only
@@ -174,6 +176,13 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
       today and as A29 names. Weight from age: opened from the weight sheet as today (the format only
       knows "opened from Guidance"). Reversible causes title still "4 Hs & 4 Ts": A: keep; B: "Reversible
       causes". **Recommended: B, today's places, and title B.**
+   f. *Fluids card with no weight entered* (found at C3; no A-row covers it). Today (v24) the fluids
+      card says "Enter weight" until a weight is entered, while adrenaline, amiodarone and magnesium
+      already show their adult line with no weight (decision 2, D11). The new engine, as built, shows
+      the adult line. A: show "1-2 litres IV for an adult." with no weight, like the other drug cards
+      (becomes a new A-row, with its test and phone check). B: keep v24: "Enter weight" until a weight
+      is entered (the engine is changed at C4 to match). **Recommended: A** (same rule as every other
+      drug card; the guideline line is printed for adults).
 2. **Web addresses for A32 (supplied by the owner)** (the settings-tab guideline links; now in the card file). Known: EAS 3.14 Cardiac Arrest
    https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas; EAS 9.3 RSI
    (Rapid Sequence Intubation)
@@ -254,8 +263,13 @@ Withdrawn: A13, A14 (showing the working on screen; decision 7 rule 4).
 - Not checked anywhere: real phones beyond the owner's, iPhone Safari, the bytes GitHub Pages serves.
 
 **Card checker (from the C1 review; do before the step named)**
-- Before C3: a group's card order is not checked (amiodarone-1 placed before amiodarone-2 would hide the
-  second-dose card); settle with the engine's group rule.
+- Before C4 (from the C3 review): an adult dose tap records the number printed at the start of the adult
+  line ("1 mg IV for an adult." records 1 mg, the same as today). Add a checker rule that refuses an
+  `amount: dose` card whose adult line does not start with a number and unit, so a reworded line
+  cannot quietly record nothing.
+- At C4: pass the 500 kg weight limit (`maxWeightKg`) into `cardsNow`; the engine sets "Manual review"
+  on header cards too under the special-situation switch; a "-" cell comes back marked "seek advice"
+  and the words come from the wording file.
 - Before C2: table and cell sources are checked only for page existence; the cell values are left to the table test.
 - Small: a page listed twice in a source ("p1, p1") is accepted.
 - From the C2 review: a table cell's cited pages are not checked against the page holding the value;
