@@ -84,7 +84,7 @@ Numbers 2, 7 and 8 are quoted in code and tests: never renumber them.
 | 21 | **Plan simplified (16 Nov 2026).** Order of work unchanged (decision 17). The editor is two steps, E2 (open, edit, what-changed) and E3 (approve, publish, rollback), each starting with a design note; deeper stages 3, 4, 7 and 8 are dropped or folded into E2. At C5, once the comparison passes, the old rule file, old engine, old checker and the tests that only check them are deleted without asking (each named in the commit; recoverable from git history), and DECISIONS.md is trimmed to what is true now. A run skips the "before" tests when the last commit message records both test runs passing on that same commit. |
 | 22 | **Streamlined screens (owner, 16 Nov 2026).** Guideline text appears in the app only when it adds real understanding; users already know the guidelines, and the screens must not fill with quotations. The trace (guideline number, page and exact sentence behind each card, dose and trigger) lives in the card file and GUIDELINE-TRACE.md for audit, not on screen. Replaces D6's "every guidance sentence word for word on screen" (decision 14) and the on-screen source lines (decision 15). **Trim rule** (owner approved the rule and two examples, A23 and A32, and gave assumed approval for the rest; every trim is listed in A37 and gets a phone check): remove guideline sentences that restate what the app already does (when a card appears, timing, rhythm conditions), headings and lead-in sentences, and source lines; keep, word for word, doses, how to give a drug, contraindications, and conditions that change the clinician's choice. What is shown is still guideline text as written (no paraphrase). |
 | 23 | **Card questions, 16 Nov 2026 (section 6 item 1 a to f).** a: B, the shock energy header shows the energy only, at all times, as in v24 (format gains "no lines" for header cards and an "always" condition). b: A, the CPR clock sentence is not drawn. c: the A33 lines are dropped; a child's second amiodarone dose shows "Seek clinical advice" only (A33 withdrawn). d: A, Guidance item 1 is plain text. e: special situations stay in the settings note; the causes title is "Reversible causes"; weight from age opens from the weight sheet as today. f: A, the fluids card shows "1-2 litres IV for an adult." with no weight entered (A36). |
-| 24 | **Store publication on hold (owner, 16 Nov 2026)** until the owner reaches an agreement with the employer (section 6 item 3). The D9 to D12 guideline gaps (decision 18) go on the owner's list of guideline updates to raise with the employer. |
+| 24 | **Store publication on hold (owner, 16 Nov 2026)** until the owner reaches an agreement with the employer (section 6 item 4). The D9 to D12 guideline gaps (decision 18) go on the owner's list of guideline updates to raise with the employer. |
 
 **Rulings made before the principle** (fluids after Asystole and "Other"; pads prompt; single
 shock energies; amiodarone card whatever the rhythm; ANZCOR causes; shortened wording) were
@@ -105,7 +105,8 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
   The card rule file is written (C2); the live rule set and engine stay unchanged until step C5.
 - **Streamlined screens** (decision 22, 16 Nov 2026): guideline text on screen only where it adds
   understanding; the trace stays in the card file. The card questions are answered (decision 23).
-  C4 builds the trimmed screens (A36, A37). Store publication is on hold (decision 24).
+  C4 part 1 (card file trimmed to A37, A36) is done; part 2 (screens) waits for section 6 items 1
+  and 2. Store publication is on hold (decision 24).
 
 ## 5. Build queue (README "How the build is run" has the method; commit messages hold each step's proof)
 | Step | State |
@@ -121,8 +122,9 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
 | C1 Cards plan step 1: card format and card checker (`src/cards/`) | Done (reviewed; commit message has the proof) |
 | C2 Cards plan step 2: card rule file `src/cards/nz-eas-cards.yaml` (13 cards, EAS 7.2 and 9.3 tables, 4 checklists, 9 guideline links) | Done (reviewed; commit message has the proof). Owner questions before C4: section 6 item 1 |
 | C3 Cards plan step 3: card engine `src/cards/engine.js`, group-order check, engine-level A20 to A35 tests | Done (reviewed; commit message has the proof) |
-| C4 Cards plan step 4: card file updated to decisions 22 and 23 (A33 withdrawn, A36, A37 trims), then the screens rewired | **Next** (card questions answered 16 Nov 2026, decision 23) |
-| C5, C6 Cards plan steps 5 and 6 (one comparison against v24; owner phone check) | After C4 |
+| C4 Cards plan step 4, part 1: card file, checker and engine updated to decisions 22 and 23 (A33 withdrawn, A36, A37 trace-only lines) | Done (reviewed, 19 of 19 planted faults caught; commit message has the proof) |
+| C4 part 2: rewire the screens to the card file | **Waiting for the owner** (section 6 items 1 and 2): the recorded reference screens cannot accept approved differences, so rewiring makes `npm test` fail until C5 re-records |
+| C5, C6 Cards plan steps 5 and 6 (one comparison against v24; owner phone check) | After C4 part 2 |
 | E2 Editor: open, edit, what-changed (design note first) | After C6. Checker rules settled (decision 16) |
 | E3 Approve, publish, rollback (design note first) | After E2 |
 | v25 release | After C6 and E3 |
@@ -163,14 +165,28 @@ a design note reviewed before code, and is cut into steps of at most one chat ea
 ## 6. Waiting for the owner (ask in this order, one at a time)
 Owner rulings of 15 and 16 Nov 2026 (D1 to D12, Q9 citations, Q10 checker, Q11 order of work, unattended re-recording, streamlined screens, card questions, store hold) are recorded
 in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
-1. **Web addresses for A32 (supplied by the owner)** (the settings-tab guideline links; now in the card file). Known: EAS 3.14 Cardiac Arrest
+1. **How to finish C4 (blocks the build).** C4 part 2 rewires the screens to the card file. The test
+   that compares every screen with the recorded reference (inside `npm test`) has no way to accept an
+   approved difference, and A22 (shock energy as printed) changes the header in almost every recorded
+   case, so after the rewire the tests fail until C5 compares with v24 and re-records.
+   - **A (recommended):** merge C4 part 2 into C5: rewire, run the C5 comparison against v24 (every
+     difference named to its A-row), re-record, all in one step. Same proof as C5; one bigger step.
+   - **B:** first build a tool that sorts each reference difference by A-row and lets the test accept
+     only those, then do C4 part 2 and C5 as planned. Safer test at each step, one extra step.
+2. **Shock energy header with no weight entered.** v24 shows nothing; the card engine now returns
+   "Maximum joule setting for an adult." (decision 23a says "as in v24"; A36 covered fluids only).
+   - **A (recommended):** show nothing with no weight, as v24.
+   - **B:** show "Maximum joule setting for an adult." with no weight (a new A-row, like A36).
+   Also: A37 item 9 says "the twelve EAS 3.14 p1 sentences"; A29 lists fourteen and A37 draws none,
+   so all fourteen are trace-only. Please confirm the number is a miscount.
+3. **Web addresses for A32 (supplied by the owner)** (the settings-tab guideline links; now in the card file). Known: EAS 3.14 Cardiac Arrest
    https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas; EAS 9.3 RSI
    (Rapid Sequence Intubation)
    https://cpg.stjohn.org.nz/tabs/guidelines/intubation-and-ventilation/page/rsi-rapid-sequence-intubation-eas
    (linked from the EAS 7.2 PDF); EAS 14.27 Magnesium sulphate
    https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas; EAS 7.2 Paediatric Equipment and Drug Doses, https://cpg.stjohn.org.nz/tabs/guidelines/paediatrics-eas/page/paediatric-equipment-and-drug-doses-eas;  EAS 9.2 Airway Backup Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/airway-backup; EAS 3.15 Treatment following ROSC, https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/treatment-following-rosc-eas; EAS 9.4 RSI Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/rsi-checklist; EAS 14.3
    Adrenaline, https://cpg.stjohn.org.nz/tabs/medicines/page/adrenaline-eas; EAS 14.4 Amiodarone, https://cpg.stjohn.org.nz/tabs/medicines/page/amiodarone-eas.
-2. **Store publication, owner actions** (on hold until the owner reaches an agreement with the employer, decision 24):
+4. **Store publication, owner actions** (on hold until the owner reaches an agreement with the employer, decision 24):
    - Ask Medsafe whether the app is a medical device (section 2 "Regulatory position").
    - Written permission from the guideline's owners to reproduce CPG text and PDFs in a published
      app. The owner's employer, Wellington Free Ambulance, is on the CPG working group and endorses
@@ -180,12 +196,12 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
    - Under a personal account (decision 11): Google needs a closed test with 12 testers for 14 days
      before public release; Apple rule 1.4.2 is not satisfied.
    - Open the developer accounts; recruit the 12 testers.
-3. Smaller items, each a possible A-row: a manual entry timed later than now is saved as the
+5. Smaller items, each a possible A-row: a manual entry timed later than now is saved as the
    previous day (on purpose, for a case crossing midnight); closing the rhythm pop-up with × leaves
    "Rhythm not recorded"; the tutorial step "Find weight-based RSI doses" still says doses "are
    calculated from the entered weight" (they are looked up since A12); the start-up message shown
    when the rule set cannot be read (wording in `src/rules/parse.js`) may be reworded.
-4. **Paediatric pads prompt:** removed 15 Nov 2026; may return as an owner addition once the
+6. **Paediatric pads prompt:** removed 15 Nov 2026; may return as an owner addition once the
    corpuls criterion (weight, age or energy) is supplied.
 
 ## 7. A-table: changes not yet live
@@ -245,17 +261,14 @@ Where A20 to A32 and A37 differ on what is drawn on screen, A37 wins (decision 2
 - Not checked anywhere: real phones beyond the owner's, iPhone Safari, the bytes GitHub Pages serves.
 
 **Card checker (from the C1 review; do before the step named)**
-- Before C4 (from the C3 review): an adult dose tap records the number printed at the start of the adult
-  line ("1 mg IV for an adult." records 1 mg, the same as today). Add a checker rule that refuses an
-  `amount: dose` card whose adult line does not start with a number and unit, so a reworded line
-  cannot quietly record nothing.
-- At C4: pass the 500 kg weight limit (`maxWeightKg`) into `cardsNow`; the engine sets "Manual review"
-  on header cards too under the special-situation switch; a "-" cell comes back marked "seek advice"
-  and the words come from the wording file.
+- At C4 part 2: pass the 500 kg weight limit (`maxWeightKg`) into `cardsNow` (the engine default is
+  no limit); a "-" cell comes back marked "seek advice" and the words come from the wording file.
+- `CARDS-DESIGN.md` says "a list must keep at least one drawn line"; the checker is narrower (a dose
+  card may have only trace-only lines; a details list may unless it opens on show). Reword the doc.
 - Before C2: table and cell sources are checked only for page existence; the cell values are left to the table test.
 - Small: a page listed twice in a source ("p1, p1") is accepted.
 - From the C2 review: a table cell's cited pages are not checked against the page holding the value;
-  guideline web links are checked by prefix only (compare with section 6 item 2); the sources of
+  guideline web links are checked by prefix only (compare with section 6 item 3); the sources of
   ordinary card lines are not pinned by a test (the checker finds each sentence on its cited page).
 - A30 and GUIDELINE-TRACE.md cite EAS 9.3 p1 for the three blocker lines; the PDF prints them on p2
   (the card file cites p2). Correct the trace row when A30 is traced at C5.
