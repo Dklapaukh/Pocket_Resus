@@ -5,9 +5,13 @@
 // card shows the trauma sentence and the nine headings as printed; "capped at 200 J" is nowhere.
 // Screen checks added at C4: the Guidance opening text as written; the settings special-situation note (its place is
 // owner question 1e, DECISIONS.md section 6); item 1 drawn plain (question 1d).
+// Step C4 (owner decisions 22 and 23, A37 items 9 and 11, which win on what is drawn): the opening text draws item 1
+// (app text, plain: 23d), the EAS 7.2 p1 and p2 sentences and the no-shock app text; the EAS 3.14 p1 sentences stay in
+// the card file as trace-only lines (checked here, in order). Special situations are drawn in the Settings tab note
+// (place "settings", 23e), unchanged.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arrest, texts, CARD_TEXT } from './helpers/card-sessions.mjs';
+import { arrest, texts, CARD_TEXT, fileLines } from './helpers/card-sessions.mjs';
 
 const INTRO = [
   'Standard non-traumatic cardiac arrest. Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment.',
@@ -23,18 +27,20 @@ const SPECIAL = ['See the ‘cardiac arrest secondary to trauma’ guideline if 
   'Cardiac arrest secondary to hanging', 'Cardiac arrest secondary to asthma', 'Cardiac arrest secondary to anaphylaxis', 'Cardiac arrest secondary to cyclic antidepressant poisoning',
   'Cardiac arrest during pregnancy greater than 20 weeks', 'Cardiac arrest secondary to hypothermia', 'Cardiac arrest secondary to hyperkalaemia', 'Cardiac arrest secondary to opiate poisoning'];
 
-test('A29: the Guidance opening text, word for word; item 1 and the last line are app text', () => {
+test('A29: the Guidance opening text, word for word; item 1 and the last line are app text; EAS 3.14 sentences in the file only (A37)', () => {
   const intro = arrest().card('guidance-intro', { request: 'guidance-intro' });
-  assert.deepEqual(texts(intro.lines), INTRO);
+  const EAS314 = INTRO.slice(1, 15); // the EAS 3.14 p1 sentences: trace-only
+  assert.deepEqual(texts(intro.lines), [INTRO[0], ...INTRO.slice(15)]);
+  assert.deepEqual(fileLines('guidance-intro'), [INTRO[0] + ' [app]', ...EAS314.map((t) => t + ' [trace]'), INTRO[15], INTRO[16], INTRO[17] + ' [app]']);
   const kinds = intro.lines.map((l) => l.kind);
-  assert.deepEqual([kinds[0], kinds.at(-1)], ['app', 'app']);
-  assert.ok(kinds.slice(1, -1).every((kind) => kind === 'guideline'));
-  assert.deepEqual(intro.sources, ['EAS 3.14 p1', 'EAS 7.2 p1', 'EAS 7.2 p2']);
+  assert.deepEqual(kinds, ['app', 'guideline', 'guideline', 'app']);
+  assert.deepEqual(intro.sources, ['EAS 7.2 p1', 'EAS 7.2 p2']);
 });
 
 test('A29: the special situations: the trauma sentence and the nine headings as printed', () => {
   const special = arrest().card('special-situations', { request: 'special-situations' });
   assert.deepEqual(texts(special.lines), SPECIAL);
+  assert.equal(special.place, 'settings', 'owner decision 23e: the Settings tab note');
   assert.deepEqual(special.sources, ['EAS 3.14 p1', 'EAS 3.14 p16', 'EAS 3.14 p17', 'EAS 3.14 p18']);
 });
 

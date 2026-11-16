@@ -1,4 +1,4 @@
-about: "CARD RULE FILE: NZ EAS clinical practice guidelines (packaged exports 24 September 2026), written as cards (CARDS-DESIGN.md, owner decisions 5, 17 and 20). One card is one guideline instruction the app acts on. Every guideline sentence is copied word for word from the cited page, and the card checker (src/cards/check.js) compares it with the packaged PDF text. App text (the app's own words) is marked app_text. The EAS 7.2 and EAS 9.3 tables are copied unchanged and checked value by value by tests/cards-rule-file.test.mjs. Approved rows A20 to A35 are written in (DECISIONS.md section 7). The live app does not read this file yet (plan step C3 builds the engine that does); do not change a value without the owner's approval as an A-row."
+about: "CARD RULE FILE: NZ EAS clinical practice guidelines (packaged exports 24 September 2026), written as cards (CARDS-DESIGN.md, owner decisions 5, 17 and 20). One card is one guideline instruction the app acts on. Every guideline sentence is copied word for word from the cited page, and the card checker (src/cards/check.js) compares it with the packaged PDF text. App text (the app's own words) is marked app_text. The EAS 7.2 and EAS 9.3 tables are copied unchanged and checked value by value by tests/cards-rule-file.test.mjs. Approved rows A20 to A37 are written in (DECISIONS.md section 7; A33 withdrawn, decision 23c). A guideline sentence marked trace_only is kept here for audit and is never drawn on screen (owner decision 22, every one listed in A37); the checker still compares it with the PDF. The card engine (src/cards/engine.js) reads this file; the live screens are rewired to it in plan step C4. Do not change a value without the owner's approval as an A-row."
 guidelines:
   "3.14":
     title: Cardiac Arrest
@@ -75,24 +75,24 @@ cards:
     place: header
     show_when: [arrest_running]
     lines:
-      - {text: "Perform two-minute cycles of high performance CPR between rhythm checks.", source: EAS 3.14 p1}
-    note: "Only the guideline sentence is here. The two-minute cycle and the 30 s and 15 s warnings stay code settings for now (CARDS-DESIGN.md section 4): the card format has no field for a cycle clock, and a card timer counts from a recorded dose only."
+      - {text: "Perform two-minute cycles of high performance CPR between rhythm checks.", source: EAS 3.14 p1, trace_only: true}
+    note: "A37 item 4 (owner decision 23b): the sentence is trace_only, not drawn. Only the guideline sentence is here. The two-minute cycle and the 30 s and 15 s warnings stay code settings for now (CARDS-DESIGN.md section 4): the card format has no field for a cycle clock, and a card timer counts from a recorded dose only."
   - id: shock-energy
     title: Shock energy
     place: header
-    show_when: [arrest_running]
+    show_when: [always]
     lines:
-      - {text: "Defibrillate immediately if the cardiac rhythm is VF or VT using a single shock and immediately recommence chest compressions:", source: EAS 3.14 p1}
+      - {text: "Defibrillate immediately if the cardiac rhythm is VF or VT using a single shock and immediately recommence chest compressions:", source: EAS 3.14 p1, trace_only: true}
     dose:
       adult: {text: "Maximum joule setting for an adult.", source: EAS 3.14 p1}
       child: {table: eas72, column: shockRangeJ, source: "EAS 7.2 p5, p8, p10, p12, p14"}
-    note: "A22 (D3): the child energy is the EAS 7.2 range as printed (low and high, in joules); nothing is pre-filled on the shock record sheet. The line is the EAS 3.14 sentence the two energy lines belong to; today's header shows only the energy. Today the header shows the energy on every screen, not only while an arrest runs: the conditions have no 'always'."
+    note: "A22 (D3): the child energy is the EAS 7.2 range as printed (low and high, in joules); nothing is pre-filled on the shock record sheet. A37 item 3 (owner decision 23a): the header shows the energy only, at all times, as in v24: the condition is 'always', and the EAS 3.14 sentence the two energy lines belong to is trace_only (kept for audit, not drawn)."
   - id: adrenaline
     title: Adrenaline
     place: top
     show_when: [arrest_running]
     lines:
-      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1}
+      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1, trace_only: true}
     dose:
       adult: {text: "1 mg IV for an adult.", source: EAS 3.14 p1}
       child: {table: eas72, column: adrenalineMg, source: "EAS 7.2 p5, p8, p10, p12, p14"}
@@ -100,24 +100,21 @@ cards:
     timer: {every_min: 4, from: last_dose}
     lock_s: 210
     details:
-      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1}
-      - {text: "Cardiac arrest:", source: EAS 14.3 p2}
+      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1, trace_only: true}
+      - {text: "Cardiac arrest:", source: EAS 14.3 p2, trace_only: true}
       - {text: "Adults and children whose weight has been rounded to 50 kg or more: administer undiluted as an IV bolus.", source: EAS 14.3 p2}
       - {text: "Children whose weight has been rounded to 40 kg or less: dilute 1 mg of adrenaline to a total of 10 ml using 0.9% sodium chloride. This solution is 1:10,000 and contains 0.1 mg/ml. Draw up the dose from this solution and administer as an IV bolus.", source: EAS 14.3 p2}
-    note: "Details are the A28 adrenaline pop-up, word for word. D11 (decision 18): today's adult-dose label is kept unchanged (it is app text, not part of this card)."
+    note: "A37 item 5: the card draws the dose only; the pop-up draws the two EAS 14.3 how-to-give sentences; the lead-ins are trace_only. Details are the A28 adrenaline pop-up, word for word. D11 (decision 18): today's adult-dose label is kept unchanged (it is app text, not part of this card)."
   - id: amiodarone-2
     title: Amiodarone
     group: amiodarone
     place: lower
     show_when: [arrest_running, {latest_rhythm: [VF, VT]}, {never_recorded: Torsades}, {shocks_at_least: 6}, {doses_at_least: 1}]
     lines:
-      - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1}
+      - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1, trace_only: true}
     dose:
       adult: {text: "150 mg IV for an adult.", source: EAS 3.14 p1}
-      child:
-        - {app_text: "Seek clinical advice", source: "Owner ruling A10 · Owner ruling A33 · EAS 3.14 p1"}
-        - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
-        - {app_text: "The EAS 7.2 tables print one amiodarone dose per band.", source: "Owner ruling A33 · EAS 7.2 p5, p8, p10, p12, p14"}
+      child: {app_text: "Seek clinical advice", source: "Owner ruling A10 · EAS 3.14 p1"}
     record: {drug: amiodarone, amount: dose, unit: mg}
     repeat: {max: 2}
     details:
@@ -127,15 +124,15 @@ cards:
       - {text: "Known severe allergy to iodine.", source: EAS 14.4 p1}
       - {text: "VT secondary to cyclic antidepressant poisoning. In this setting amiodarone administration can be associated with severe worsening of shock, without resolution of the rhythm.", source: EAS 14.4 p1}
       - {text: "If torsades de pointes is present or has occurred.", source: EAS 14.4 p1}
-    note: "A23 and A28. D9 ruled B (decision 18, A33): the child second dose stays 'Seek clinical advice' (A10); its source line quotes the EAS 3.14 sentence and adds the one-dose line. This card is listed before amiodarone-1 so the group picks it first once its conditions are met."
+    note: "A23 and A28. D9 ruled B (decision 18): the child second dose stays 'Seek clinical advice' (A10), with no other line (decision 23c: the A33 lines are dropped). A37 item 1: the card draws the dose line and the dose count only; the six-shock sentence is trace_only. A37 item 6: the pop-up draws the dose lines, then the details. This card is listed before amiodarone-1 so the group picks it first once its conditions are met."
   - id: amiodarone-1
     title: Amiodarone
     group: amiodarone
     place: lower
     show_when: [arrest_running, {latest_rhythm: [VF, VT]}, {never_recorded: Torsades}, {shocks_at_least: 3}]
     lines:
-      - {text: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:", source: EAS 3.14 p1}
-      - {text: "Administer amiodarone:", source: EAS 3.14 p1}
+      - {text: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:", source: EAS 3.14 p1, trace_only: true}
+      - {text: "Administer amiodarone:", source: EAS 3.14 p1, trace_only: true}
     dose:
       adult: {text: "300 mg IV for an adult.", source: EAS 3.14 p1}
       child: {table: eas72, column: amiodaroneFirstMg, source: "EAS 7.2 p5, p8, p10, p12, p14"}
@@ -148,15 +145,15 @@ cards:
       - {text: "Known severe allergy to iodine.", source: EAS 14.4 p1}
       - {text: "VT secondary to cyclic antidepressant poisoning. In this setting amiodarone administration can be associated with severe worsening of shock, without resolution of the rhythm.", source: EAS 14.4 p1}
       - {text: "If torsades de pointes is present or has occurred.", source: EAS 14.4 p1}
-    note: "A23 and A28: shown only while the latest rhythm is VF or VT and the shock count (with earlier shocks) has reached 3."
+    note: "A37 item 1: the card draws the dose line and the dose count only; the three-shock sentence and 'Administer amiodarone:' are trace_only. A23 and A28: shown only while the latest rhythm is VF or VT and the shock count (with earlier shocks) has reached 3."
   - id: magnesium
     title: Magnesium
     place: lower
     show_when: [arrest_running, {ever_recorded: Torsades}]
     lines:
-      - {text: "If torsades de pointes is present or has occurred", source: EAS 3.14 p2}
+      - {text: "If torsades de pointes is present or has occurred", source: EAS 3.14 p2, trace_only: true}
       - {text: "Withhold amiodarone.", source: EAS 3.14 p2}
-      - {text: "Administer magnesium IV:", source: EAS 3.14 p2}
+      - {text: "Administer magnesium IV:", source: EAS 3.14 p2, trace_only: true}
     dose:
       adult: {text: "10 mmol (2.5 g) over 1-2 minutes for an adult.", source: EAS 3.14 p2}
       child: {table: eas72, column: magnesiumMmol, source: "EAS 7.2 p7, p9, p11, p13, p15"}
@@ -168,67 +165,67 @@ cards:
         - {text: "Repeat once if torsades de pointes recurs or persists.", source: EAS 3.14 p2}
     lock_s: 5
     details:
-      - {text: "If torsades de pointes is present or has occurred", source: EAS 3.14 p2}
+      - {text: "If torsades de pointes is present or has occurred", source: EAS 3.14 p2, trace_only: true}
       - {text: "Withhold amiodarone.", source: EAS 3.14 p2}
-      - {text: "Administer magnesium IV:", source: EAS 3.14 p2}
-      - {text: "10 mmol (2.5 g) over 1-2 minutes for an adult.", source: EAS 3.14 p2}
-      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p2}
+      - {text: "Administer magnesium IV:", source: EAS 3.14 p2, trace_only: true}
+      - {text: "10 mmol (2.5 g) over 1-2 minutes for an adult.", source: EAS 3.14 p2, trace_only: true}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p2, trace_only: true}
       - {text: "Repeat once if torsades de pointes recurs or persists.", source: EAS 3.14 p2}
       - {app_text: "Administration time: see EAS 7.2, dilution 13", source: "Owner ruling A34 · EAS 7.2 p4-5", only: child}
-    note: "A27: the details are the torsades pop-up lines, word for word (the first line is the pop-up title). A34 (D10): the child pop-up adds the pointer line; no time is shown for a child. A35 (D12): the adult dilution to 10 mL and the adrenaline-line sentence are absent until EAS 14.27 is packaged. The 5 and 10 kg bands print no magnesium dose (A9: 'Seek clinical advice')."
+    note: "A37 item 7: the card draws 'Withhold amiodarone.' and the dose. The pop-up, titled 'Magnesium' (the card title), draws 'Withhold amiodarone.', the dose for this patient (the card's dose lines, as v24), 'Repeat once if torsades de pointes recurs or persists.' and, for a child, the A34 pointer; the other lines are trace_only. A27: the details are the torsades pop-up lines, word for word. A34 (D10): the child pop-up adds the pointer line; no time is shown for a child. A35 (D12): the adult dilution to 10 mL and the adrenaline-line sentence are absent until EAS 14.27 is packaged. The 5 and 10 kg bands print no magnesium dose (A9: 'Seek clinical advice')."
   - id: fluids
     title: "Fluids · NaCl 0.9%"
     place: lower
     show_when: [arrest_running, {latest_rhythm: [PEA]}]
     pop_up_on_show: true
     lines:
-      - {text: "If the patient is in PEA", source: EAS 3.14 p2}
+      - {text: "If the patient is in PEA", source: EAS 3.14 p2, trace_only: true}
       - {text: "Correct immediately reversible causes.", source: EAS 3.14 p2}
-      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2}
+      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2, trace_only: true}
     dose:
       adult: {text: "1-2 litres IV for an adult.", source: EAS 3.14 p2}
       child:
         - {table: eas72, column: fluidsTableMl, source: "EAS 7.2 p7, p9, p12, p14, p16"}
-        - {text: "20-40 ml/kg IV for a child.", source: EAS 3.14 p2}
+        - {text: "20-40 ml/kg IV for a child.", source: EAS 3.14 p2, trace_only: true}
     record: {drug: fluids, amount: typed, unit: mL}
     lock_s: 5
     details:
-      - {text: "If the patient is in PEA", source: EAS 3.14 p2}
+      - {text: "If the patient is in PEA", source: EAS 3.14 p2, trace_only: true}
       - {text: "Correct immediately reversible causes.", source: EAS 3.14 p2}
-      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2}
+      - {text: "Administer 0.9% sodium chloride IV:", source: EAS 3.14 p2, trace_only: true}
       - {text: "1-2 litres IV for an adult.", source: EAS 3.14 p2}
       - {text: "20-40 ml/kg IV for a child.", source: EAS 3.14 p2}
-    note: "A20 (D1): shown only while the latest rhythm is PEA; the pop-up opens after PEA only, titled with its first line. A27: 'Assess and treat the reversible cause.' is gone. A19: a child sees the EAS 7.2 table volume only; nothing is calculated."
+    note: "A37 item 8: the card draws 'Correct immediately reversible causes.' and the dose (the adult line, or the child table volume). The pop-up, titled 'Fluids · NaCl 0.9%' (the card title), draws 'Correct immediately reversible causes.', '1-2 litres IV for an adult.' and '20-40 ml/kg IV for a child.' (replacing A19's source line). The other lines are trace_only. A36 (decision 23f): with no weight entered the card draws the adult line. A20 (D1): shown only while the latest rhythm is PEA; the pop-up opens after PEA only. A27: 'Assess and treat the reversible cause.' is gone. A19: a child sees the EAS 7.2 table volume only; nothing is calculated."
   - id: guidance-intro
     title: "Guidance & sources"
     place: guidance
     show_when: [on_request]
     lines:
       - {app_text: "Standard non-traumatic cardiac arrest. Clinician reference and event recorder. It does not detect a rhythm, operate a defibrillator or infer treatment."}
-      - {text: "This guideline is for adults and children in non-traumatic cardiac arrest.", source: EAS 3.14 p1}
-      - {text: "Perform two-minute cycles of high performance CPR between rhythm checks.", source: EAS 3.14 p1}
-      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1}
-      - {text: "1 mg IV for an adult.", source: EAS 3.14 p1}
-      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
-      - {text: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:", source: EAS 3.14 p1}
-      - {text: "Administer amiodarone:", source: EAS 3.14 p1}
-      - {text: "300 mg IV for an adult.", source: EAS 3.14 p1}
-      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
-      - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1}
-      - {text: "150 mg IV for an adult.", source: EAS 3.14 p1}
-      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1}
-      - {text: "Maximum joule setting for an adult.", source: EAS 3.14 p1}
-      - {text: "See the paediatric drug dose tables for joule settings for a child.", source: EAS 3.14 p1}
+      - {text: "This guideline is for adults and children in non-traumatic cardiac arrest.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "Perform two-minute cycles of high performance CPR between rhythm checks.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "Administer adrenaline IV every four minutes:", source: EAS 3.14 p1, trace_only: true}
+      - {text: "1 mg IV for an adult.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:", source: EAS 3.14 p1, trace_only: true}
+      - {text: "Administer amiodarone:", source: EAS 3.14 p1, trace_only: true}
+      - {text: "300 mg IV for an adult.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "If in VF or VT after six shocks, including shocks delivered prior to ambulance arrival, administer a second dose of amiodarone:", source: EAS 3.14 p1, trace_only: true}
+      - {text: "150 mg IV for an adult.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "See the paediatric drug dose tables for a child.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "Maximum joule setting for an adult.", source: EAS 3.14 p1, trace_only: true}
+      - {text: "See the paediatric drug dose tables for joule settings for a child.", source: EAS 3.14 p1, trace_only: true}
       - {text: "The following pages contain tables of paediatric drug doses. They are based on rounding the child’s weight up to 5, 10, 20, 30 or 40 kg.", source: EAS 7.2 p1}
       - {text: "The usual recommended defibrillation energy for a child is 4 J/kg, but this may not be available for all defibrillators. If the recommended defibrillation energy level is not available, select the next highest level.", source: EAS 7.2 p2}
       - {app_text: "A no-shock cycle is counted only when recorded."}
-    note: "A29: the Guidance opening text. Item 1 stays app text (what the app is); today it starts with 'Standard non-traumatic cardiac arrest.' in bold, and card text is plain."
+    note: "A37 item 9: drawn are item 1 (app text, plain: owner decision 23d), the EAS 7.2 p1 and p2 sentences and the no-shock app text; the EAS 3.14 p1 sentences are trace_only. A29: the Guidance opening text, word for word."
   - id: reversible-causes
-    title: "Reversible causes · 4 Hs & 4 Ts"
+    title: Reversible causes
     place: guidance
     show_when: [on_request]
     lines:
-      - {text: "Potentially reversible causes of PEA include:", source: EAS 3.14 p13}
+      - {text: "Potentially reversible causes of PEA include:", source: EAS 3.14 p13, trace_only: true}
       - {text: "Hypoxia.", source: EAS 3.14 p13}
       - {text: "Hypothermia.", source: EAS 3.14 p13}
       - {text: "Hypovolaemia (including anaphylaxis).", source: EAS 3.14 p13}
@@ -237,10 +234,10 @@ cards:
       - {text: "Tamponade (cardiac).", source: EAS 3.14 p13}
       - {text: "Toxins (poisoning).", source: EAS 3.14 p13}
       - {text: "Thrombosis (pulmonary and coronary).", source: EAS 3.14 p13}
-    note: "A24 (D5): the EAS causes replace the ANZCOR prompts; shown in any rhythm. The link opens EAS 3.14 (website online, the packaged PDF at page 13 offline)."
+    note: "A37 item 10: titled 'Reversible causes' (owner decision 23e); the eight causes are drawn; the lead-in sentence is trace_only and there is no link button (the Settings tab links EAS 3.14). A24 (D5): the EAS causes replace the ANZCOR prompts; shown in any rhythm."
   - id: special-situations
     title: Special situations
-    place: guidance
+    place: settings
     show_when: [on_request]
     lines:
       - {text: "See the ‘cardiac arrest secondary to trauma’ guideline if the cardiac arrest is secondary to trauma.", source: EAS 3.14 p1}
@@ -253,14 +250,14 @@ cards:
       - {text: "Cardiac arrest secondary to hypothermia", source: EAS 3.14 p18}
       - {text: "Cardiac arrest secondary to hyperkalaemia", source: EAS 3.14 p18}
       - {text: "Cardiac arrest secondary to opiate poisoning", source: EAS 3.14 p18}
-    note: "A29: the settings special-situation note (specialNote), word for word, then the headings as printed. The special-situation switch stays one app setting that turns every automatic card to 'Manual review'."
+    note: "A37 item 11, owner decision 23e: drawn in the Settings tab note, unchanged. A29: the settings special-situation note (specialNote), word for word, then the headings as printed. The special-situation switch stays one app setting that turns every automatic card to 'Manual review'."
   - id: weight-from-age
     title: Age-based weight estimate
-    place: header
+    place: weight-sheet
     show_when: [on_request]
     lines:
       - {text: "If the weight is not known, it can be estimated from the child’s age using formulae, noting that the formulae are a guide only and tend to underestimate true weight.", source: EAS 7.2 p1}
-    note: "A31 caption sentence. Weight from age uses the eas72 table headings (decision 8, A16): the 'heading' column as printed and 'ageYears' (first and last whole year; 0 means under 1 year). Age is whole years only (A25, D7); age 14 is adult. The look-up is code. Opened from the weight sheet and the Tube sizes age box."
+    note: "A31 caption sentence. Weight from age uses the eas72 table headings (decision 8, A16): the 'heading' column as printed and 'ageYears' (first and last whole year; 0 means under 1 year). Age is whole years only (A25, D7); age 14 is adult. The look-up is code. Opened from the weight sheet (owner decision 23e) and the Tube sizes age box. A37 item 14: the caption is unchanged."
   - id: tubes-lma
     title: "Tube sizes & age criteria"
     place: guidance
@@ -293,8 +290,8 @@ cards:
       - {text: "2 mg/kg of rocuronium IV, or", source: EAS 9.3 p2}
       - {text: "2 mg/kg of suxamethonium IV.", source: EAS 9.3 p2}
       - {text: "Do not reduce the dose of ketamine in the setting of RSI for prolonged seizures.", source: EAS 9.3 p4}
-      - {text: "2 mg/kg of rocuronium or suxamethonium (to a maximum of 200 mg) is an appropriate dose for all patients.", source: EAS 9.3 p4}
-      - {text: "The dose should usually be rounded to the nearest 50 mg in adults.", source: EAS 9.3 p5}
+      - {text: "2 mg/kg of rocuronium or suxamethonium (to a maximum of 200 mg) is an appropriate dose for all patients.", source: EAS 9.3 p4, trace_only: true}
+      - {text: "The dose should usually be rounded to the nearest 50 mg in adults.", source: EAS 9.3 p5, trace_only: true}
     dose:
       adult:
         - {table: eas93adult, column: fentanylMcg, source: EAS 9.3 p2}
@@ -307,7 +304,7 @@ cards:
         - {table: eas93child, column: ketamineMg, source: EAS 9.3 p2}
         - {table: eas93child, column: reducedKetamineMg, source: EAS 9.3 p2}
         - {table: eas93child, column: blockerMg, source: EAS 9.3 p2}
-    note: "A30 (D6): the RSI text word for word; A30 cites p1 for the three neuromuscular blockade lines, which are printed on p2 (cited here). A12: doses looked up in the EAS 9.3 tables. A26 (D8): an adult uses the next 10 kg column up (over 90 kg the 'greater than or equal to 100 kg' column) and the line 'weight rounded up to the next column' is shown. The 5 kg band has no column: 'Seek clinical advice'. The drug labels are app text."
+    note: "A37 item 12: the p4 blockade sentence and the p5 rounding sentence are trace_only; everything else is drawn. A30 (D6): the RSI text word for word; A30 cites p1 for the three neuromuscular blockade lines, which are printed on p2 (cited here). A12: doses looked up in the EAS 9.3 tables. A26 (D8): an adult uses the next 10 kg column up (over 90 kg the 'greater than or equal to 100 kg' column) and the line 'weight rounded up to the next column' is shown. The 5 kg band has no column: 'Seek clinical advice'. The drug labels are app text."
 checklists:
   - id: arrest
     title: Cardiac arrest checklist
@@ -339,7 +336,7 @@ checklists:
   - id: preparation
     title: Airway Backup Checklist
     items:
-      - {text: "This checklist should be used to prepare a patient for RSI while awaiting CCP backup.", source: EAS 9.2 p1, tick: false}
+      - {text: "This checklist should be used to prepare a patient for RSI while awaiting CCP backup.", source: EAS 9.2 p1, tick: false, trace_only: true}
       - {text: "Pre-oxygenate by mask.", source: EAS 9.2 p1}
       - {text: "Attach monitor, including ETCO2.", source: EAS 9.2 p1}
       - {text: "Gain IV access, preferably in two sites.", source: EAS 9.2 p1}

@@ -5,9 +5,12 @@
 // adult." (child as A23).
 // Screen checks added at C4: the adrenaline and amiodarone Administration pop-ups show these lines; the amiodarone
 // pop-up lists the four contraindications.
+// Step C4 (owner decision 22, A37 item 5, which wins on what is drawn): the adrenaline pop-up draws the two EAS 14.3
+// how-to-give sentences; the lead-ins "Administer adrenaline IV every four minutes:" and "Cardiac arrest:" stay in the
+// card file as trace-only lines (checked here). The amiodarone pop-up is unchanged (A37 item 6).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arrest, texts } from './helpers/card-sessions.mjs';
+import { arrest, texts, fileLines, CARDS } from './helpers/card-sessions.mjs';
 
 const ADRENALINE = ['Administer adrenaline IV every four minutes:', 'Cardiac arrest:',
   'Adults and children whose weight has been rounded to 50 kg or more: administer undiluted as an IV bolus.',
@@ -19,9 +22,11 @@ const AMIODARONE = ['Cardiac arrest: administer IV undiluted as a bolus.', 'Cont
 test('A28: the adrenaline pop-up, word for word, for an adult and a child', () => {
   for (const weight of ['70', '15']) {
     const adrenaline = arrest({ weight }).card('adrenaline');
-    assert.deepEqual(texts(adrenaline.details), ADRENALINE);
-    assert.deepEqual(adrenaline.details.map((l) => l.source), ['EAS 3.14 p1', 'EAS 14.3 p2', 'EAS 14.3 p2', 'EAS 14.3 p2']);
+    assert.deepEqual(texts(adrenaline.details), ADRENALINE.slice(2));
+    assert.deepEqual(adrenaline.details.map((l) => l.source), ['EAS 14.3 p2', 'EAS 14.3 p2']);
   }
+  assert.deepEqual(fileLines('adrenaline', 'details'), [ADRENALINE[0] + ' [trace]', ADRENALINE[1] + ' [trace]', ...ADRENALINE.slice(2)]);
+  assert.deepEqual(CARDS.cards.find((c) => c.id === 'adrenaline').details.map((l) => l.source), ['EAS 3.14 p1', 'EAS 14.3 p2', 'EAS 14.3 p2', 'EAS 14.3 p2']);
 });
 
 test('A28: the amiodarone pop-up with its four contraindications, on the first- and second-dose cards', () => {

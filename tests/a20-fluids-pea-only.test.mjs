@@ -3,11 +3,14 @@
 // blank; torsades earlier: magnesium as well), "rhythm not recorded" changes nothing, an older session's "Other" is
 // not PEA, the fluids pop-up opens after PEA only and is titled with its first line, and "Other" is no no-shock choice.
 // Screen checks added at C4 (when the screens are rewired): the no-shock rhythm check and the correction sheet offer
-// PEA and Asystole only; the Live lower card is blank after Asystole; the fluids pop-up opens after PEA only, titled
-// "If the patient is in PEA"; 20 kg PEA card reads "400 mL IV". (The old a2c and a7 tests move to this row at C4/C5.)
+// PEA and Asystole only; the Live lower card is blank after Asystole; the fluids pop-up opens after PEA only;
+// 20 kg PEA card reads "400 mL IV". (The old a2c and a7 tests move to this row at C4/C5.)
+// Step C4 (owner decision 22, A37 item 8, which wins on what is drawn): the pop-up is titled "Fluids · NaCl 0.9%"
+// (the card title); "If the patient is in PEA" and the child "20-40 ml/kg" card line stay in the card file as
+// trace-only lines (checked here), so the card shows the 20 kg table volume only.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arrest, texts, CARDS } from './helpers/card-sessions.mjs';
+import { arrest, texts, CARDS, fileLines } from './helpers/card-sessions.mjs';
 
 const lower = (c) => c.at('lower');
 
@@ -16,8 +19,11 @@ test('A20: PEA shows the fluids card, and its pop-up opens when it first shows',
   assert.deepEqual(lower(c), ['fluids']);
   const fluids = c.card('fluids');
   assert.equal(fluids.pop_up_on_show, true);
-  assert.equal(fluids.details[0].text, 'If the patient is in PEA', 'the pop-up is titled with the guideline heading');
-  assert.deepEqual(texts(fluids.dose.lines), ['cell:fluidsTableMl=400', '20-40 ml/kg IV for a child.'], '20 kg: 400 mL from the EAS 7.2 table');
+  assert.equal(fluids.title, 'Fluids · NaCl 0.9%', 'A37 item 8: the pop-up title');
+  assert.equal(fileLines('fluids', 'details')[0], 'If the patient is in PEA [trace]', 'the A20 heading stays in the file, not drawn');
+  assert.ok(!texts(fluids.details).includes('If the patient is in PEA'));
+  assert.deepEqual(texts(fluids.dose.lines), ['cell:fluidsTableMl=400'], '20 kg: 400 mL from the EAS 7.2 table');
+  assert.deepEqual(fileLines('fluids', 'dose.child'), ['cell:fluidsTableMl', '20-40 ml/kg IV for a child. [trace]']);
 });
 
 test('A20: Asystole leaves the lower card blank', () => {

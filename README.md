@@ -84,14 +84,15 @@ before changing any clinical rule.
    `src/rules/load.js` and `parse.js`.
 
 **Cards (being built, not used by the app yet; `CARDS-DESIGN.md`).** `src/cards/check.js` is the
-card checker: fields, the seven conditions, citations, and every guideline sentence compared word for
-word with `src/cards/guideline-text.json` (the packaged PDFs' text, page by page, made by
+card checker: fields, the eight conditions, citations, trace-only lines (kept for audit, never drawn), and every
+guideline sentence compared word for word with `src/cards/guideline-text.json` (the packaged PDFs' text, page by page, made by
 `node tools/extract-guideline-text.mjs`; re-run it when a PDF changes). Tests:
 `tests/cards-checker.test.mjs` (good file `tests/fixtures/cards/good.yaml` and the bad files),
 `tests/cards-guideline-text.test.mjs`. `src/cards/engine.js` is the card engine: `cardsNow(cardFile,
-session, nowMs, options)` returns the cards that show now (the seven conditions, the group rule, the
-dose line for this patient, record, timer, dose count, lock, details, sources). Tests:
-`tests/cards-engine.test.mjs` and one `tests/aNN-*.test.mjs` per row A20 to A35 except A32 (sessions built by
+session, nowMs, options)` returns the cards that show now (the conditions, the group rule, the
+dose line for this patient, record, timer, dose count, lock, details, sources), leaving out trace-only lines. Tests:
+`tests/cards-engine.test.mjs` and one `tests/aNN-*.test.mjs` per row A20 to A37 except A32 (the A33 test checks
+decision 23c; sessions built by
 `tests/helpers/card-sessions.mjs` with the app's own recording routines). `src/cards/` is not in the
 `sw.js` list until step C5.
 

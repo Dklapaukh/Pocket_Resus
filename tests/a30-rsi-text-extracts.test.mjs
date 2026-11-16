@@ -4,9 +4,12 @@
 // (A30 cites p1 for the three neuromuscular blockade lines; the PDF prints them on p2, which the card cites:
 // DECISIONS.md section 8, to correct in the trace row at C5.)
 // Screen checks added at C4: the Guidance RSI section and the RSI pop-up show "Hypertension (SBP > 150 mmHg in an adult)."
+// Step C4 (owner decision 22, A37 item 12, which wins on what is drawn): the p4 sentence "2 mg/kg of rocuronium or
+// suxamethonium (to a maximum of 200 mg) is an appropriate dose for all patients." and the p5 rounding sentence stay in
+// the card file as trace-only lines (checked here); the other thirteen are drawn.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arrest, texts, CARD_TEXT } from './helpers/card-sessions.mjs';
+import { arrest, texts, CARD_TEXT, CARDS, fileLines } from './helpers/card-sessions.mjs';
 
 const RSI = ['Administer 2 mcg/kg of fentanyl IV (up to a maximum of 200 mcg) immediately prior to ketamine if the patient has:', 'Traumatic brain injury, or',
   'Suspected intracranial pathology, or', 'Hypertension (SBP > 150 mmHg in an adult).', 'Withhold fentanyl if the above clinical indications are not present, or there are signs of shock.',
@@ -18,14 +21,17 @@ const RSI = ['Administer 2 mcg/kg of fentanyl IV (up to a maximum of 200 mcg) im
 test('A30: the RSI card shows the EAS 9.3 sentences word for word, in order, for an adult and a child', () => {
   for (const weight of ['70', '20']) {
     const rsi = arrest({ weight }).card('rsi', { request: 'rsi' });
-    assert.deepEqual(texts(rsi.lines), RSI);
+    assert.deepEqual(texts(rsi.lines), RSI.slice(0, 13));
     assert.ok(rsi.lines.every((line) => line.kind === 'guideline'));
   }
+  assert.deepEqual(fileLines('rsi'), [...RSI.slice(0, 13), RSI[13] + ' [trace]', RSI[14] + ' [trace]']);
 });
 
 test('A30: the sentences cite p1, p2, p4 and p5', () => {
+  const inFile = CARDS.cards.find((c) => c.id === 'rsi');
+  assert.deepEqual(inFile.lines.map((l) => l.source), [...Array(9).fill('EAS 9.3 p1'), ...Array(3).fill('EAS 9.3 p2'), 'EAS 9.3 p4', 'EAS 9.3 p4', 'EAS 9.3 p5']);
   const rsi = arrest().card('rsi', { request: 'rsi' });
-  assert.deepEqual(rsi.lines.map((l) => l.source), [...Array(9).fill('EAS 9.3 p1'), ...Array(3).fill('EAS 9.3 p2'), 'EAS 9.3 p4', 'EAS 9.3 p4', 'EAS 9.3 p5']);
+  assert.deepEqual(rsi.lines.map((l) => l.source), [...Array(9).fill('EAS 9.3 p1'), ...Array(3).fill('EAS 9.3 p2'), 'EAS 9.3 p4']);
 });
 
 test('A30: "Alternatives, not both" and "Use the full RSI CPG" are gone', () => {

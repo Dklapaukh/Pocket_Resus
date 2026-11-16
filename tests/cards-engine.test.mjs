@@ -2,36 +2,68 @@
 // "which cards show now?". Every condition is tested true and false, then the group rule, the dose look-up (adult,
 // each child band, a "-" cell, child lines, the RSI columns), on_request, the special-situation switch, voided
 // events, and every card field the engine returns. Sessions are built with the app's own recording routines
-// (tests/helpers/card-sessions.mjs), so they are exactly what the app saves. The live app does not use this engine
-// until step C4.
+// (tests/helpers/card-sessions.mjs), so they are exactly what the app saves.
+// Step C4 (owner decisions 22 and 23): the shock energy header is an "always" card (23a), shown with or without an
+// arrest; lines marked trace_only in the card file (A37) are never returned; header cards are marked "manual review"
+// under the special-situation switch. The tests below that changed with these rulings say so where they changed.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as core from '../src/engine/core.js';
 import * as drugCards from '../src/engine/drug-cards.js';
 import { cardsNow, patientNow, latestRhythm, shockCount, doseCount } from '../src/cards/engine.js';
 import { readCardFile } from '../src/cards/check.js';
-import { arrest, texts, CARDS, CARD_TEXT, MIN, T0, MAX_WEIGHT_KG } from './helpers/card-sessions.mjs';
+import { arrest, texts, CARDS, CARD_TEXT, MIN, T0, MAX_WEIGHT_KG, fileLines } from './helpers/card-sessions.mjs';
 
 const AUTOMATIC = ['cpr-clock', 'shock-energy', 'adrenaline', 'amiodarone-2', 'amiodarone-1', 'magnesium', 'fluids'];
 const ON_REQUEST = ['guidance-intro', 'reversible-causes', 'special-situations', 'weight-from-age', 'tubes-lma', 'rsi'];
-const ALWAYS = ['cpr-clock', 'shock-energy', 'adrenaline']; // show_when: [arrest_running] only
+const ALWAYS = ['cpr-clock', 'shock-energy', 'adrenaline']; // shown whenever the arrest runs (no other condition)
+const AT_ALL_TIMES = ['shock-energy']; // show_when: [always] (owner decision 23a)
 const lower = (c) => c.at('lower');
 
 /* ---------- 1. arrest_running ---------- */
 
-test('arrest_running: no card before CPR is started; the three always-on cards once it is', () => {
-  assert.deepEqual(arrest({ start: false }).ids(), []);
+test('arrest_running: before CPR is started only the always card (shock energy, decision 23a); the three always-on cards once it is', () => {
+  assert.deepEqual(arrest({ start: false }).ids(), AT_ALL_TIMES);
   assert.deepEqual(arrest().ids(), ALWAYS);
 });
 
 test('arrest_running: false after ROSC and after the end; true again after a re-arrest', () => {
   const c = arrest().shock('VF');
   c.rosc();
-  assert.deepEqual(c.ids(), []);
+  assert.deepEqual(c.ids(), AT_ALL_TIMES, 'decision 23a: the shock energy header stays');
   c.rearrest();
   assert.deepEqual(c.ids(), [...ALWAYS]);
   c.end();
-  assert.deepEqual(c.ids(), []);
+  assert.deepEqual(c.ids(), AT_ALL_TIMES);
+});
+
+test('always (decision 23a): the shock energy card shows before CPR, during the arrest, after ROSC and after the end, with its dose', () => {
+  for (const c of [arrest({ start: false, weight: '15' }), arrest({ weight: '15' }), arrest({ weight: '15' }).shock().rosc(), arrest({ weight: '15' }).end()]) {
+    const energy = c.card('shock-energy');
+    assert.equal(energy.place, 'header');
+    assert.deepEqual(energy.lines, [], 'energy only: its sentence is trace-only (A37 item 3)');
+    assert.deepEqual(energy.dose.lines[0].value, [80, 100]);
+  }
+  assert.deepEqual(CARDS.cards.find((card) => card.id === 'shock-energy').show_when, ['always']);
+});
+
+test('trace-only lines (decision 22, A37) are never returned: what the engine returns is exactly the drawn lines of the file', () => {
+  const drawn = (list) => [].concat(list ?? []).filter((line) => line.trace_only !== true);
+  const runs = [arrest({ weight: '70' }).shock().shock().shock(), arrest({ weight: '15' }).shock().shock().shock().dose('amiodarone', 100).shock().shock().shock(),
+    arrest({ weight: '70' }).shock('Torsades').dose('magnesium', 10, 'mmol'), arrest({ weight: '20' }).shock('Torsades').noShock('PEA'), arrest().noShock('PEA')];
+  let traceLines = 0;
+  for (const c of runs) {
+    for (const card of c.cards({ request: ON_REQUEST })) {
+      const inFile = CARDS.cards.find((f) => f.id === card.id);
+      traceLines += [inFile.lines, inFile.details].flat().filter(Boolean).filter((line) => line.trace_only).length;
+      assert.deepEqual(texts(card.lines), drawn(inFile.lines).map((l) => l.text ?? l.app_text), card.id + ' lines');
+      const details = drawn(inFile.details).filter((l) => !l.only || l.only === card.dose?.who || (!card.dose && l.only === 'adult'));
+      assert.deepEqual(texts(card.details), details.map((l) => l.text ?? l.app_text), card.id + ' details');
+      if (card.dose) assert.equal(card.dose.lines.length, drawn(inFile.dose[card.dose.who]).length, card.id + ' dose');
+      if (card.doses?.confirm.length) assert.equal(card.doses.confirm.length, drawn(inFile.repeat.confirm).length, card.id + ' confirm');
+    }
+  }
+  assert.ok(traceLines > 20, 'the runs reach cards with trace-only lines');
 });
 
 /* ---------- 2. latest_rhythm ---------- */
@@ -152,9 +184,9 @@ test('doses_at_least: the second-dose card needs one amiodarone dose; earlier do
 
 test('on_request: a Guidance card shows only when it is asked for, one id or several, with or without an arrest', () => {
   assert.ok(!arrest().ids().some((id) => ON_REQUEST.includes(id)));
-  assert.deepEqual(arrest({ start: false }).ids({ request: 'reversible-causes' }), ['reversible-causes']);
+  assert.deepEqual(arrest({ start: false }).ids({ request: 'reversible-causes' }), [...AT_ALL_TIMES, 'reversible-causes']);
   assert.deepEqual(arrest().ids({ request: ['rsi', 'guidance-intro'] }), [...ALWAYS, 'guidance-intro', 'rsi']);
-  assert.deepEqual(arrest().shock().rosc().ids({ request: ON_REQUEST }), ON_REQUEST);
+  assert.deepEqual(arrest().shock().rosc().ids({ request: ON_REQUEST }), [...AT_ALL_TIMES, ...ON_REQUEST]);
   assert.deepEqual(arrest().ids({ request: 'not-a-card' }), ALWAYS);
 });
 
@@ -236,12 +268,13 @@ test('dose lines: a "-" cell (magnesium, 5 and 10 kg bands) is "seek clinical ad
   assert.equal(arrest({ weight: '15' }).shock('Torsades').card('magnesium').record.value, 4);
 });
 
-test('dose lines: child lines (fluids: table volume and the EAS 3.14 sentence; second amiodarone: A33 lines)', () => {
+test('dose lines: child lines (fluids: table volume, its EAS 3.14 line trace-only (A37); second amiodarone: "Seek clinical advice" only (23c))', () => {
   const f = arrest({ weight: '15' }).noShock('PEA').card('fluids');
-  assert.deepEqual(texts(f.dose.lines), ['cell:fluidsTableMl=400', '20-40 ml/kg IV for a child.']);
+  assert.deepEqual(texts(f.dose.lines), ['cell:fluidsTableMl=400']);
+  assert.deepEqual(fileLines('fluids', 'dose.child'), ['cell:fluidsTableMl', '20-40 ml/kg IV for a child. [trace]']);
   assert.deepEqual(f.record, { drug: 'fluids', amount: 'typed', unit: 'mL', value: null }, 'typed: never pre-filled');
   const a = arrest({ weight: '15' }).shock().shock().shock().dose('amiodarone', 100).shock().shock().shock().card('amiodarone-2');
-  assert.deepEqual(a.dose.lines.map((l) => l.kind), ['app', 'guideline', 'app']);
+  assert.deepEqual(a.dose.lines.map((l) => l.kind), ['app'], 'decision 23c: the A33 lines are dropped');
   assert.equal(a.record.value, null, 'A10: no child second dose can be recorded from the card');
 });
 
@@ -277,7 +310,8 @@ test('card fields: id, title, place, group and lines (guideline words and app wo
   const amio = c.card('amiodarone-1');
   assert.deepEqual([amio.id, amio.title, amio.place, amio.group], ['amiodarone-1', 'Amiodarone', 'lower', 'amiodarone']);
   assert.equal(c.card('adrenaline').group, null);
-  assert.deepEqual(amio.lines[0], { kind: 'guideline', text: 'If in VF or VT after three shocks, including shocks delivered prior to ambulance arrival:', source: 'EAS 3.14 p1' });
+  assert.deepEqual(amio.lines, [], 'A37 item 1: both amiodarone-1 lines are trace-only');
+  assert.deepEqual(c.shock('Torsades').card('magnesium').lines[0], { kind: 'guideline', text: 'Withhold amiodarone.', source: 'EAS 3.14 p2' });
   const intro = c.card('guidance-intro', { request: 'guidance-intro' });
   assert.deepEqual(intro.lines[0].kind, 'app');
   assert.equal(intro.lines[0].source, null);
@@ -341,8 +375,9 @@ test('card fields: details for this patient (only: child lines left out for an a
 });
 
 test('card fields: sources are every source the card shows, each once, in order', () => {
+  // A37: the adrenaline lead-ins are trace-only, so a child's card shows no EAS 3.14 line (the adult dose line is EAS 3.14 p1).
   assert.deepEqual(arrest().card('adrenaline').sources, ['EAS 3.14 p1', 'EAS 14.3 p2']);
-  assert.deepEqual(arrest({ weight: '15' }).card('adrenaline').sources, ['EAS 3.14 p1', 'EAS 7.2 p5, p8, p10, p12, p14', 'EAS 14.3 p2']);
+  assert.deepEqual(arrest({ weight: '15' }).card('adrenaline').sources, ['EAS 7.2 p5, p8, p10, p12, p14', 'EAS 14.3 p2']);
   assert.deepEqual(arrest({ weight: '20' }).shock('Torsades').card('magnesium').sources, ['EAS 3.14 p2', 'EAS 7.2 p7, p9, p11, p13, p15', 'Owner ruling A34 · EAS 7.2 p4-5']);
 });
 
@@ -355,6 +390,14 @@ test('special situation: every automatic card is marked "manual review"; Guidanc
   for (const card of cards) assert.equal(card.manual_review, AUTOMATIC.includes(card.id), card.id);
   c.special(false);
   assert.ok(c.cards().every((card) => card.manual_review === false));
+});
+
+test('special situation (DECISIONS.md section 8, at C4): header cards are marked "manual review" too, also the always card outside an arrest', () => {
+  const c = arrest({ weight: '15' }).special();
+  for (const id of ['cpr-clock', 'shock-energy']) assert.equal(c.card(id).manual_review, true, id);
+  const before = arrest({ start: false, weight: '15' }).special();
+  assert.equal(before.card('shock-energy').manual_review, true);
+  assert.equal(before.card('weight-from-age', { request: 'weight-from-age' }).manual_review, false, 'an on_request card is never marked');
 });
 
 /* ---------- Same counts as today; nothing changed ---------- */
@@ -387,6 +430,7 @@ test('every card in the file can be shown by the engine and every condition in t
   ];
   for (const c of runs) for (const id of c.ids({ request: ON_REQUEST })) seen.add(id);
   assert.deepEqual([...seen].sort(), CARDS.cards.map((card) => card.id).sort());
-  const known = new Set(['arrest_running', 'on_request', 'latest_rhythm', 'shocks_at_least', 'ever_recorded', 'never_recorded', 'doses_at_least']);
+  // The seven conditions of CARDS-DESIGN.md section 2, plus "always" (owner decision 23a, step C4).
+  const known = new Set(['arrest_running', 'on_request', 'always', 'latest_rhythm', 'shocks_at_least', 'ever_recorded', 'never_recorded', 'doses_at_least']);
   for (const card of CARDS.cards) for (const condition of card.show_when) assert.ok(known.has(typeof condition === 'string' ? condition : Object.keys(condition)[0]));
 });
