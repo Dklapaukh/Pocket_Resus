@@ -160,14 +160,16 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
    printed range) is above the highest energy that can be recorded." Rule 1 keeps adrenaline,
    amiodarone and magnesium. Still catches typing slips (1600 J) without an adult number.
    **B: drop both** (rule 1 keeps adrenaline, amiodarone and magnesium; nothing checks energies).
-2. **Unattended runs and the recordings.** Today an unattended run may not re-record the reference
+      - Author addition: A
+3. **Unattended runs and the recordings.** Today an unattended run may not re-record the reference
    recordings, so it builds an approved A-row uncommitted and an owner-started chat must finish it.
    The next scheduled run then sees that waiting row and stops, so the schedule builds **one row,
    then waits for the owner** (13 rows are now approved). **Option A (recommended): allow an
    unattended run to commit and re-record for an approved A-row** when the what-changed report
    shows that every difference is the approved change and the reviewer has no blocking findings.
    **Option B: keep today's rule** (one owner-started chat per row).
-3. **Web addresses for A32** (the settings-tab guideline links). Known: EAS 3.14 Cardiac Arrest
+        - Author Addition: A
+5. **Web addresses for A32** (the settings-tab guideline links). Known: EAS 3.14 Cardiac Arrest
    https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas; EAS 9.3 RSI
    (Rapid Sequence Intubation)
    https://cpg.stjohn.org.nz/tabs/guidelines/intubation-and-ventilation/page/rsi-rapid-sequence-intubation-eas
@@ -175,7 +177,7 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
    https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas. **Not yet confirmed**
        - Author Addition: EAS 7.2 Paediatric Equipment and Drug Doses, https://cpg.stjohn.org.nz/tabs/guidelines/paediatrics-eas/page/paediatric-equipment-and-drug-doses-eas;  EAS 9.2 Airway Backup Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/airway-backup; EAS 3.15 Treatment following ROSC, https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/treatment-following-rosc-eas; EAS 9.4 RSI Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/rsi-checklist; EAS 14.3
    Adrenaline, https://cpg.stjohn.org.nz/tabs/medicines/page/adrenaline-eas; EAS 14.4 Amiodarone, https://cpg.stjohn.org.nz/tabs/medicines/page/amiodarone-eas. Owner action: completed.
-4. **Deviations D9 to D12** (GUIDELINE-TRACE.md section 5): one ruling each. Option A recommended for each.
+6. **Deviations D9 to D12** (GUIDELINE-TRACE.md section 5): one ruling each. Option A recommended for each.
    - **D9** child second amiodarone (now "Seek clinical advice", A10; EAS 3.14 says "See the
      paediatric drug dose tables for a child"). **A (recommended):** at the second-dose point show
      the EAS 3.14 sentence "See the paediatric drug dose tables for a child" and the band's EAS 7.2
@@ -183,10 +185,12 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
      owner-approved A10 and needs the owner's clinical sign-off. **B:** keep "Seek clinical advice"
      (A10), with the source line quoting that EAS 3.14 sentence and saying the tables print one
      amiodarone dose per band.
+           - Author addition: B, add this to the list of issues to bring up with my employer as requiring updates in the guidelines
    - **D10** child magnesium time not shown (EAS 7.2: "over approximately 15 minutes, preferably
      into a running line"). **A (recommended):** show EAS 7.2 dilution 13 word for word, including
      that administration sentence. **B:** keep the time out, with the line "Administration time: see
      EAS 7.2, dilution 13". (Under D6 a left-out sentence needs this ruling.)
+           - Author addition: B, as above
    - **D11** adult doses above 40 kg and with no weight, without EAS 7.2's caution. **A
      (recommended):** above 40 kg, show in full, word for word, the EAS 7.2 sentences "Children
      weighing greater than 40 kg can usually be administered adult doses, but clinical judgement
@@ -194,11 +198,13 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
      paracetamol. If there is any doubt, a paediatric dose should be administered." with the adult
      dose; with no weight entered, label the dose with EAS 3.14's own words "for an adult" instead
      of "weight band above 40 kg". **B:** keep today's label.
+            - Author addition: B
    - **D12** two magnesium sentences (adult dilution to 10 mL; avoid the adrenaline-infusion line)
      with no packaged source (EAS 14.27 is online only). **A (recommended):** package the EAS 14.27
      export, check both sentences against it word for word, and quote them as written. **B:** remove
      both sentences until EAS 14.27 is packaged.
-5. **Store publication, owner actions** (these have waiting times, so they decide the date):
+            - Author addition: B
+7. **Store publication, owner actions** (these have waiting times, so they decide the date):
    - Ask Medsafe whether the app is a medical device (section 2 "Regulatory position").
    - Written permission from the guideline's owners to reproduce CPG text and PDFs in a published
      app. The owner's employer, Wellington Free Ambulance, is on the CPG working group and endorses
@@ -208,12 +214,13 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
    - Under a personal account (decision 11): Google needs a closed test with 12 testers for 14 days
      before public release; Apple rule 1.4.2 is not satisfied.
    - Open the developer accounts; recruit the 12 testers.
-6. Smaller items, each a possible A-row: a manual entry timed later than now is saved as the
+            - Author addition: Store publication is on hold until I come to an agreement with my employer
+8. Smaller items, each a possible A-row: a manual entry timed later than now is saved as the
    previous day (on purpose, for a case crossing midnight); closing the rhythm pop-up with × leaves
    "Rhythm not recorded"; the tutorial step "Find weight-based RSI doses" still says doses "are
    calculated from the entered weight" (they are looked up since A12); the start-up message shown
    when the rule set cannot be read (wording in `src/rules/parse.js`) may be reworded.
-7. **Paediatric pads prompt:** removed 15 Nov 2026; may return as an owner addition once the
+9. **Paediatric pads prompt:** removed 15 Nov 2026; may return as an owner addition once the
    corpuls criterion (weight, age or energy) is supplied.
 
 ## 7. A-table: changes not yet live
