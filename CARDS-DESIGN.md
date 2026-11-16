@@ -40,12 +40,12 @@ The checker is `src/cards/check.js` (README "Code map").
 | Field | Holds |
 |---|---|
 | `id`, `title` | name; the title is app text |
-| `place` | `top`, `lower`, `header` or `guidance` (where it is drawn) |
+| `place` | `top`, `lower`, `header`, `guidance`, `settings` (Settings tab note) or `weight-sheet` (opened from the weight sheet) (where it is drawn; decision 23e) |
 | `group` | optional: only the first matching card of a group shows (amiodarone-2 before -1) |
 | `show_when` | conditions from the list below, all must be true |
-| `lines` | each `{text, source}`, found word for word on a cited page of the packaged PDF (spacing, quote and dash style ignored; a sentence across a page break needs both pages cited); or `{app_text}` with an optional source, drawn differently |
+| `lines` | each `{text, source}`, found word for word on a cited page of the packaged PDF (spacing, quote and dash style ignored; a sentence across a page break needs both pages cited); or `{app_text}` with an optional source, drawn differently. A header card may have no lines (decision 23a) |
 | `dose` | `adult:` one line and `child:` a table cell `{table, column, source}` and/or lines; a dose in app text needs a source citing an owner ruling; an empty ("-") cell shows "Seek clinical advice" |
-| `record` | what tapping records: drug, amount (`dose` or `typed`), unit; never pre-filled when `typed` |
+| `record` | what tapping records: drug, amount (`dose` or `typed`), unit; never pre-filled when `typed`. With `dose`, the first drawn adult dose line is a table cell or starts with the number and unit recorded ("1 mg IV for an adult." records 1 mg) |
 | `timer` | clock on the card, e.g. `every_min: 4, from: last_dose` |
 | `repeat` | `max` doses; optional `confirm` lines before a repeat |
 | `details` | the "Administration ⓘ" pop-up: `{text, source}` lines |
@@ -53,21 +53,28 @@ The checker is `src/cards/check.js` (README "Code map").
 | `lock_s` | double-tap lock after recording (app mechanic, A5) |
 | `note` | plain-English note for the owner; never shown |
 
+**Trace-only lines** (decision 22, step C4): a guideline line marked `trace_only: true` (in `lines`, a `dose`
+part, `details`, `repeat.confirm` or a checklist) stays in the file for audit and is never drawn; the checker
+still compares it with the PDF. Every one is listed in A37. A list, a dose part or a pop-up on show must keep at
+least one drawn line; app text is deleted, not marked.
+
 **Sources** are parts joined by " · ": `EAS 3.14 p1`, `EAS 7.2 p5, p8-9`, `Owner ruling A10`. A guideline
 sentence or table cell needs at least one EAS part. Card text is plain: no `{gaps}`, no bold or italic.
 
-**Conditions (seven; no "or" between conditions, no formulas; each at most once per card; exactly one
-of `arrest_running` and `on_request`, and an `on_request` card has no other condition):**
+**Conditions (eight; no "or" between conditions, no formulas; each at most once per card; exactly one
+of `arrest_running`, `on_request` and `always`, and an `on_request` or `always` card has no other condition):**
 1. `arrest_running`: CPR started, no ROSC or end since.
 2. `latest_rhythm: [list]`: the latest rhythm recorded at a rhythm check (ROSC rhythms ignored, A8; "not recorded" changes nothing).
 3. `shocks_at_least: n`: shocks so far, counting "+ Previous shock" and earlier counts.
 4. `ever_recorded: rhythm`: recorded at any time in this arrest (torsades).
 5. `never_recorded: rhythm`.
 6. `doses_at_least: n`: doses of this card's drug, counting earlier doses entered.
-7. `on_request`: shown only when opened from the Guidance tab.
+7. `on_request`: shown only when opened from the Guidance tab (or the weight sheet, or the Settings note).
+8. `always`: shown at all times (the shock energy header, decision 23a).
 
 Adult or child is not a condition: it only picks the `dose` line. The special-situation switch stays
-one app setting that turns every automatic card to "Manual review".
+one app setting that turns every card that shows by itself (`arrest_running` or `always`, header cards included)
+to "Manual review".
 
 ## 3. Example cards (text as approved in A20, A23, A27, A28)
 ```yaml

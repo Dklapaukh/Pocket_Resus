@@ -106,6 +106,25 @@ const BAD = [
   ['"only" on a dose line', (f) => { card(f, 'adrenaline').dose.adult.only = 'adult'; }, /dose\.adult\.only: "only" .* is allowed in details lines only/],
   ['tick: true on a checklist item', (f) => { f.checklists[0].items[0].tick = true; }, /items\[0\]\.tick: must be false/],
   ['tick on a card line', (f) => { card(f, 'fluids').lines[0].tick = false; }, /lines\[0\]\.tick: "tick: false" is allowed in checklist items only/],
+  // Step C4 (owner decisions 22 and 23): trace-only lines, "always", header cards with no lines, new places
+  ['trace_only set to false', (f) => { card(f, 'fluids').lines[0].trace_only = false; }, /lines\[0\]\.trace_only: must be true/],
+  ['trace_only on app text', (f) => { card(f, 'magnesium').repeat.confirm[0].trace_only = true; }, /repeat\.confirm\[0\]\.trace_only: only a guideline sentence \{text, source\} can be trace_only/],
+  ['trace_only on a table cell', (f) => { card(f, 'adrenaline').dose.child.trace_only = true; }, /dose\.child\.trace_only: only a guideline sentence/],
+  ['a trace-only sentence with a changed word (still compared with the PDF)', (f) => { Object.assign(card(f, 'fluids').lines[0], { text: 'If the patient is in VF', trace_only: true }); }, /\(fluids\)\.lines\[0\]: not found word for word/],
+  ['every adult dose line trace-only', (f) => { card(f, 'fluids').dose.adult.trace_only = true; }, /\(fluids\)\.dose\.adult: every dose line is trace_only/],
+  ['every child dose line trace-only', (f) => { card(f, 'amiodarone-2').dose.child = { text: 'See the paediatric drug dose tables for a child.', source: 'EAS 3.14 p1', trace_only: true }; }, /\(amiodarone-2\)\.dose\.child: every dose line is trace_only/],
+  ['a card with every line trace-only and no dose', (f) => { card(f, 'reversible-causes').lines[0].trace_only = true; }, /\(reversible-causes\)\.lines: every line is trace_only and the card has no dose/],
+  ['a pop-up on show whose details are all trace-only', (f) => { card(f, 'fluids').details[0].trace_only = true; }, /needs at least one details line that is drawn/],
+  ['repeat confirm lines all trace-only', (f) => { card(f, 'magnesium').repeat.confirm = [{ text: 'Repeat once if torsades de pointes recurs or persists.', source: 'EAS 3.14 p2', trace_only: true }]; }, /repeat\.confirm: every line is trace_only/],
+  ['a checklist with every item trace-only', (f) => { for (const item of f.checklists[0].items) item.trace_only = true; }, /checklists\[0\]\.items: every line is trace_only/],
+  ['no lines on a card that is not a header card', (f) => { card(f, 'reversible-causes').lines = []; }, /\(reversible-causes\)\.lines: must be a list of at least one line/],
+  ['always with another condition', (f) => { card(f, 'adrenaline').show_when = ['always', { shocks_at_least: 3 }]; }, /an always card shows at all times, so it takes no other condition/],
+  ['always and arrest_running together', (f) => { card(f, 'adrenaline').show_when = ['always', 'arrest_running']; }, /needs exactly one of arrest_running .*, always .* or on_request/],
+  // DECISIONS.md section 8, before C4: a card that records the dose shown needs a number and unit at the start of the adult line
+  ['an adult dose line with no number, on a card that records the dose shown', (f) => { card(f, 'adrenaline').dose.adult = { text: 'See the paediatric drug dose tables for a child.', source: 'EAS 3.14 p1' }; }, /\(adrenaline\)\.dose\.adult: the card records the dose shown .* must start with the number and unit it records \("<number> mg"\)/],
+  ['an adult dose line in another unit than the one recorded', (f) => { card(f, 'magnesium').record.unit = 'g'; }, /\(magnesium\)\.dose\.adult: the card records the dose shown/],
+  ['an adult dose in app words with no number', (f) => { card(f, 'amiodarone-1').dose.adult = { app_text: 'Three hundred milligrams', source: 'Owner ruling X · EAS 3.14 p1' }; }, /\(amiodarone-1\)\.dose\.adult: the card records the dose shown/],
+  ['a first drawn adult line with no number after a trace-only line', (f) => { card(f, 'adrenaline').dose.adult = [{ text: '1 mg IV for an adult.', source: 'EAS 3.14 p1', trace_only: true }, { text: 'See the paediatric drug dose tables for a child.', source: 'EAS 3.14 p1' }]; }, /\(adrenaline\)\.dose\.adult: the card records the dose shown/],
 ];
 
 for (const [name, plant, pattern] of BAD) {
@@ -186,6 +205,22 @@ test('step C3 group order: a later card is refused only when an earlier card of 
   assert.equal(swapped((a) => { a.show_when.push({ doses_at_least: 1 }); a.repeat.max = 2; a.record.drug = 'other-drug'; }), false, 'doses of another drug');
   assert.equal(swapped((a) => { a.show_when[2] = { ever_recorded: 'VF' }; a.show_when[1] = { latest_rhythm: ['VF', 'VT'] }; }), false, 'latest VF or VT does not mean VF was recorded');
   assert.equal(swapped((a, b) => { a.show_when[2] = { ever_recorded: 'VF' }; b.show_when[1] = { latest_rhythm: ['VF'] }; }), true, 'latest VF means VF was recorded');
+});
+
+test('step C4 marks are accepted where allowed: trace-only lines everywhere, an always header card with no lines, the new places', () => {
+  const f = good();
+  card(f, 'adrenaline').lines[0].trace_only = true; // the dose is still drawn
+  card(f, 'fluids').lines[0].trace_only = true;
+  card(f, 'fluids').dose.child[1].trace_only = true; // the table cell is still drawn
+  card(f, 'magnesium').repeat.confirm[1].trace_only = true; // the app-text line is still drawn
+  card(f, 'adrenaline').dose.adult = [{ text: 'Administer adrenaline IV every four minutes:', source: 'EAS 3.14 p1', trace_only: true }, { text: '1 mg IV for an adult.', source: 'EAS 3.14 p1' }];
+  f.checklists[0].items[0].trace_only = true;
+  f.cards.push({ id: 'shock-energy', title: 'Shock energy', place: 'header', show_when: ['always'], lines: [],
+    dose: { adult: { text: 'Maximum joule setting for an adult.', source: 'EAS 3.14 p1' }, child: { table: 'eas72', column: 'adrenalineMg', source: 'EAS 7.2 p5' } } });
+  card(f, 'reversible-causes').place = 'settings';
+  assert.deepEqual(check(f), []);
+  card(f, 'reversible-causes').place = 'weight-sheet';
+  assert.deepEqual(check(f), []);
 });
 
 test('the checker changes nothing it is given', () => {
