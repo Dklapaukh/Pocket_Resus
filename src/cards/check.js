@@ -287,7 +287,7 @@ function checkCards(cards, context) {
         }
       }
     }
-    if ('details' in card) checkLines(card.details, where + '.details', context, { allowEmpty: true });
+    if ('details' in card) checkLines(card.details, where + '.details', context, { allowEmpty: true, allowOnly: true });
     if ('pop_up_on_show' in card) {
       if (typeof card.pop_up_on_show !== 'boolean') problem(where + '.pop_up_on_show', 'must be true or false');
       else if (card.pop_up_on_show && !(Array.isArray(card.details) && card.details.length)) problem(where + '.pop_up_on_show', 'opens the details pop-up, so the card needs at least one details line');
@@ -342,16 +342,29 @@ function checkShowWhen(list, where, { rhythms, problem }, { hasRecord, maxDoses 
 }
 
 /* A list of lines. Each line is {text, source} (guideline words, compared with the PDF) or {app_text} with an
-   optional source (the app's own words, drawn so they never look like guidance). */
-function checkLines(lines, where, context, { allowEmpty }) {
+   optional source (the app's own words, drawn so they never look like guidance).
+   Two optional marks (added in step C2 for approved rows that need them):
+     - only: adult | child  (details lines only): the line is shown for that patient only (A34: the child magnesium
+       pop-up adds a pointer line that an adult never sees);
+     - tick: false  (checklist items only): the line is shown but is not ticked, for a printed section heading or an
+       opening sentence (A31: EAS 9.4 section headings shown once; the EAS 9.2 opening sentence). */
+function checkLines(lines, where, context, { allowEmpty, allowOnly = false, allowTick = false }) {
   if (!Array.isArray(lines) || (!allowEmpty && !lines.length)) { problem(context, where, 'must be a list of ' + (allowEmpty ? '' : 'at least one ') + 'line'); return; }
-  lines.forEach((line, i) => checkLine(line, where + '[' + i + ']', context, {}));
+  lines.forEach((line, i) => checkLine(line, where + '[' + i + ']', context, { allowOnly, allowTick }));
 }
 const problem = (context, where, message) => context.problem(where, message);
 
-function checkLine(line, where, context, { isDose = false, allowCell = false }) {
+function checkLine(line, where, context, { isDose = false, allowCell = false, allowOnly = false, allowTick = false }) {
   if (!isMap(line)) { problem(context, where, 'a line is {text, source} or {app_text}'); return; }
-  const keys = Object.keys(line).sort().join();
+  if ('only' in line) {
+    if (!allowOnly) problem(context, where + '.only', '"only" (adult or child) is allowed in details lines only');
+    else if (!['adult', 'child'].includes(line.only)) problem(context, where + '.only', 'must be adult or child (found ' + show(line.only) + ')');
+  }
+  if ('tick' in line) {
+    if (!allowTick) problem(context, where + '.tick', '"tick: false" is allowed in checklist items only');
+    else if (line.tick !== false) problem(context, where + '.tick', 'must be false (a line that is shown but not ticked); leave it out for an item that is ticked (found ' + show(line.tick) + ')');
+  }
+  const keys = Object.keys(line).filter((key) => key !== 'only' && key !== 'tick').sort().join();
   if (allowCell && 'table' in line) { checkCell(line, where, context); return; }
   if (keys === 'source,text') {
     checkPlainWords(line.text, where + '.text', context);
@@ -408,14 +421,16 @@ function checkWordForWord(text, source, where, { guidelines, guidelineText, prob
   if (!places.some((place) => foundWhole(wanted, place))) report(where, 'not found word for word on ' + source.eas.map(({ code, pages }) => 'EAS ' + code + ' p' + pages.join(', p')).join(' or ') + ': "' + text + '"');
 }
 
-/* dose: { adult: <line>, child: <line or table cell, or a list of them> }. An empty ("-") table cell is shown by
-   the app as "Seek clinical advice" (decision 7 rule 3); that is the engine's job, not the file's. */
+/* dose: { adult: <line, table cell, or a list of them>, child: <the same> }. An empty ("-") table cell is shown by
+   the app as "Seek clinical advice" (decision 7 rule 3); that is the engine's job, not the file's. The adult part may
+   use a table cell too since step C2 (the RSI doses for an adult come from the EAS 9.3 adult table, A12). */
 function checkDose(dose, where, context) {
   if (!isMap(dose) || Object.keys(dose).sort().join() !== 'adult,child') { problem(context, where, 'must be { adult: ..., child: ... }'); return; }
-  checkLine(dose.adult, where + '.adult', context, { isDose: true });
-  const child = Array.isArray(dose.child) ? dose.child : [dose.child];
-  if (!child.length) problem(context, where + '.child', 'needs at least one line or table cell');
-  child.forEach((line, i) => checkLine(line, where + '.child' + (Array.isArray(dose.child) ? '[' + i + ']' : ''), context, { isDose: true, allowCell: true }));
+  for (const who of ['adult', 'child']) {
+    const lines = Array.isArray(dose[who]) ? dose[who] : [dose[who]];
+    if (!lines.length) problem(context, where + '.' + who, 'needs at least one line or table cell');
+    lines.forEach((line, i) => checkLine(line, where + '.' + who + (Array.isArray(dose[who]) ? '[' + i + ']' : ''), context, { isDose: true, allowCell: true }));
+  }
 }
 
 // A table cell: { table, column, source }. The table and column must exist (the values are checked by the table test).
@@ -447,6 +462,6 @@ function checkChecklists(checklists, context) {
     else if (ids.has(list.id)) problem(context, where + '.id', 'another checklist already has this id');
     else ids.add(list.id);
     if (!isText(list.title)) problem(context, where + '.title', 'needs the checklist title');
-    checkLines(list.items, where + '.items', context, { allowEmpty: false });
+    checkLines(list.items, where + '.items', context, { allowEmpty: false, allowTick: true });
   });
 }
