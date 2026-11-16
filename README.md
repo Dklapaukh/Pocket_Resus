@@ -88,7 +88,12 @@ card checker: fields, the seven conditions, citations, and every guideline sente
 word with `src/cards/guideline-text.json` (the packaged PDFs' text, page by page, made by
 `node tools/extract-guideline-text.mjs`; re-run it when a PDF changes). Tests:
 `tests/cards-checker.test.mjs` (good file `tests/fixtures/cards/good.yaml` and the bad files),
-`tests/cards-guideline-text.test.mjs`. `src/cards/` is not in the `sw.js` list until step C5.
+`tests/cards-guideline-text.test.mjs`. `src/cards/engine.js` is the card engine: `cardsNow(cardFile,
+session, nowMs, options)` returns the cards that show now (the seven conditions, the group rule, the
+dose line for this patient, record, timer, dose count, lock, details, sources). Tests:
+`tests/cards-engine.test.mjs` and one `tests/aNN-*.test.mjs` per row A20 to A35 except A32 (sessions built by
+`tests/helpers/card-sessions.mjs` with the app's own recording routines). `src/cards/` is not in the
+`sw.js` list until step C5.
 
 The app uses shared state. Read the call sites
 before moving a function: a display function can also update screen-only state,
