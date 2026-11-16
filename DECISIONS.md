@@ -99,7 +99,7 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
   the first A-table below. Owner decision 17's "release v24" is now the next release, v25.
 - **Cards plan approved** (15 Nov 2026, `CARDS-DESIGN.md`): a new card rule file, engine and checker
   built from the guideline replace building A20 to A32 one row at a time; the formula box is dropped.
-  The live rule set and engine stay unchanged until step C5.
+  The card rule file is written (C2); the live rule set and engine stay unchanged until step C5.
 
 ## 5. Build queue (README "How the build is run" has the method; commit messages hold each step's proof)
 | Step | State |
@@ -113,7 +113,8 @@ reviewer. Independent clinical review comes after the deviation rulings (GUIDELI
 | P1 Trace check of GUIDELINE-TRACE.md (found D9 to D12) | Done |
 | P2 Deviation rulings | Done: D1 to D8 ruled 15 Nov 2026 (A20 to A31), D9 to D12 ruled 16 Nov 2026 (A33 to A35; D11 no change) |
 | C1 Cards plan step 1: card format and card checker (`src/cards/`) | Done (reviewed; commit message has the proof) |
-| C2 to C6 Cards plan steps 2 to 6 (A20 to A32 and P3 written into the cards; one comparison against v24 at C5) | **Next: C2**, then in order. web addresses for A32 supplied by the owner (section 6) |
+| C2 Cards plan step 2: card rule file `src/cards/nz-eas-cards.yaml` (13 cards, EAS 7.2 and 9.3 tables, 4 checklists, 9 guideline links) | Done (reviewed; commit message has the proof). Owner questions before C4: section 6 item 1 |
+| C3 to C6 Cards plan steps 3 to 6 (A20 to A32 and P3 written into the cards; one comparison against v24 at C5) | **Next: C3**, then in order |
 | E2 Editor: open, edit, what-changed (design note first) | After C6. Checker rules settled (decision 16) |
 | E3 Approve, publish, rollback (design note first) | After E2 |
 | v25 release | After C6 and E3 |
@@ -154,14 +155,33 @@ a design note reviewed before code, and is cut into steps of at most one chat ea
 ## 6. Waiting for the owner (ask in this order, one at a time)
 Owner rulings of 15 and 16 Nov 2026 (D1 to D12, Q9 citations, Q10 checker, Q11 order of work, unattended re-recording) are recorded
 in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
-1. **Web addresses for A32 (supplied by the owner)** (the settings-tab guideline links). Known: EAS 3.14 Cardiac Arrest
+1. **Card questions from C2 (answer before C4 draws the cards; C3 is not blocked).** Each is a small
+   design choice the approved rows do not settle; the file follows option A until ruled.
+   a. *Shock energy card.* Every card needs a guideline line, and no condition means "always".
+      A: header shows the added EAS 3.14 p1 line "Defibrillate immediately if the cardiac rhythm is VF
+      or VT using a single shock and immediately recommence chest compressions:" with the energy, only
+      while the arrest is running. B: header shows the energy only, at all times, as in v24 (the card
+      format gains "no lines" for header cards and an "always" condition). **Recommended: B** (no new
+      text, no change from today's screen).
+   b. *CPR clock card* holds "Perform two-minute cycles of high performance CPR between rhythm
+      checks." A: not drawn (the sentence is already in the Guidance opening text, A29). B: drawn in
+      the header. **Recommended: A.**
+   c. *A33 lines* (child second amiodarone). A: shown as dose lines under "Seek clinical advice".
+      B: shown as the card's source line, in source-line style (A33 says "source line"). **Recommended: B.**
+   d. *Guidance opening item 1* (app text) loses its bold, because card text is plain. A: plain.
+      B: allow bold in app text. **Recommended: A.**
+   e. *Places.* Special situations: A: Guidance tab (as the file has it); B: the settings note, as
+      today and as A29 names. Weight from age: opened from the weight sheet as today (the format only
+      knows "opened from Guidance"). Reversible causes title still "4 Hs & 4 Ts": A: keep; B: "Reversible
+      causes". **Recommended: B, today's places, and title B.**
+2. **Web addresses for A32 (supplied by the owner)** (the settings-tab guideline links; now in the card file). Known: EAS 3.14 Cardiac Arrest
    https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/cardiac-arrest-eas; EAS 9.3 RSI
    (Rapid Sequence Intubation)
    https://cpg.stjohn.org.nz/tabs/guidelines/intubation-and-ventilation/page/rsi-rapid-sequence-intubation-eas
    (linked from the EAS 7.2 PDF); EAS 14.27 Magnesium sulphate
    https://cpg.stjohn.org.nz/tabs/medicines/page/magnesium-sulphate-eas; EAS 7.2 Paediatric Equipment and Drug Doses, https://cpg.stjohn.org.nz/tabs/guidelines/paediatrics-eas/page/paediatric-equipment-and-drug-doses-eas;  EAS 9.2 Airway Backup Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/airway-backup; EAS 3.15 Treatment following ROSC, https://cpg.stjohn.org.nz/tabs/guidelines/cardiac-eas/page/treatment-following-rosc-eas; EAS 9.4 RSI Checklist, https://cpg.stjohn.org.nz/tabs/checklists/procedural-checklists/page/rsi-checklist; EAS 14.3
    Adrenaline, https://cpg.stjohn.org.nz/tabs/medicines/page/adrenaline-eas; EAS 14.4 Amiodarone, https://cpg.stjohn.org.nz/tabs/medicines/page/amiodarone-eas.
-2. **Store publication, owner actions** (these have waiting times, so they decide the date):
+3. **Store publication, owner actions** (these have waiting times, so they decide the date):
    - Ask Medsafe whether the app is a medical device (section 2 "Regulatory position").
    - Written permission from the guideline's owners to reproduce CPG text and PDFs in a published
      app. The owner's employer, Wellington Free Ambulance, is on the CPG working group and endorses
@@ -171,12 +191,12 @@ in sections 1 to 3, GUIDELINE-TRACE.md section 5 and the A-table below.
    - Under a personal account (decision 11): Google needs a closed test with 12 testers for 14 days
      before public release; Apple rule 1.4.2 is not satisfied.
    - Open the developer accounts; recruit the 12 testers.
-3. Smaller items, each a possible A-row: a manual entry timed later than now is saved as the
+4. Smaller items, each a possible A-row: a manual entry timed later than now is saved as the
    previous day (on purpose, for a case crossing midnight); closing the rhythm pop-up with × leaves
    "Rhythm not recorded"; the tutorial step "Find weight-based RSI doses" still says doses "are
    calculated from the entered weight" (they are looked up since A12); the start-up message shown
    when the rule set cannot be read (wording in `src/rules/parse.js`) may be reworded.
-4. **Paediatric pads prompt:** removed 15 Nov 2026; may return as an owner addition once the
+5. **Paediatric pads prompt:** removed 15 Nov 2026; may return as an owner addition once the
    corpuls criterion (weight, age or energy) is supplied.
 
 ## 7. A-table: changes not yet live
@@ -238,6 +258,11 @@ Withdrawn: A13, A14 (showing the working on screen; decision 7 rule 4).
   second-dose card); settle with the engine's group rule.
 - Before C2: table and cell sources are checked only for page existence; the cell values are left to the table test.
 - Small: a page listed twice in a source ("p1, p1") is accepted.
+- From the C2 review: a table cell's cited pages are not checked against the page holding the value;
+  guideline web links are checked by prefix only (compare with section 6 item 2); the sources of
+  ordinary card lines are not pinned by a test (the checker finds each sentence on its cited page).
+- A30 and GUIDELINE-TRACE.md cite EAS 9.3 p1 for the three blocker lines; the PDF prints them on p2
+  (the card file cites p2). Correct the trace row when A30 is traced at C5.
 
 **Before the editor is used (E2)**
 - The 0–100 limit on the earlier-counts boxes is typed in code (three places); its error text is data.
