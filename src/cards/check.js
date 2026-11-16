@@ -11,7 +11,8 @@
        one of those pages of the packaged PDF (owner rulings D6 and Q9). Spacing, curly quotes and dash styles
        are ignored, nothing else;
      - app text ({app_text}) is never a dose unless an owner ruling is cited;
-     - a dose taken from a table names a table and column that exist.
+     - a dose taken from a table names a table and column that exist;
+     - every card of a group can show: no earlier card of the group matches whenever it does (step C3).
    It is a pure function: it reads only what it is given and changes nothing. It holds no clinical values.
    The phone never runs it; the tests do (and the rules editor will). */
 
@@ -299,6 +300,69 @@ function checkCards(cards, context) {
     if (places.length < 2) problem('cards', 'group "' + group + '" has only one card; a group picks the first matching card of two or more');
     if (new Set(places).size > 1) problem('cards', 'the cards of group "' + group + '" must all have the same place');
   }
+  checkGroupOrder(cards, problem);
+}
+
+/* Group order (DECISIONS.md section 8, "before C3"). The engine shows only the FIRST matching card of a group, in file
+   order. So a later card can never show if an earlier card of the same group is sure to match whenever the later one
+   does (amiodarone-1 placed before amiodarone-2 would hide the second-dose card for ever). Such a file is refused:
+   the card with more conditions must come first. */
+function checkGroupOrder(cards, problem) {
+  const members = new Map(); // group name -> [{ card, index }] in file order
+  cards.forEach((card, index) => {
+    if (isMap(card) && typeof card.group === 'string') members.set(card.group, [...(members.get(card.group) || []), { card, index }]);
+  });
+  for (const [group, list] of members) {
+    list.forEach((later, i) => {
+      const earlier = list.slice(0, i).find((candidate) => alwaysMatchedWith(candidate.card, later.card));
+      if (earlier) {
+        problem('cards[' + later.index + '] (' + later.card.id + ')', 'can never show: the earlier card "' + earlier.card.id + '" of group "' + group +
+          '" matches whenever this one does, and a group shows only its first matching card; put the card with more conditions first');
+      }
+    });
+  }
+}
+
+/* The conditions of a card as name -> value (a word condition has the value true). null when show_when is not a
+   readable list (that is reported elsewhere). */
+function conditionMap(card) {
+  if (!Array.isArray(card.show_when)) return null;
+  const map = new Map();
+  for (const condition of card.show_when) {
+    if (typeof condition === 'string') map.set(condition, true);
+    else if (isMap(condition) && Object.keys(condition).length === 1) map.set(...Object.entries(condition)[0]);
+    else return null;
+  }
+  return map;
+}
+
+/* True when the earlier card's conditions are all sure to be true whenever all of the later card's are. Each
+   condition of the earlier card must follow from one of the later card's:
+     arrest_running       the later card has arrest_running too
+     latest_rhythm        the later card's latest_rhythm list is part of the earlier card's list
+     shocks_at_least n    the later card asks for at least n shocks
+     doses_at_least n     the later card asks for at least n doses of the same drug
+     ever_recorded R      the later card has ever_recorded R, or its latest rhythm can only be R
+     never_recorded R     the later card has never_recorded R
+   on_request is never "sure": each card is opened by its own request. Anything unreadable counts as not sure. */
+function alwaysMatchedWith(earlierCard, laterCard) {
+  const earlier = conditionMap(earlierCard), later = conditionMap(laterCard);
+  if (!earlier || !later) return false;
+  const latest = Array.isArray(later.get('latest_rhythm')) ? later.get('latest_rhythm') : null;
+  const sameDrug = isMap(earlierCard.record) && isMap(laterCard.record) && earlierCard.record.drug === laterCard.record.drug;
+  for (const [name, value] of earlier) {
+    const theirs = later.get(name);
+    const sure =
+      name === 'arrest_running' ? theirs === true :
+      name === 'latest_rhythm' ? Array.isArray(value) && latest !== null && latest.every((rhythm) => value.includes(rhythm)) :
+      name === 'shocks_at_least' ? Number.isInteger(theirs) && theirs >= value :
+      name === 'doses_at_least' ? sameDrug && Number.isInteger(theirs) && theirs >= value :
+      name === 'ever_recorded' ? theirs === value || (latest !== null && latest.length > 0 && latest.every((rhythm) => rhythm === value)) :
+      name === 'never_recorded' ? theirs === value :
+      false; // on_request, or an unknown condition (reported elsewhere)
+    if (!sure) return false;
+  }
+  return true;
 }
 
 /* show_when: a list of conditions, all of which must be true. Exactly one of arrest_running and on_request; an
